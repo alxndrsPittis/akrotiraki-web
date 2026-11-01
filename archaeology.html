@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Asset version: ?v=20261101b. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The archaeology of the hill · Akrotiraki, Sifnos</title>
@@ -22,9 +23,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="site.css?v=20261101b">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="site.js" defer></script>
+  <script src="site.js?v=20261101b" defer></script>
 </head>
 <body class="page-arch">
   <a class="skip" href="#main">Skip to content</a>
@@ -41,8 +42,8 @@
       </button>
       <nav id="site-nav" class="site-nav" aria-label="Main">
         <ul>
-          <li><a href="./#houses">Houses</a></li>
-          <li><a href="./#place">The place</a></li>
+          <li><a href="./#houses">Apartments</a></li>
+          <li><a href="./#location">Location</a></li>
           <li><a href="./#gallery">Gallery</a></li>
           <li><a href="./#practical">Practical</a></li>
           <li><a href="./#contact">Contact</a></li>
@@ -50,8 +51,8 @@
         </ul>
         <a class="btn btn-quiet" href="./#contact">Request to stay</a>
         <a class="nav-staff" href="./app/" rel="nofollow"><svg class="staff-glyph" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span>Staff</span></a>
-        <div class="lang-switch" role="group" aria-label="Language"><span class="lang-current" lang="en" aria-current="true">EN</span><span class="lang-sep" aria-hidden="true">|</span><a href="el/archaeology.html" hreflang="el" lang="el" title="Ελληνικά">EL</a></div>
       </nav>
+      <div class="lang-switch" role="group" aria-label="Language"><span class="lang-current" lang="en" aria-current="true">EN</span><span class="lang-sep" aria-hidden="true">/</span><a href="el/archaeology.html" hreflang="el" lang="el" title="Ελληνικά">ΕΛ</a></div>
     </div>
   </header>
 
@@ -60,7 +61,7 @@
       <header class="essay-head wrap">
         <p class="eyebrow">Archaeology</p>
         <h1 id="arch-title">The hill of Akrotiraki</h1>
-        <p class="lede">The houses stand on a headland with a long prehistory. This page summarises, for guests, what archaeologists have published about it.</p>
+        <p class="lede">The house stands on a headland with a long prehistory. This page summarises, for guests, what archaeologists have published about it.</p>
       </header>
 
       <div class="essay-body wrap">
@@ -69,6 +70,19 @@
           <p>Akrotiraki is a low promontory, about 20 m above the sea, between the bay of Platys Gialos and the small cove of Lazarou to the south. In the Early Bronze Age, which in the Cyclades is called the Early Cycladic period, a settlement stood on its summit and spread down its east and northeast slopes. Its dead were buried on the southwest slope, above Lazarou.</p>
           <p>The cemetery was first noted in 1896, and Christos Tsountas published his excavation of graves there in 1899. He found most of the graves already plundered. Pottery from the settlement shows that people lived here from the Final Neolithic into the early part of the last Early Cycladic phase, with most of the material from the middle phase, Early Cycladic II. Colin Renfrew has called Akrotiraki a key site because of this long life, which he puts in the order of 850 years.</p>
         </section>
+
+        <figure class="map-inset">
+          <a href="photos/sifnos-archaeological-map.jpg" data-lightbox data-alt="The official map of archaeological sites and places on Sifnos, scale 1:20,000, with a legend and the declared archaeological zones outlined.">
+            <img src="photos/sifnos-archaeological-map-akrotiraki.jpg" width="420" height="340" loading="lazy" decoding="async"
+                 alt="Detail of the official archaeological map of Sifnos: the outlined zone of Akrotiraki – Platys Gialos on the south-east coast.">
+          </a>
+          <figcaption>
+            <p>The declared archaeological zone of Akrotiraki – Platys Gialos on the official map of the sites of Sifnos. Click for the whole island.</p>
+            <!-- TODO: confirm — exact map credit -->
+            <p class="credit">Map: Ephorate of Antiquities of the Cyclades, Hellenic Ministry of Culture <span class="tbc">(to confirm)</span></p>
+          </figcaption>
+        </figure>
+
 
         <section aria-labelledby="a-silver">
           <h2 id="a-silver">Silver from lead</h2>
@@ -108,6 +122,11 @@
           <p>Only small parts of the hill have been excavated, and what lies beneath is fragile. Please keep to the paths, do not dig or move stones, and leave any sherd, obsidian flake or piece of slag where you find it. If something catches your eye, tell us; we are glad to talk about it. The Archaeological Museum of Sifnos is the place to see the finds.</p>
         </section>
 
+        <!--
+          PLACEHOLDER: closing section "Elsewhere on Sifnos" (acropolis of Agios Andreas, the ancient mines, the towers).
+          Intentionally empty; content to be written once the research is done. Insert a <section> here.
+        -->
+
         <section class="sources" aria-labelledby="a-src">
           <h2 id="a-src">Sources</h2>
           <ol>
@@ -130,5 +149,15 @@
     </div>
   </footer>
 
+  <dialog class="lightbox" id="lightbox" aria-label="Photograph">
+    <figure>
+      <img id="lightbox-img" alt="">
+    </figure>
+    <div class="lightbox-ctrl">
+      <button type="button" data-lb="prev" aria-label="Previous photograph">←</button>
+      <button type="button" data-lb="next" aria-label="Next photograph">→</button>
+      <button type="button" data-lb="close" aria-label="Close">Close</button>
+    </div>
+  </dialog>
 </body>
 </html>

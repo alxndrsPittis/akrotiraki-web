@@ -98,7 +98,8 @@ p { margin: 0 0 1em; max-width: 62ch; }
   border-bottom: 1px solid var(--line);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px; }
+.header-inner { display: flex; align-items: center; gap: clamp(.8rem, 1.5vw, 1.4rem); min-height: 68px; }
+.site-nav { margin-left: auto; }
 .wordmark { text-decoration: none; color: var(--ink); display: flex; flex-direction: column; line-height: 1; }
 .wordmark-name { font-family: var(--serif); font-size: 1.75rem; font-weight: 500; }
 .wordmark-place { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted-text); margin-top: .35rem; }
@@ -120,22 +121,52 @@ p { margin: 0 0 1em; max-width: 62ch; }
 .nav-toggle[aria-expanded="true"] .nav-toggle-bars { transform: translateY(3px) rotate(45deg); }
 .nav-toggle[aria-expanded="true"] .nav-toggle-bars::before { transform: translateY(-6px) rotate(-90deg); }
 
-@media (max-width: 1180px) {
-  .js .nav-toggle { display: inline-flex; }
-  .js .site-nav {
-    position: absolute; left: 0; right: 0; top: 100%;
+
+
+
+
+
+
+/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: EN 1080px, EL 1220px (Greek labels run longer) */
+/* Greek: tighter gaps so the expanded nav fits */
+html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-nav ul { gap: clamp(.8rem, 1.4vw, 1.05rem); }
+@media (max-width: 1080px) {
+  html[lang="en"].js .nav-toggle { display: inline-flex; order: 2; }
+  html[lang="en"] .lang-switch { margin-left: auto; order: 1; }
+  html[lang="en"].js .site-nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
     flex-direction: column; align-items: stretch; gap: 0;
     background: var(--paper); border-bottom: 1px solid var(--line);
     padding: .5rem var(--gutter) 1.5rem;
   }
-  .js .site-nav:not(.open) { display: none; }
-  .site-nav ul { flex-direction: column; gap: 0; }
-  .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
-  .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="en"].js .site-nav:not(.open) { display: none; }
+  html[lang="en"] .site-nav ul { flex-direction: column; gap: 0; }
+  html[lang="en"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+  html[lang="en"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="en"] .nav-staff { margin-top: 1rem; justify-content: center; padding: .6rem 0; }
   /* Without JS: nav stays visible below the wordmark */
-  html:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-  html:not(.js) .site-nav { width: 100%; }
+  html[lang="en"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
+  html[lang="en"]:not(.js) .site-nav { width: 100%; }
 }
+@media (max-width: 1220px) {
+  html[lang="el"].js .nav-toggle { display: inline-flex; order: 2; }
+  html[lang="el"] .lang-switch { margin-left: auto; order: 1; }
+  html[lang="el"].js .site-nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: .5rem var(--gutter) 1.5rem;
+  }
+  html[lang="el"].js .site-nav:not(.open) { display: none; }
+  html[lang="el"] .site-nav ul { flex-direction: column; gap: 0; }
+  html[lang="el"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+  html[lang="el"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="el"] .nav-staff { margin-top: 1rem; justify-content: center; padding: .6rem 0; }
+  /* Without JS: nav stays visible below the wordmark */
+  html[lang="el"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
+  html[lang="el"]:not(.js) .site-nav { width: 100%; }
+}
+/* NAV-COLLAPSE:END */
 
 /* Hero */
 .hero { padding-bottom: clamp(40px, 6vw, 72px); }
@@ -294,9 +325,6 @@ input[aria-invalid="true"] { border-color: #a33a2b; }
 }
 .nav-staff:hover { border-bottom-color: currentColor; }
 .staff-glyph { flex: none; }
-@media (max-width: 1180px) {
-  .nav-staff { margin-top: 1rem; justify-content: center; padding: .6rem 0; }
-}
 
 /* Archaeology page */
 .essay { padding-bottom: var(--section); }
@@ -321,17 +349,12 @@ input[aria-invalid="true"] { border-color: #a33a2b; }
 .more { margin-top: 1.4rem; }
 .more a, .back a { color: var(--sand-text); }
 
-/* Language switch (EN | EL) */
-.lang-switch { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; letter-spacing: .08em; white-space: nowrap; }
-.lang-switch a { color: var(--muted-text); text-decoration: none; padding: .3rem .1rem; border-bottom: 1px solid transparent; }
+/* Language switch (EN / ΕΛ): small and quiet */
+.lang-switch { display: inline-flex; align-items: center; gap: .3rem; font-size: 12px; letter-spacing: .16em; white-space: nowrap; }
+.lang-switch a { color: var(--muted-text); text-decoration: none; padding: .3rem .05rem; border-bottom: 1px solid transparent; }
 .lang-switch a:hover { color: var(--ink); border-bottom-color: var(--sand); }
-.lang-current { color: var(--ink); font-weight: 600; padding: .3rem .1rem; }
-.lang-sep { color: var(--line); }
-@media (max-width: 1180px) {
-  .lang-switch { justify-content: center; font-size: .9rem; padding: .4rem 0 0; gap: .6rem; }
-  .lang-switch a, .lang-current { padding: .5rem .4rem; }
-}
-@media (max-width: 1180px) { .lang-switch { order: 2; } .nav-staff { order: 3; margin-top: .4rem; } }
+.lang-current { color: var(--ink); font-weight: 400; padding: .3rem .05rem; }
+.lang-sep { color: var(--muted); font-weight: 300; }
 .site-nav ul a, .site-nav .btn, .nav-staff { white-space: nowrap; }
 .wordmark { flex: none; }
 
@@ -343,3 +366,17 @@ input[aria-invalid="true"] { border-color: #a33a2b; }
 :lang(el) .card h3 { font-size: 1.9rem; }
 .wordmark-name { font-family: "Cormorant Garamond", var(--serif); }
 h1, h2, h3 { text-wrap: balance; }
+
+/* Archaeology page: inset of the official map (opens the full map in the lightbox) */
+.map-inset { margin: clamp(32px, 5vw, 48px) 0 0; display: grid; gap: 1rem; }
+.map-inset a { display: block; max-width: 420px; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; cursor: zoom-in; }
+.map-inset img { width: 100%; transition: transform .6s ease; }
+.map-inset a:hover img { transform: scale(1.02); }
+.map-inset figcaption p { margin: 0 0 .5rem; font-size: .92rem; color: var(--muted-text); }
+.map-inset .credit { font-size: .8rem; }
+@media (min-width: 640px) {
+  .map-inset { grid-template-columns: minmax(0, 340px) 1fr; align-items: end; gap: clamp(20px, 3vw, 32px); }
+}
+
+/* Location: one-line answer under the heading */
+.section-head p.loc-line { font-family: var(--serif); font-size: clamp(1.25rem, 2.2vw, 1.55rem); line-height: 1.35; color: var(--ink); margin-bottom: .6rem; }

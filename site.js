@@ -10,13 +10,13 @@
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
       check: 'Please check: ', order: 'Departure must be after arrival',
       subject: function (a, d) { return 'Request to stay: ' + a + ' to ' + d; },
-      name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'House', guests: 'Guests'
+      name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'Apartment', guests: 'Guests'
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
       check: 'Ελέγξτε: ', order: 'Η αναχώρηση πρέπει να είναι μετά την άφιξη',
       subject: function (a, d) { return 'Αίτημα διαμονής: ' + a + ' έως ' + d; },
-      name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Σπίτι', guests: 'Άτομα'
+      name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Διαμέρισμα', guests: 'Άτομα'
     }
   };
   var T = STR[LANG] || STR.en;
@@ -52,9 +52,12 @@
       idx = (i + links.length) % links.length;
       var thumb = links[idx].querySelector('img');
       img.src = links[idx].getAttribute('href');
-      img.alt = thumb ? thumb.alt : '';
+      img.alt = links[idx].getAttribute('data-alt') || (thumb ? thumb.alt : '');
       dlg.setAttribute('aria-label', T.photo(idx + 1, links.length));
     };
+    if (links.length < 2) {
+      Array.prototype.forEach.call(dlg.querySelectorAll('[data-lb=prev],[data-lb=next]'), function (b) { b.hidden = true; });
+    }
     links.forEach(function (a, i) {
       a.addEventListener('click', function (e) {
         e.preventDefault();
