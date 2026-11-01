@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Asset version: ?v=20261101c. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101d. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Four apartments above Platys Gialos, Sifnos</title>
@@ -24,9 +24,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="photos/bay-panorama.webp" fetchpriority="high">
-  <link rel="stylesheet" href="site.css?v=20261101c">
+  <link rel="stylesheet" href="site.css?v=20261101d">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="site.js?v=20261101c" defer></script>
+  <script src="site.js?v=20261101d" defer></script>
+  <script src="booking.js?v=20261101d" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -231,72 +232,120 @@
       </div>
     </section>
 
-    <!-- Contact -->
+    <!-- Contact / request to stay. Posts to the ops API (public actions availability + requestStay) via booking.js. -->
     <section class="section contact" id="contact" aria-labelledby="contact-title">
-      <div class="wrap split contact-split">
-        <div class="split-text">
-          <p class="eyebrow">Contact</p>
-          <h2 id="contact-title">Request to stay</h2>
-          <p>Tell us your dates and we will reply with availability and a price.</p>
-          <ul class="contact-list">
-            <!-- TODO: confirm — phone number -->
-            <li><span class="label">Phone</span> <span class="tbc">+30 22840 ·····</span></li>
-            <!-- TODO: confirm — email address (also used by the form's mailto) -->
-            <li><span class="label">Email</span> <span class="tbc">stay@akrotiraki.gr — to confirm</span></li>
-          </ul>
-          <p class="also">Also on
-            <a href="#">Airbnb</a><!-- TODO: confirm — Airbnb listing URL -->
-            and
-            <a href="#">Booking.com</a><!-- TODO: confirm — Booking.com listing URL -->
-            <span class="tbc">(links to confirm)</span>.
-          </p>
+      <div class="wrap">
+        <div class="contact-head">
+          <div>
+            <p class="eyebrow">Contact</p>
+            <h2 id="contact-title">Request to stay</h2>
+            <p>Choose your dates and apartment and send us a request. We reply personally with availability and a price; nothing is booked until we confirm.</p>
+          </div>
+          <div class="contact-aside">
+            <ul class="contact-list">
+              <!-- TODO: confirm — phone number -->
+              <li><span class="label">Phone</span> <span class="tbc">+30 22840 ·····</span></li>
+              <!-- TODO: confirm — email address (also in the fallback link below) -->
+              <li><span class="label">Email</span> <span class="tbc">stay@akrotiraki.gr — to confirm</span></li>
+            </ul>
+            <p class="also">Also on
+              <a href="#">Airbnb</a><!-- TODO: confirm — Airbnb listing URL -->
+              and
+              <a href="#">Booking.com</a><!-- TODO: confirm — Booking.com listing URL -->
+              <span class="tbc">(links to confirm)</span>.
+            </p>
+          </div>
         </div>
 
-        <!--
-          For now the form only builds a mailto: link in site.js (no backend).
-          Later it will POST to the ops API (akrotiraki-ops) as a pending request.
-        -->
-        <form class="form" id="stay-form" action="mailto:stay@akrotiraki.gr" method="post" enctype="text/plain" novalidate>
-          <div class="field">
-            <label for="f-name">Name</label>
-            <input id="f-name" name="name" type="text" autocomplete="name" required>
+        <!-- Backend URL: one place, data-api. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
+        <div class="booking" id="booking" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
+          <div class="cal" id="cal" hidden>
+            <div class="cal-top">
+              <h3 class="cal-title">Availability</h3>
+              <div class="seg" role="group" aria-label="Show availability for">
+                <button type="button" data-type="any" aria-pressed="true">Any</button><button type="button" data-type="maisonette" aria-pressed="false">Maisonette</button><button type="button" data-type="studio" aria-pressed="false">Studio</button>
+              </div>
+            </div>
+            <div class="cal-body">
+              <button type="button" class="cal-prev" aria-label="Previous month">←</button>
+              <div class="cal-months" id="cal-months"></div>
+              <button type="button" class="cal-next" aria-label="Next month">→</button>
+            </div>
+            <ul class="cal-legend" role="list">
+              <li><span class="sw sw-free" aria-hidden="true"></span>Free</li>
+              <li><span class="sw sw-pending" aria-hidden="true"></span>On request</li>
+              <li><span class="sw sw-taken" aria-hidden="true"></span>Taken</li>
+              <li><span class="sw sw-sel" aria-hidden="true"></span>Your dates</li>
+            </ul>
+            <p class="cal-status" id="cal-status" aria-live="polite"></p>
           </div>
-          <div class="field">
-            <label for="f-email">Email</label>
-            <input id="f-email" name="email" type="email" autocomplete="email" required>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="f-from">Arrival</label>
-              <input id="f-from" name="arrival" type="date" required>
+
+          <form class="form" id="stay-form" novalidate>
+            <fieldset class="field apt-choice">
+              <legend>Apartment</legend>
+              <label class="apt-opt"><input type="radio" name="type" value="maisonette" checked><span><strong>Maisonette</strong> 55 m², 2–4 guests</span></label>
+              <label class="apt-opt"><input type="radio" name="type" value="studio"><span><strong>Studio</strong> 21 m², 2 guests</span></label>
+              <p class="field-error" id="err-unit_id" hidden></p>
+            </fieldset>
+            <div class="field-row">
+              <div class="field">
+                <label for="f-in">Arrival</label>
+                <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
+                <p class="field-error" id="err-check_in" hidden></p>
+              </div>
+              <div class="field">
+                <label for="f-out">Departure</label>
+                <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
+                <p class="field-error" id="err-check_out" hidden></p>
+              </div>
             </div>
             <div class="field">
-              <label for="f-to">Departure</label>
-              <input id="f-to" name="departure" type="date" required>
+              <label for="f-name">Name</label>
+              <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
+              <p class="field-error" id="err-guest_name" hidden></p>
             </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="f-house">Apartment</label>
-              <select id="f-house" name="house">
-                <option value="Either">Either</option>
-                <option value="Maisonette">Maisonette (2–4)</option>
-                <option value="Studio">Studio (2)</option>
-              </select>
+            <div class="field-row">
+              <div class="field">
+                <label for="f-email">Email</label>
+                <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
+                <p class="field-error" id="err-email" hidden></p>
+              </div>
+              <div class="field">
+                <label for="f-phone">Phone <span class="opt">(optional)</span></label>
+                <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
+                <p class="field-error" id="err-phone" hidden></p>
+              </div>
             </div>
-            <div class="field">
+            <div class="field field-narrow">
               <label for="f-guests">Guests</label>
-              <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric">
+              <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
+              <p class="field-error" id="err-guests" hidden></p>
             </div>
+            <div class="field">
+              <label for="f-msg">Message <span class="opt">(optional)</span></label>
+              <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
+              <p class="field-error" id="err-message" hidden></p>
+            </div>
+            <div class="hp" aria-hidden="true">
+              <label for="f-hp">Leave this field empty</label>
+              <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
+            </div>
+            <p class="form-error" id="form-error" role="alert" hidden></p>
+            <button class="btn btn-solid" type="submit">Send request</button>
+            <p class="form-note">We will reply personally within a day or two. If the other apartment of the same type suits your dates better, we may offer you that one.</p>
+            <!-- TODO: confirm — email address -->
+            <p class="form-note">Prefer email? Write to us at <a href="mailto:stay@akrotiraki.gr">stay@akrotiraki.gr</a> <span class="tbc">(to confirm)</span></p>
+            <noscript><p class="form-error">This form needs JavaScript. Please write to us by email instead: <a href="mailto:stay@akrotiraki.gr">stay@akrotiraki.gr</a></p></noscript>
+          </form>
+
+          <div class="request-ok" id="request-ok" tabindex="-1" hidden>
+            <h3>Thank you.</h3>
+            <p>We have sent an acknowledgement to <strong data-email></strong> and will reply personally within a day or two. Nothing is booked yet.</p>
+            <p>If the other apartment of the same type suits your dates better, we may offer you that one; they are alike.</p>
+            <!-- TODO: confirm — email address -->
+            <p class="form-note">Prefer email? Write to us at <a href="mailto:stay@akrotiraki.gr">stay@akrotiraki.gr</a> <span class="tbc">(to confirm)</span></p>
           </div>
-          <div class="field">
-            <label for="f-msg">Message <span class="opt">(optional)</span></label>
-            <textarea id="f-msg" name="message" rows="4"></textarea>
-          </div>
-          <p class="form-error" id="form-error" role="alert" hidden></p>
-          <button class="btn btn-solid" type="submit">Send request</button>
-          <p class="form-note">This opens your email app with the request filled in.</p>
-        </form>
+        </div>
       </div>
     </section>
   </main>

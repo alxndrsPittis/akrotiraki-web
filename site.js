@@ -1,4 +1,4 @@
-// Akrotiraki — small enhancements: mobile nav, gallery lightbox, mailto request form.
+// Akrotiraki — small enhancements: mobile nav, gallery lightbox, and the interface strings shared with booking.js.
 (function () {
   'use strict';
   document.documentElement.classList.add('js');
@@ -8,18 +8,76 @@
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
-      check: 'Please check: ', order: 'Departure must be after arrival',
-      subject: function (a, d) { return 'Request to stay: ' + a + ' to ' + d; },
-      name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'Apartment', guests: 'Guests'
+      // booking.js (request to stay)
+      name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'Apartment', guests: 'Guests',
+      any: 'Any apartment', maisonette: 'Maisonette', studio: 'Studio',
+      prevMonth: 'Previous month', nextMonth: 'Next month',
+      free: 'free', onRequest: 'on request', taken: 'taken', past: 'not available',
+      selArrival: 'your arrival', selDeparture: 'your departure', selStay: 'in your stay',
+      hint: 'Choose an arrival day, then a departure day.',
+      pickedArrival: function (d) { return 'Arrival ' + d + '. Now choose a departure day.'; },
+      pickedRange: function (n, a, d) { return n + (n === 1 ? ' night' : ' nights') + ', ' + a + ' to ' + d + '.'; },
+      calError: 'The calendar could not be loaded. You can still send a request below.',
+      err: {
+        unit_id: 'Please choose an apartment.',
+        check_in: 'Please choose an arrival date.',
+        check_in_past: 'The arrival date is in the past.',
+        check_out: 'Please choose a departure date after the arrival.',
+        check_out_long: 'For stays longer than 60 nights, please write to us by email.',
+        guests: function (n) { return 'Please enter between 1 and ' + n + ' guests for this apartment.'; },
+        email: 'Please enter a valid email address.',
+        guest_name: 'Please enter your name.',
+        guest_name_long: 'Your name is too long.',
+        phone: 'The phone number is too long (40 characters at most).',
+        message: 'Your message is too long (2,000 characters at most).'
+      },
+      checkFields: 'Please check the fields marked below.',
+      sending: 'Sending…', send: 'Send request',
+      network: 'We could not send your request. Please try again in a moment, or write to us by email.',
+      quick: 'That was very quick. Please check your details and send the request again.',
+      duplicate: 'We already have this request and will reply soon. There is no need to send it again.',
+      cap: 'We cannot take more requests right now. Please try again later or write to us by email.',
+      reload: 'Your request could not be sent. Please reload the page and try again.',
+      blocked: 'Your request could not be sent. Please write to us by email instead.',
+      closed: 'Online requests are closed at the moment. Please write to us by email.'
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
-      check: 'Ελέγξτε: ', order: 'Η αναχώρηση πρέπει να είναι μετά την άφιξη',
-      subject: function (a, d) { return 'Αίτημα διαμονής: ' + a + ' έως ' + d; },
-      name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Διαμέρισμα', guests: 'Άτομα'
+      name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Διαμέρισμα', guests: 'Άτομα',
+      any: 'Οποιοδήποτε', maisonette: 'Μεζονέτα', studio: 'Στούντιο',
+      prevMonth: 'Προηγούμενος μήνας', nextMonth: 'Επόμενος μήνας',
+      free: 'ελεύθερο', onRequest: 'κατόπιν αιτήματος', taken: 'κλεισμένο', past: 'μη διαθέσιμο',
+      selArrival: 'η άφιξή σας', selDeparture: 'η αναχώρησή σας', selStay: 'μέσα στη διαμονή σας',
+      hint: 'Διαλέξτε ημέρα άφιξης και μετά ημέρα αναχώρησης.',
+      pickedArrival: function (d) { return 'Άφιξη ' + d + '. Διαλέξτε τώρα ημέρα αναχώρησης.'; },
+      pickedRange: function (n, a, d) { return n + (n === 1 ? ' διανυκτέρευση' : ' διανυκτερεύσεις') + ', ' + a + ' έως ' + d + '.'; },
+      calError: 'Δεν ήταν δυνατό να φορτωθεί το ημερολόγιο. Μπορείτε πάντως να στείλετε αίτημα παρακάτω.',
+      err: {
+        unit_id: 'Διαλέξτε διαμέρισμα.',
+        check_in: 'Διαλέξτε ημερομηνία άφιξης.',
+        check_in_past: 'Η ημερομηνία άφιξης έχει περάσει.',
+        check_out: 'Διαλέξτε ημερομηνία αναχώρησης μετά την άφιξη.',
+        check_out_long: 'Για διαμονή πάνω από 60 διανυκτερεύσεις, γράψτε μας με email.',
+        guests: function (n) { return 'Γράψτε από 1 έως ' + n + ' άτομα για αυτό το διαμέρισμα.'; },
+        email: 'Γράψτε μια έγκυρη διεύθυνση email.',
+        guest_name: 'Γράψτε το όνομά σας.',
+        guest_name_long: 'Το όνομα είναι πολύ μεγάλο.',
+        phone: 'Το τηλέφωνο είναι πολύ μεγάλο (έως 40 χαρακτήρες).',
+        message: 'Το μήνυμα είναι πολύ μεγάλο (έως 2.000 χαρακτήρες).'
+      },
+      checkFields: 'Ελέγξτε τα πεδία που σημειώνονται παρακάτω.',
+      sending: 'Αποστολή…', send: 'Αποστολή αιτήματος',
+      network: 'Δεν ήταν δυνατό να σταλεί το αίτημα. Δοκιμάστε ξανά σε λίγο ή γράψτε μας με email.',
+      quick: 'Ήταν πολύ γρήγορο. Ελέγξτε τα στοιχεία σας και στείλτε ξανά το αίτημα.',
+      duplicate: 'Έχουμε ήδη αυτό το αίτημα και θα σας απαντήσουμε σύντομα. Δεν χρειάζεται να το ξαναστείλετε.',
+      cap: 'Δεν μπορούμε να δεχτούμε άλλα αιτήματα αυτή τη στιγμή. Δοκιμάστε αργότερα ή γράψτε μας με email.',
+      reload: 'Το αίτημα δεν στάλθηκε. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.',
+      blocked: 'Το αίτημα δεν στάλθηκε. Γράψτε μας καλύτερα με email.',
+      closed: 'Τα αιτήματα μέσω της σελίδας είναι προσωρινά κλειστά. Γράψτε μας με email.'
     }
   };
   var T = STR[LANG] || STR.en;
+  window.AKRO_LANG = LANG; window.AKRO_T = T; // used by booking.js
 
   var y = document.getElementById('year');
   if (y) y.textContent = String(new Date().getFullYear());
@@ -83,49 +141,4 @@
     dlg.addEventListener('close', function () { if (opener) opener.focus(); });
   }
 
-  // Request form → mailto:
-  // TODO: later POST this to the ops API (akrotiraki-ops) as a pending request instead of mailto.
-  var TO = 'stay@akrotiraki.gr'; // TODO: confirm address
-  var form = document.getElementById('stay-form');
-  if (form) {
-    var err = document.getElementById('form-error');
-    var from = form.elements.arrival, to = form.elements.departure;
-    var today = new Date().toISOString().slice(0, 10);
-    from.min = today; to.min = today;
-    from.addEventListener('change', function () { if (from.value) to.min = from.value; });
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var problems = [];
-      ['name', 'email', 'arrival', 'departure'].forEach(function (n) {
-        var el = form.elements[n];
-        var bad = !el.value.trim() || !el.checkValidity();
-        el.setAttribute('aria-invalid', String(bad));
-        if (bad) problems.push(form.querySelector('label[for="' + el.id + '"]').textContent.trim());
-      });
-      if (!problems.length && to.value <= from.value) {
-        to.setAttribute('aria-invalid', 'true');
-        problems.push(T.order);
-      }
-      if (problems.length) {
-        err.textContent = T.check + problems.join(', ') + '.';
-        err.hidden = false;
-        return;
-      }
-      err.hidden = true;
-      var f = form.elements;
-      var subject = T.subject(f.arrival.value, f.departure.value);
-      var body = [
-        T.name + ': ' + f.name.value.trim(),
-        T.email + ': ' + f.email.value.trim(),
-        T.arrival + ': ' + f.arrival.value,
-        T.departure + ': ' + f.departure.value,
-        T.house + ': ' + f.house.options[f.house.selectedIndex].text,
-        T.guests + ': ' + f.guests.value,
-        '',
-        f.message.value.trim()
-      ].join('\n');
-      window.location.href = 'mailto:' + TO + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    });
-  }
 })();
