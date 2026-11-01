@@ -6,6 +6,8 @@
 //  List     stays grouped by month (whole-house bookings merged into one row).
 // The chosen view is remembered on the device (localStorage). Bars in the compressed views show a small label on
 // hover (mouse) or on the first tap (touch); a second tap, or the label, opens the reservation.
+// Month and 3 months zoom horizontally (pinch, ctrl/cmd + wheel, or the − Fit + control in the corner cell); the day
+// width is remembered per view on the device.
 import { state, activeUnits, unitById, groupMembers, pendingCount } from '../state.js';
 import { h, icon } from '../ui.js';
 import { todayISO, ymd, addDays, diffDays, daysInMonth, weekday, MONTHS, MON, WD1, fmtRange, fmtDate,
@@ -83,7 +85,7 @@ export function renderCalendar(root) {
   const today = todayISO();
   if (!cur) cur = todayCursor(view, today);
   hideTip();
-  const prevWrap = root.querySelector('.cal-wrap.month');
+  const prevWrap = root.querySelector('.cal-wrap.month, .cal-wrap.quarter');
   const keepScroll = prevWrap ? prevWrap.scrollLeft : null;
   const key = `${view}-${cur.y}-${cur.m}`;
   const rangeChanged = key !== lastKey;
@@ -132,7 +134,7 @@ export function renderCalendar(root) {
 
   if (view === 'list') { root.append(listView(rng, today)); return; }
   if (view === 'month') monthGrid(root, rng, today, hasToday, keepScroll, rangeChanged);
-  else compactGrid(root, rng, today, view);
+  else compactGrid(root, rng, today, view, keepScroll, rangeChanged);
   root.append(legend(view), upcoming(today));
 }
 
@@ -170,16 +172,17 @@ function monthGrid(root, rng, today, isThisMonth, keepScroll, monthChanged) {
   const n = diffDays(first, end);
   const units = activeUnits();
   const grid = h('div', { class: 'cal-grid' });
-  grid.style.gridTemplateColumns = `var(--unit-col) repeat(${n}, minmax(var(--day-min), 1fr))`;
-  grid.style.minWidth = `calc(var(--unit-col) + ${n} * var(--day-min))`;
+  grid.style.gridTemplateColumns = `var(--unit-col) repeat(${n}, var(--day-w))`;
+  grid.style.width = `calc(var(--unit-col) + ${n} * var(--day-w))`;
   const rows = ['auto'];
 
   grid.append(h('div', { class: 'cal-corner', style: 'grid-row:1;grid-column:1' }, h('span', { class: 'sr-only' }, 'Unit')));
   for (let d = 0; d < n; d++) {
     const date = addDays(first, d);
     const wd = weekday(date);
+    const dn = +date.slice(8);
     grid.append(h('div', {
-      class: `cal-day-h${wd === 0 || wd === 6 ? ' we' : ''}${date === today ? ' today' : ''}`,
+      class: `cal-day-h${wd === 0 || wd === 6 ? ' we' : ''}${date === today ? ' today' : ''}${dn === 1 || dn % 5 === 0 ? ' tk' : ''}`,
       style: `grid-row:1;grid-column:${d + 2}`, 'aria-hidden': 'true',
     }, h('span', null, WD1[wd]), h('b', null, +date.slice(8))));
   }
@@ -225,6 +228,7 @@ function monthGrid(root, rng, today, isThisMonth, keepScroll, monthChanged) {
 
   const wrap = h('div', { class: 'cal-wrap month' }, grid);
   root.append(wrap);
+  attachZoom(wrap, grid, n, 'month');
   if (!units.length) wrap.after(h('p', { class: 'empty' }, 'No units yet. Add them in the Units tab of the Sheet.'));
 
   if (keepScroll != null && !monthChanged) wrap.scrollLeft = keepScroll;
@@ -240,12 +244,16 @@ function monthGrid(root, rng, today, isThisMonth, keepScroll, monthChanged) {
 }
 
 // ---------- 3 months / Season / Year: compressed to the width, no day cells ----------
-function compactGrid(root, rng, today, mode) {
+function compactGrid(root, rng, today, mode, keepScroll, rangeChanged) {
   const { first, end } = rng;
   const n = diffDays(first, end);
   const units = activeUnits();
+  const zoomable = mode === 'quarter';
   const grid = h('div', { class: `cal-grid compact ${mode}` });
-  grid.style.gridTemplateColumns = `var(--unit-col) repeat(${n}, minmax(0, 1fr))`;
+  if (zoomable) {
+    grid.style.gridTemplateColumns = `var(--unit-col) repeat(${n}, var(--day-w))`;
+    grid.style.width = `calc(var(--unit-col) + ${n} * var(--day-w))`;
+  } else grid.style.gridTemplateColumns = `var(--unit-col) repeat(${n}, minmax(0, 1fr))`;
   const rows = mode === 'quarter' ? ['auto', 'auto'] : ['auto'];
   const head = rows.length;
 
@@ -259,12 +267,14 @@ function compactGrid(root, rng, today, mode) {
     const stop = next < end ? next : end;
     const c0 = diffDays(first, d) + 2;
     grid.append(h('div', { class: 'cal-mh', style: `grid-row:1;grid-column:${c0} / ${diffDays(first, stop) + 2}`, 'aria-hidden': 'true' },
-      mode === 'quarter' ? `${MONTHS[m]}${m === 0 || d === first ? ' ' + y : ''}` : [h('span', { class: 'm-long' }, MON[m]), h('span', { class: 'm-short' }, MONTHS[m][0])]));
+      mode === 'quarter' ? h('span', { class: 'cal-mh-l' }, `${MONTHS[m]}${m === 0 || d === first ? ' ' + y : ''}`) : [h('span', { class: 'm-long' }, MON[m]), h('span', { class: 'm-short' }, MONTHS[m][0])]));
     if (mode === 'quarter') {
-      for (const day of [1, 8, 15, 22, 29]) {
+      // Every day gets a tick; CSS shows 1 and 15, then 8, 22, 29, then all of them as the days get wider.
+      for (let day = 1; day <= daysInMonth(y, m); day++) {
         const date = ymd(y, m, day);
-        if (day > daysInMonth(y, m) || date < d || date >= stop) continue;
-        grid.append(h('div', { class: `cal-tick t${day}`, style: `grid-row:2;grid-column:${diffDays(first, date) + 2}`, 'aria-hidden': 'true' }, day));
+        if (date < d || date >= stop) continue;
+        const tier = day === 1 || day === 15 ? 'major' : day % 7 === 1 ? 'minor' : 'day';
+        grid.append(h('div', { class: `cal-tick ${tier} t${day}`, style: `grid-row:2;grid-column:${diffDays(first, date) + 2}`, 'aria-hidden': 'true' }, day));
       }
     }
     if (d > first) seps.push(c0);
@@ -312,6 +322,134 @@ function compactGrid(root, rng, today, mode) {
   wrap.addEventListener('scroll', hideTip, { passive: true });
   root.append(wrap);
   if (!units.length) wrap.after(h('p', { class: 'empty' }, 'No units yet. Add them in the Units tab of the Sheet.'));
+  if (!zoomable) return;
+  attachZoom(wrap, grid, n, mode);
+  if (keepScroll != null && !rangeChanged) wrap.scrollLeft = keepScroll;
+  else if (today >= first && today < end && wrap.scrollWidth > wrap.clientWidth) {
+    const dayW = parseFloat(grid.style.getPropertyValue('--day-w')) || 0;
+    wrap.scrollLeft = Math.max(0, (diffDays(first, today) - 2) * dayW);
+  }
+}
+
+// ---------- Zoom (Month and 3 months) ----------
+// The day column width is --day-w on the grid, between ZOOM_MIN and ZOOM_MAX px (widened to "fit" when the whole
+// range fits in less, or needs more). Stored per view as a number of px or 'fit'; nothing stored = the old layout
+// (Month: at least 36 px on phones / 28 px on wide screens, else filling the width; 3 months: fit).
+const ZOOM_MIN = 14, ZOOM_MAX = 64, ZOOM_STEP = 1.2, NAMES_AT = 28;
+const zoomKey = (v) => `ak.cal.dayw.${v}`;
+function readZoom(v) {
+  try {
+    const s = localStorage.getItem(zoomKey(v));
+    if (s === 'fit') return 'fit';
+    const x = parseFloat(s);
+    return x > 0 ? x : null;
+  } catch { return null; }
+}
+function saveZoom(v, m) {
+  try { localStorage.setItem(zoomKey(v), typeof m === 'number' ? m.toFixed(1) : m); } catch { /* private mode */ }
+}
+let zoomRO = null;
+
+function attachZoom(wrap, grid, n, v) {
+  const corner = grid.querySelector('.cal-corner');
+  let mode = readZoom(v);
+  let w = 0;
+  const unitW = () => corner.offsetWidth;
+  const fitW = () => Math.max(1, Math.floor(((wrap.clientWidth - unitW()) / n) * 100) / 100);
+  const bounds = () => { const f = fitW(); return [Math.min(ZOOM_MIN, f), Math.max(ZOOM_MAX, f)]; };
+  const clamp = (x) => { const [lo, hi] = bounds(); return Math.min(hi, Math.max(lo, x)); };
+  const target = () => {
+    const f = fitW();
+    if (mode === 'fit') return f;
+    if (typeof mode === 'number') return clamp(mode);
+    return v === 'month' ? clamp(Math.max(matchMedia('(min-width: 900px)').matches ? 28 : 36, f)) : f;
+  };
+  const originX = () => wrap.getBoundingClientRect().left + wrap.clientLeft;
+  // Day position (in days from the first column) under the client x coordinate.
+  const dayAt = (cx) => Math.max(0, (wrap.scrollLeft + cx - originX() - unitW()) / w);
+  const midX = () => originX() + unitW() + (wrap.clientWidth - unitW()) / 2;
+
+  const out = h('button', { type: 'button', class: 'zb', 'aria-label': 'Narrower days', title: 'Narrower days (pinch, or Ctrl/⌘ + wheel)', onclick: () => step(1 / ZOOM_STEP) }, '−');
+  const fit = h('button', { type: 'button', class: 'zb fit', 'aria-label': 'Fit to width', title: 'Fit the whole period to the width', onclick: () => { mode = 'fit'; set(fitW(), originX() + unitW(), 0); saveZoom(v, mode); } }, 'Fit');
+  const inn = h('button', { type: 'button', class: 'zb', 'aria-label': 'Wider days', title: 'Wider days (pinch, or Ctrl/⌘ + wheel)', onclick: () => step(ZOOM_STEP) }, '+');
+  corner.append(h('div', { class: 'cal-zoom', role: 'group', 'aria-label': 'Day width' }, out, fit, inn));
+
+  function paint(nw) {
+    w = nw;
+    grid.style.setProperty('--day-w', `${w}px`);
+    grid.classList.toggle('z-names', w >= NAMES_AT);
+    grid.classList.toggle('z-days', w >= 18);
+    grid.classList.toggle('z-tiny', w < 20);
+    grid.classList.toggle('z-xs', w < 16);
+    grid.classList.toggle('z-min', w < 9);
+    const [lo, hi] = bounds();
+    out.disabled = w <= lo + 0.05;
+    inn.disabled = w >= hi - 0.05;
+    fit.setAttribute('aria-pressed', String(Math.abs(w - fitW()) < 0.05));
+  }
+  // Zoom to nw keeping day position pos (default: the one under cx) under the client x coordinate cx.
+  function set(nw, cx = midX(), pos = dayAt(cx)) {
+    paint(clamp(nw));
+    wrap.scrollLeft = unitW() + pos * w - (cx - originX());
+  }
+  function step(f) {
+    hideTip();
+    set(w * f);
+    mode = w;
+    saveZoom(v, mode);
+  }
+  paint(target());
+
+  // Keep fit / default widths (and the clamp) right when the wrap changes size (rotation, window resize).
+  zoomRO?.disconnect();
+  zoomRO = new ResizeObserver(() => { if (wrap.isConnected && Math.abs(target() - w) > 0.05) paint(target()); });
+  zoomRO.observe(wrap);
+
+  // Pinch: two touch pointers; scale by the distance ratio, keep the day under the start midpoint under the current one.
+  const pts = new Map();
+  let pinch = null;
+  let quietUntil = 0;
+  const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2 }; };
+  wrap.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2) {
+      const { d, x } = two();
+      pinch = { d0: d, w0: w, pos: dayAt(x) };
+      hideTip();
+    }
+  });
+  wrap.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!pinch || pts.size !== 2) return;
+    const { d, x } = two();
+    set(pinch.w0 * (d / pinch.d0), x, pinch.pos);
+  });
+  const lift = (e) => {
+    if (!pts.delete(e.pointerId)) return;
+    if (pinch && pts.size < 2) { pinch = null; mode = w; saveZoom(v, mode); quietUntil = Date.now() + 400; }
+  };
+  wrap.addEventListener('pointerup', lift);
+  wrap.addEventListener('pointercancel', lift);
+  // Two fingers down: don't let the browser scroll the strip meanwhile (it would cancel the pointers).
+  wrap.addEventListener('touchmove', (e) => { if (e.touches.length > 1 && e.cancelable) e.preventDefault(); }, { passive: false });
+  wrap.addEventListener('gesturestart', (e) => e.preventDefault()); // iOS Safari
+  // No "tap" (new reservation / open) right after a pinch.
+  wrap.addEventListener('click', (e) => { if (Date.now() < quietUntil && !e.target.closest('.cal-zoom')) { e.stopPropagation(); e.preventDefault(); } }, true);
+
+  // Ctrl/cmd + wheel (and trackpad pinch, which arrives as ctrl + wheel), anchored at the cursor.
+  let saveT = 0;
+  wrap.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    hideTip();
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    set(w * Math.exp(-Math.max(-20, Math.min(20, dy)) * 0.01), e.clientX);
+    mode = w;
+    clearTimeout(saveT);
+    saveT = setTimeout(() => saveZoom(v, mode), 250);
+  }, { passive: false });
 }
 
 // Small label for bars in the compressed views. Mouse: shown while hovering. Touch: the first tap shows it, the label

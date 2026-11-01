@@ -54,6 +54,8 @@ Edit `config.js`:
   (compressed; names on wide screens only), Season (`season_start`..`season_end`), Year, and List (stays grouped by
   month, from today in the current period). Prev/next move by a month, three months or a year. Bars in the
   compressed views show a label on hover, or on the first tap on phones. A source filter applies to every view.
+  Month and 3 months zoom horizontally: pinch, ctrl/cmd + wheel, or the − Fit + control in the top-left cell
+  (day width 14–64 px, or less when "Fit" needs it; guest names from 28 px). Remembered per view in `ak.cal.dayw.<view>`.
   Dev knob: `?mock=1&many=1` adds ~300 stays to the demo data for performance checks.
 - **Whole-house requests** (`group_id`): the Requests tab shows the group as one card (apartments, total guests, group
   total and deposit, extras from the first); Approve all / Decline all call `setReservationStatus` with
