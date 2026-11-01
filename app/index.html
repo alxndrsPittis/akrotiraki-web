@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Akrotiraki</title>
+  <meta name="description" content="Reservations, expenses and totals for Akrotiraki, Sifnos.">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14191e" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Akrotiraki">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./app.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#view">Skip to content</a>
+
+  <div id="signin" class="signin" hidden>
+    <div class="signin-card">
+      <img class="signin-mark" src="./icons/icon.svg" alt="" width="64" height="64">
+      <h1>Akrotiraki</h1>
+      <p class="muted">Reservations and expenses for the family.</p>
+      <div id="signin-actions" class="signin-actions"></div>
+      <p id="signin-msg" class="signin-msg" role="status"></p>
+    </div>
+  </div>
+
+  <div id="app" class="shell" hidden>
+    <nav class="tabs" aria-label="Main">
+      <div class="brand"><img src="./icons/icon.svg" alt="" width="28" height="28"><span>Akrotiraki</span></div>
+      <a href="#calendar" data-route="calendar"><span class="ic" data-icon="calendar"></span><span>Calendar</span></a>
+      <a href="#expenses" data-route="expenses"><span class="ic" data-icon="receipt"></span><span>Expenses</span></a>
+      <a href="#totals" data-route="totals"><span class="ic" data-icon="totals"></span><span>Totals</span></a>
+      <div class="rail-foot" id="rail-foot"></div>
+    </nav>
+    <header class="topbar">
+      <h1 id="view-title">Calendar</h1>
+      <span id="status-note" class="status-note" role="status"></span>
+      <button id="account-btn" class="avatar" type="button" aria-haspopup="dialog" aria-label="Account">?</button>
+    </header>
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <noscript><p style="padding:24px">This app needs JavaScript.</p></noscript>
+</body>
+</html>
