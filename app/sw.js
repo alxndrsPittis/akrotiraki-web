@@ -1,6 +1,6 @@
 // Service worker: caches the app shell so the app opens offline.
 // Bump VERSION when deploying changes so clients pick them up promptly.
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CACHE = `akrotiraki-app-${VERSION}`;
 const SHELL = [
   './', './index.html', './app.css', './app.js', './config.js', './api.js', './auth.js', './state.js',
@@ -10,7 +10,8 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' bypasses the HTTP cache so a new version never fills its cache with stale files.
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

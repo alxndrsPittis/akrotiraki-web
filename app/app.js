@@ -263,6 +263,14 @@ function start() {
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => { /* optional */ });
+    // When a new version takes over, reload once so the page runs the new modules.
+    let hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) { hadController = true; return; }
+      if (sessionStorage.getItem('ak.reloaded') === '1') return;
+      sessionStorage.setItem('ak.reloaded', '1');
+      location.reload();
+    });
   });
 }
 
