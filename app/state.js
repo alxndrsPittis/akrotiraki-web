@@ -12,7 +12,7 @@ export const state = {
   user: null,          // {email, name, role}
   units: [],
   settings: {},
-  prices: [],          // price list rows {unit_type, from, to, price_per_night, min_nights, notes}
+  prices: [],          // price list rows {unit_type, unit_id?, from, to, price_per_night, min_nights, notes}
   reservations: [],
   expenses: [],
 };
@@ -30,7 +30,7 @@ function normalize(data) {
   state.expenses = (data.expenses || []).map(normExp);
 }
 export const normRes = (r) => ({ ...r, checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0,
-  cleaning_fee: Number(r.cleaning_fee) || 0, guests: Number(r.guests) || 0,
+  cleaning_fee: Number(r.cleaning_fee) || 0, discount: Number(r.discount) || 0, guests: Number(r.guests) || 0,
   email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '' });
 export const normExp = (e) => ({ ...e, amount: Number(e.amount) || 0, unit_id: e.unit_id || '' });
 

@@ -31,18 +31,23 @@ function makePrices() {
       rows.push({ unit_type: 'maisonette', from: `${y}-${f}`, to: `${y}-${t}`, price_per_night: pm, min_nights: min, notes });
       rows.push({ unit_type: 'studio', from: `${y}-${f}`, to: `${y}-${t}`, price_per_night: ps, min_nights: min, notes });
     }
+    // Per-unit override (unit_id set): Thalassa sleeps 5, so it costs more in high season.
+    rows.push({ unit_type: '', unit_id: 'u1', from: `${y}-07-01`, to: `${y}-08-31`, price_per_night: 240, min_nights: 5, notes: 'Thalassa, high season' });
   }
   return rows;
 }
 const PRICES = makePrices();
 
-/** Same shape as the backend quoteFor. Missing nights count 0 and mark the quote incomplete. */
+/** Same shape as the backend quoteFor. Missing nights count 0 and mark the quote incomplete.
+ *  A row with unit_id applies to that unit only and wins over the unit_type rows. */
 function quote(unit_id, check_in, check_out) {
   const u = UNITS.find((x) => x.id === unit_id);
   const nightly = [];
   let min = 0;
   for (let d = check_in; d < check_out; d = addDays(d, 1)) {
-    const row = PRICES.findLast((p) => p.unit_type.toLowerCase() === u.type && p.from <= d && d <= p.to && p.price_per_night > 0);
+    const covers = (p) => p.from <= d && d <= p.to && p.price_per_night > 0;
+    const row = PRICES.findLast((p) => p.unit_id === unit_id && covers(p))
+      || PRICES.findLast((p) => !p.unit_id && String(p.unit_type || '').toLowerCase() === u.type && covers(p));
     nightly.push({ date: d, price: row ? row.price_per_night : null });
     if (row) min = Math.max(min, Number(row.min_nights) || 0);
   }
@@ -89,6 +94,8 @@ function seed() {
     let cleaning_fee = fee;
     if (o.priced === 'quote') ({ total: price, cleaning_fee } = quote(o.unit_id, o.check_in, o.check_out));
     else if (o.priced === false) { price = 0; cleaning_fee = 0; }
+    const discount = price > 0 ? Math.min(o.discount || 0, price) : 0; // price = accommodation + cleaning − discount
+    price = round2(price - discount);
     const past = o.check_in <= T;
     const created = addDays(o.check_in, -ri(15, 90));
     const r = {
@@ -104,7 +111,7 @@ function seed() {
       created_at: stamp(created),
       updated_at: o.status === 'cancelled' ? stamp(addDays(T, -ri(2, 20))) : stamp(created),
       created_by: 'owner@example.com',
-      cleaning_fee, email: '', phone: '', lang: '',
+      cleaning_fee, discount, email: '', phone: '', lang: '',
       ...o.extra,
     };
     if (o.hoursAgo != null) r.created_at = r.updated_at = new Date(Date.now() - o.hoursAgo * 3600e3).toISOString();
@@ -128,7 +135,7 @@ function seed() {
   // Around today, so the current month has something to show.
   mk({ unit_id: 'u2', check_in: addDays(T, -2), check_out: addDays(T, 3), source: 'booking', status: 'confirmed' });
   mk({ unit_id: 'u4', check_in: addDays(T, 1), check_out: addDays(T, 5), source: 'airbnb', status: 'confirmed' });
-  mk({ unit_id: 'u1', check_in: addDays(T, 9), check_out: addDays(T, 14), source: 'direct', status: 'confirmed', notes: 'Arriving with the evening ferry.' });
+  mk({ unit_id: 'u1', check_in: addDays(T, 9), check_out: addDays(T, 14), source: 'direct', status: 'confirmed', discount: 50, notes: 'Arriving with the evening ferry. Returning guests: €50 off.' });
   // Website requests (requestStay): pending, direct, created_by "website", notes = the guest's message, price 0.
   const web = (email, phone, lang) => ({ email, phone, lang, created_by: 'website' });
   mk({ unit_id: 'u1', check_in: addDays(T, 12), check_out: addDays(T, 16), source: 'direct', status: 'pending', priced: false, hoursAgo: 3,
@@ -140,7 +147,7 @@ function seed() {
   mk({ unit_id: 'u4', check_in: addDays(T, 30), check_out: addDays(T, 37), source: 'direct', status: 'pending', priced: 'quote', hoursAgo: 52,
     guest_name: 'Νίκος Γεωργίου', extra: web('n.georgiou@example.gr', '+30 694 123 4567', 'el'),
     notes: 'Καλησπέρα σας, θα θέλαμε το στούντιο για μία εβδομάδα. Υπάρχει δυνατότητα για παρκάρισμα κοντά;' });
-  mk({ unit_id: 'u1', check_in: addDays(T, 40), check_out: addDays(T, 44), source: 'direct', status: 'pending', priced: 'quote',
+  mk({ unit_id: 'u1', check_in: addDays(T, 40), check_out: addDays(T, 44), source: 'direct', status: 'pending', priced: 'quote', discount: 40,
     guest_name: 'Ingrid Olsen', extra: { email: 'ingrid.olsen@example.com', lang: 'en' }, notes: 'Asked by email, waiting for the deposit.' });
   mk({ unit_id: 'u2', check_in: addDays(T, 19), check_out: addDays(T, 24), source: 'booking', status: 'pending' });
   mk({ unit_id: 'u3', check_in: addDays(T, 2), check_out: addDays(T, 4), source: 'airbnb', status: 'cancelled' });
@@ -195,6 +202,9 @@ function validateReservation(r) {
   r.lang = LANGS[r.lang] ? r.lang : r.lang ? 'en' : '';
   r.price = Number(r.price) || 0;
   r.cleaning_fee = Number(r.cleaning_fee) || 0;
+  r.discount = Number(r.discount) || 0;
+  if (r.discount < 0) throw new E('bad_request', 'discount cannot be negative', { field: 'discount' });
+  if (r.price < 0) throw new E('bad_request', 'price cannot be negative', { field: 'price' });
 }
 
 function applyStatusRules(user, prev, next, force) {
@@ -242,7 +252,7 @@ const actions = {
     if (reservation.id && !prev) throw new E('not_found', 'Reservation not found.');
     const now = new Date().toISOString();
     const next = {
-      external_uid: '', notes: '', guests: 0, price: 0, paid: 0, checked: false, cleaning_fee: 0, email: '', phone: '', lang: '',
+      external_uid: '', notes: '', guests: 0, price: 0, paid: 0, checked: false, cleaning_fee: 0, discount: 0, email: '', phone: '', lang: '',
       ...prev, ...reservation,
       id: prev?.id || `r${++seq}`,
       created_at: prev?.created_at || now, created_by: prev?.created_by || user.email, updated_at: now,
@@ -254,7 +264,8 @@ const actions = {
     let q = null;
     if (auto && datesChanged) {
       q = quote(next.unit_id, next.check_in, next.check_out);
-      next.price = q.incomplete ? 0 : q.total;
+      if (!q.incomplete && next.discount > q.total) throw new E('bad_request', 'The discount is more than the price-list total.', { field: 'discount', quote: q });
+      next.price = q.incomplete ? 0 : round2(q.total - next.discount); // price = accommodation + cleaning − discount
       next.cleaning_fee = q.incomplete ? 0 : q.cleaning_fee;
     }
     const conflicts = applyStatusRules(user, prev, next, force);

@@ -534,3 +534,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .dlg-extra { margin-top: 10px; }
 .dlg-extra .warn { margin: 10px 0 0; }
 .check-row { margin: 14px 0 0; }
+
+/* Reservation form: price, cleaning, discount (price spans the row on phones) */
+.row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 480px) {
+  .row3 { grid-template-columns: 1fr 1fr; }
+  .row3 > :first-child { grid-column: 1 / -1; }
+}
+.price-fields .field { justify-content: flex-start; }
+.hint.auto { color: var(--sea); }
+.breakdown dd.disc { color: var(--ok); }
+.price-break { margin: -6px 0 14px; }
+.price-break:empty { display: none; }
+.price-break .breakdown { margin: 0; max-width: 380px; }

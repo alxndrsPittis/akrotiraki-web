@@ -14,16 +14,23 @@ export function conflictList(list) {
     h('span', { class: `badge ${c.status}` }, STATUSES[c.status] || c.status))));
 }
 
-/** Price lines for a stay: accommodation + cleaning = total, deposit. Empty when there is no price. */
-export function priceBreakdown(r, { deposit = true } = {}) {
+/**
+ * Price lines for a stay: accommodation + cleaning − discount = total (what the guest pays), deposit on that total.
+ * price is net of the discount (API.md), so accommodation = price + discount − cleaning. Empty when there is no price.
+ * full: always show the accommodation line (the form), not only when there is something to split.
+ */
+export function priceBreakdown(r, { deposit = true, full = false } = {}) {
   const cur = currency();
   const price = Number(r.price) || 0;
   if (!(price > 0)) return null;
-  const fee = Math.min(Number(r.cleaning_fee) || 0, price);
+  const disc = Math.max(0, Number(r.discount) || 0);
+  const fee = Math.min(Math.max(0, Number(r.cleaning_fee) || 0), price + disc);
   const pct = depositPercent();
   const row = (k, v, cls = '') => [h('dt', { class: cls }, k), h('dd', { class: `num ${cls}` }, v)];
   return h('dl', { class: 'breakdown' },
-    fee > 0 ? [row('Accommodation', money(round2(price - fee), cur)), row('Cleaning fee', money(fee, cur))] : null,
+    full || fee > 0 || disc > 0 ? row('Accommodation', money(round2(price + disc - fee), cur)) : null,
+    fee > 0 ? row('Cleaning fee', money(fee, cur)) : null,
+    disc > 0 ? row('Discount', h('span', { 'aria-label': `minus ${money(disc, cur)}` }, `−${money(disc, cur)}`), 'disc') : null,
     row('Total', money(price, cur), 'total'),
     deposit ? row(`Deposit ${pct}%`, money(depositOf(price, pct), cur), 'dep') : null);
 }
@@ -117,7 +124,7 @@ export function openReservation(input = {}, opts = {}) {
   const r = {
     unit_id: units[0]?.id || '', check_in: t, check_out: addDays(t, 1), guest_name: '', guests: 2,
     source: 'direct', status: owner ? 'confirmed' : 'pending', price: '', paid: '', checked: false, notes: '',
-    email: '', phone: '', lang: 'en', cleaning_fee: '',
+    email: '', phone: '', lang: 'en', cleaning_fee: '', discount: '',
     ...(existing || input),
   };
   if (!existing && r.check_out <= r.check_in) r.check_out = addDays(r.check_in, 1);
@@ -144,11 +151,15 @@ export function openReservation(input = {}, opts = {}) {
   const price = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', pattern: '[0-9]*[.,]?[0-9]*', value: r.price === 0 && !existing ? '' : r.price });
   const paid = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', pattern: '[0-9]*[.,]?[0-9]*', value: r.paid === 0 && !existing ? '' : r.paid });
   const cleaning = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', pattern: '[0-9]*[.,]?[0-9]*', value: r.cleaning_fee ? r.cleaning_fee : '' });
+  const discount = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', pattern: '[0-9]*[.,]?[0-9]*', placeholder: '0', value: Number(r.discount) > 0 ? r.discount : '' });
+  const priceNote = h('span', { class: 'hint' });
+  const discHint = h('span', { class: 'hint' });
   const email = h('input', { type: 'email', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', inputmode: 'email', maxlength: 254, value: r.email || '' });
   const phone = h('input', { type: 'tel', autocomplete: 'off', maxlength: 40, value: r.phone || '' });
   const lang = h('select', { value: LANGS[r.lang] ? r.lang : 'en' }, Object.entries(LANGS).map(([k, v]) => h('option', { value: k }, v)));
   const recalcBtn = h('button', { class: 'btn sm', type: 'button' }, icon('calc'), 'Recalculate price');
-  const quoteOut = h('div', { class: 'quote', 'aria-live': 'polite' });
+  const quoteInfo = h('div', { class: 'quote', 'aria-live': 'polite' }); // price-list messages
+  const breakOut = h('div', { class: 'price-break' }); // breakdown of the form values (not live: it changes on every keystroke)
   const balance = h('p', { class: 'hint' });
   const checked = h('input', { type: 'checkbox', class: 'switch', role: 'switch', checked: !!r.checked, id: `${uid}-chk` });
   const notes = h('textarea', { rows: 3, value: r.notes || '' });
@@ -166,8 +177,10 @@ export function openReservation(input = {}, opts = {}) {
     field('Email', email, h('span', { class: 'hint' }, 'Optional. Requests from the website have one.')),
     h('div', { class: 'row2' }, field('Phone', phone), field('Language', lang)),
     field('Status', status, !owner ? h('span', { class: 'hint' }, 'Only owners can confirm.') : null),
-    h('div', { class: 'row2' }, field(`Price, total (${currency()})`, price), field('of which cleaning', cleaning)),
-    h('div', { class: 'quote-row' }, quoteOut, recalcBtn),
+    h('div', { class: 'row3 price-fields' }, field(`Price, total (${currency()})`, price, priceNote),
+      field('of which cleaning', cleaning), field('Discount', discount, discHint)),
+    h('div', { class: 'quote-row' }, quoteInfo, recalcBtn),
+    breakOut,
     h('div', { class: 'row2' }, field('Paid', paid), h('div')),
     balance,
     h('div', { class: 'switch-row' },
@@ -200,7 +213,7 @@ export function openReservation(input = {}, opts = {}) {
     guest_name: name.value.trim(),
     guests: Math.max(0, Math.round(num(guests.value))),
     source: source.value, status: status.value,
-    price: num(price.value), paid: num(paid.value), cleaning_fee: num(cleaning.value),
+    price: num(price.value), paid: num(paid.value), cleaning_fee: num(cleaning.value), discount: num(discount.value),
     email: email.value.trim(), phone: phone.value.trim(), lang: lang.value,
     checked: checked.checked, notes: notes.value.trim(),
   });
@@ -249,6 +262,7 @@ export function openReservation(input = {}, opts = {}) {
     const dep = cur.source === 'direct' && cur.price > 0 && cur.paid < depositOf(cur.price, pct)
       ? `Deposit ${pct}%: ${money(depositOf(cur.price, pct), currency())} · ` : '';
     balance.textContent = cur.price > 0 ? dep + (due > 0 ? `Balance due ${money(due, currency())}` : 'Paid in full') : '';
+    renderPriceInfo(cur);
     serverConflicts = null;
     notifyAnswer = undefined;
     renderWarn(conflictsFor(cur, state.reservations), false);
@@ -264,58 +278,111 @@ export function openReservation(input = {}, opts = {}) {
   });
   if (isISODate(r.check_in)) co.min = addDays(r.check_in, 1);
 
-  // ---- Price list quote ----
+  // ---- Price list quote and discount ----
   // New reservations (and requests being priced for approval) quote automatically until the user types a price.
+  // price is what the guest pays (accommodation + cleaning − discount). Until it is typed by hand it follows
+  // gross − discount, where gross is the loaded quote total or, for a saved stay, its saved price + discount.
   const autoQuote = !existing || (approving && !(existing.price > 0));
   let priceTouched = !autoQuote;
   let quoted = false;
+  let lastQuote = null; // complete quote for the current unit and dates
+  let gross = existing && existing.price > 0 ? round2(existing.price + (Number(existing.discount) || 0)) : null;
+  let priceMode = gross != null ? 'base' : null; // 'quote' | 'base' | 'manual' | null
   let qSeq = 0, qTimer = 0;
   const cur$ = () => currency();
-  price.addEventListener('input', () => { priceTouched = true; });
+  const discVal = () => Math.max(0, num(discount.value));
+  const setPrice = (v) => { price.value = v > 0 ? String(round2(v)) : ''; };
+
+  price.addEventListener('input', () => { priceTouched = true; priceMode = 'manual'; gross = null; });
   cleaning.addEventListener('input', () => { priceTouched = true; });
+  discount.addEventListener('input', () => {
+    if (lastQuote) {
+      // A quote is loaded: the price becomes the price-list total less the discount again.
+      gross = lastQuote.total;
+      setPrice(gross - discVal());
+      cleaning.value = lastQuote.cleaning_fee ? String(lastQuote.cleaning_fee) : '';
+      priceTouched = false;
+      quoted = true;
+      priceMode = 'quote';
+    } else if (priceMode === 'base' && gross != null) {
+      setPrice(gross - discVal());
+    }
+  });
 
   function renderQuote(q) {
     const c = q.currency || cur$();
     const rates = (q.nightly || []).map((x) => Number(x.price)).filter((p) => p > 0);
     const lo = Math.min(...rates), hi = Math.max(...rates);
-    const per = rates.length ? ` (${lo === hi ? money(lo, c) : `${money(lo, c)}–${money(hi, c)}`}/night)` : '';
+    const per = rates.length ? ` at ${lo === hi ? money(lo, c) : `${money(lo, c)}–${money(hi, c)}`}/night` : '';
     const missing = (q.nightly || []).filter((x) => x.price == null).length;
-    quoteOut.replaceChildren(...[
+    quoteInfo.replaceChildren(...[
       q.incomplete
         ? h('p', { class: 'bad' }, `No rate in the price list for ${plural(missing, 'night')} of ${q.nights}. Enter the price by hand, or add the rates to the Prices tab.`)
-        : h('p', null, `${plural(q.nights, 'night')} ${money(q.accommodation, c)}${per}${q.cleaning_fee ? ` + cleaning ${money(q.cleaning_fee, c)}` : ''} = `, h('strong', null, money(q.total, c))),
+        : h('p', null, `Price list: ${plural(q.nights, 'night')}${per}, `, h('strong', null, money(q.total, c)), q.cleaning_fee ? ' with cleaning' : ''),
       q.below_min ? h('p', { class: 'bad' }, `Shorter than the minimum stay of ${plural(Number(q.min_nights) || 0, 'night')} for these dates.`) : null,
     ].filter(Boolean));
+  }
+
+  /** Breakdown of the form values, price source note and discount check. Called from update(). */
+  function renderPriceInfo(cur) {
+    const c = cur$();
+    const d = Math.max(0, cur.discount);
+    const fromList = priceMode === 'quote' && lastQuote;
+    priceNote.textContent = !(cur.price > 0) ? ''
+      : fromList ? (d > 0 ? `Price list ${money(lastQuote.total, c)} − discount` : 'From the price list')
+        : priceMode === 'base' && d > 0 && gross != null ? `${money(gross, c)} − discount`
+          : priceMode === 'manual' ? (d > 0 ? 'Entered by hand, after discount' : 'Entered by hand') : '';
+    priceNote.classList.toggle('auto', !!fromList);
+    let dErr = '';
+    if (cur.discount < 0) dErr = 'Cannot be negative.';
+    else if (lastQuote && d > lastQuote.total) dErr = `More than the price-list total ${money(lastQuote.total, c)}.`;
+    discHint.textContent = dErr;
+    discHint.classList.toggle('bad', !!dErr);
+    discount.setAttribute('aria-invalid', dErr ? 'true' : 'false');
+    const b = priceBreakdown(cur, { deposit: false, full: true });
+    breakOut.replaceChildren(...(b ? [b] : []));
   }
 
   async function runQuote(manual) {
     const cur = read();
     if (!cur.unit_id || !isISODate(cur.check_in) || !isISODate(cur.check_out) || cur.check_out <= cur.check_in) {
-      if (manual) quoteOut.replaceChildren(h('p', { class: 'bad' }, 'Choose the unit and valid dates first.'));
+      if (manual) { quoteInfo.replaceChildren(h('p', { class: 'bad' }, 'Choose the unit and valid dates first.')); update(); }
       return;
     }
     const my = ++qSeq;
     recalcBtn.disabled = true;
-    quoteOut.replaceChildren(h('p', { class: 'hint' }, 'Getting the price…'));
+    quoteInfo.replaceChildren(h('p', { class: 'hint' }, 'Getting the price…'));
     try {
       const q = await actions.quoteFor(cur.unit_id, cur.check_in, cur.check_out);
       if (my !== qSeq || !dlg.isConnected) return;
       // An incomplete quote only covers the priced nights: never use its total.
+      lastQuote = q.incomplete ? null : q;
       if (!q.incomplete && (manual || !priceTouched)) {
-        price.value = q.total ? String(q.total) : '';
+        gross = q.total;
+        setPrice(q.total - discVal());
         cleaning.value = q.cleaning_fee ? String(q.cleaning_fee) : '';
         priceTouched = false;
         quoted = true;
+        priceMode = 'quote';
       }
       renderQuote(q);
       update();
     } catch (e) {
       if (my !== qSeq) return;
-      quoteOut.replaceChildren(h('p', { class: manual ? 'bad' : 'hint' },
+      quoteInfo.replaceChildren(h('p', { class: manual ? 'bad' : 'hint' },
         e.code === 'network' ? 'Offline: no price list quote.' : manual ? (e.message || 'Could not get a quote.') : 'No automatic price. Enter it, or press Recalculate.'));
+      update();
     } finally {
       if (my === qSeq) recalcBtn.disabled = false;
     }
+  }
+  /** Unit or dates changed: the loaded quote no longer applies (and a reply still on its way is dropped). */
+  function invalidateQuote() {
+    qSeq++;
+    lastQuote = null;
+    if (priceMode === 'quote') priceMode = 'base';
+    quoteInfo.replaceChildren();
+    recalcBtn.disabled = false;
   }
   function scheduleQuote() {
     if (!autoQuote || priceTouched) return;
@@ -325,7 +392,9 @@ export function openReservation(input = {}, opts = {}) {
   }
   recalcBtn.addEventListener('click', () => runQuote(true));
   form.addEventListener('change', (e) => {
-    if (e.target === ci || e.target === co || e.target === source || e.target.name === `${uid}-unit`) scheduleQuote();
+    const dates = e.target === ci || e.target === co || e.target.name === `${uid}-unit`;
+    if (dates) invalidateQuote();
+    if (dates || e.target === source) scheduleQuote();
   });
 
   form.addEventListener('input', update);
@@ -351,9 +420,14 @@ export function openReservation(input = {}, opts = {}) {
       else return fail('Enter the guest name.', name);
     }
     if (cur.paid > cur.price && cur.price > 0) return fail('Paid is more than the price.', paid);
-    if (cur.cleaning_fee > cur.price && cur.price > 0) return fail('The cleaning fee is more than the total price.', cleaning);
+    if (cur.discount < 0) return fail('The discount cannot be negative.', discount);
+    if (lastQuote && cur.discount > lastQuote.total) return fail(`The discount is more than the price-list total (${money(lastQuote.total, currency())}).`, discount);
+    if (cur.cleaning_fee > cur.price + cur.discount && cur.price > 0) return fail('The cleaning fee is more than the price before discount.', cleaning);
     if (cur.email && !isEmail(cur.email)) return fail('Enter a valid email address, or leave it empty.', email);
     if (approving && !(cur.price > 0)) return fail('Enter the price, or press Recalculate price.', price);
+    // New direct booking with no price typed and no quote: let the server price it from the list (total − discount).
+    const autoprice = !existing && !quoted && cur.source === 'direct' && price.value.trim() === '';
+    if (cur.discount > 0 && !(cur.price > 0) && !lastQuote && !autoprice) return fail('Enter the price, or clear the discount.', price);
     // A pending request with an email that is confirmed or declined here also emails the guest: ask first.
     const emailKind = existing?.status === 'pending' && cur.email
       ? (cur.status === 'confirmed' ? 'confirm' : cur.status === 'cancelled' ? 'decline' : null) : null;
@@ -363,8 +437,6 @@ export function openReservation(input = {}, opts = {}) {
       if (ans === null) return;
       notifyAnswer = ans;
     }
-    // New direct booking with no price typed and no quote: let the server price it from the list.
-    const autoprice = !existing && !quoted && cur.source === 'direct' && price.value.trim() === '';
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
     try {
@@ -374,7 +446,7 @@ export function openReservation(input = {}, opts = {}) {
         ? `Saved. Overlaps ${plural(n, 'other stay')}.`
         : emailKind && notifyAnswer ? `Saved. Emailing ${cur.email}.`
           : existing ? 'Reservation updated.'
-            : autoprice && Number(d.reservation.price) > 0 ? `Reservation added at ${money(d.reservation.price, currency())} (price list).`
+            : autoprice && Number(d.reservation.price) > 0 ? `Reservation added at ${money(d.reservation.price, currency())} (price list${cur.discount > 0 ? ` less ${money(cur.discount, currency())}` : ''}).`
               : autoprice && d.quote?.incomplete ? 'Reservation added. The price list misses some nights: set the price.' : 'Reservation added.', n ? 'warn' : 'info');
       dlg.close();
       if (approving && d.reservation.status === 'pending') approveRequest(d.reservation);

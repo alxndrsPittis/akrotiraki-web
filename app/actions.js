@@ -4,13 +4,14 @@ import { upsert, removeById, normRes, normExp } from './state.js';
 import { toast } from './ui.js';
 
 const RES_FIELDS = ['id', 'unit_id', 'check_in', 'check_out', 'guest_name', 'guests', 'source', 'status',
-  'price', 'paid', 'checked', 'notes', 'external_uid', 'email', 'phone', 'lang', 'cleaning_fee'];
+  'price', 'paid', 'checked', 'notes', 'external_uid', 'email', 'phone', 'lang', 'cleaning_fee', 'discount'];
 const EXP_FIELDS = ['id', 'date', 'category', 'amount', 'unit_id', 'paid_by', 'receipt_url', 'notes'];
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
 
 /**
  * opts.notify (boolean): guest email on pending → confirmed/cancelled; omitted = server default (send).
- * opts.autoprice: let the server fill price and cleaning_fee from the price list (sent as false otherwise).
+ * opts.autoprice: let the server fill price and cleaning_fee from the price list (sent as false otherwise);
+ *   the server then sets price = quote total − discount, so discount is still sent.
  */
 export async function saveReservation(reservation, force = false, opts = {}) {
   const payload = { reservation: pick(reservation, RES_FIELDS) };

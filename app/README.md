@@ -47,11 +47,13 @@ Edit `config.js`:
 - **Roles**: managers can add and edit everything but cannot confirm reservations; owners can, and can
   "Confirm anyway" over an overlap (`force: true`).
 - **Requests** (tab with a badge; also the "Pending (n)" chip on the calendar): every pending reservation as a card
-  with contact, message, price breakdown (accommodation + cleaning = total, deposit) and overlaps. Approve (owners)
+  with contact, message, price breakdown (accommodation + cleaning − discount = total, deposit on the total) and overlaps. Approve (owners)
   asks for a price first when it is 0, then confirms with `setReservationStatus` and a "Send email" switch
   (`notify`); Decline does the same with status `cancelled`. "Email guest" opens a `mailto:` in your own mail app.
 - **Prices**: the reservation form quotes from the price list with `quoteFor` (automatically for new reservations
   until you type a price; "Recalculate price" any time). `saveReservation` always sends `autoprice` explicitly.
+  `price` is what the guest pays (accommodation + cleaning − `discount`). Typing a discount while a quote is loaded
+  sets price = quote total − discount; a price typed by hand is kept and the discount stays as entered.
 - **Totals** are computed on the device from loaded data; when the `totals` action answers, its numbers are used.
 
 ## Files
