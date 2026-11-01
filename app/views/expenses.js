@@ -140,7 +140,7 @@ export function openExpense(input = {}) {
       fileLabel.lastChild.textContent = 'Replace photo';
       drawPreview();
     } catch (ex) {
-      rStatus.textContent = 'Upload failed';
+      rStatus.textContent = 'Upload failed: ' + (ex?.message || 'could not read the image');
       if (ex && ex.code) actions.report(ex); else toast(ex?.message || 'Could not read the image.', 'error');
     } finally {
       uploading = false;

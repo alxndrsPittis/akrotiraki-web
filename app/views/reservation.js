@@ -33,7 +33,7 @@ export function openReservation(input = {}) {
     h('legend', { class: 'field-label' }, 'Unit'),
     h('div', { class: 'seg' }, units.map((u) => [
       h('input', { type: 'radio', name: `${uid}-unit`, id: `${uid}-u-${u.id}`, value: u.id, checked: u.id === r.unit_id }),
-      h('label', { for: `${uid}-u-${u.id}` }, h('span', { class: 'dot', style: `background:${u.color || 'var(--sea)'}` }), u.name),
+      h('label', { for: `${uid}-u-${u.id}` }, h('span', { class: 'dot', style: `background:${u.color || 'var(--sea)'}` }), h('span', { class: 'u-long' }, u.name), h('span', { class: 'u-short' }, u.id)),
     ])));
 
   const ci = h('input', { type: 'date', required: true, value: r.check_in, id: `${uid}-ci` });

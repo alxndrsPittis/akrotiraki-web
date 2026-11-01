@@ -271,6 +271,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .seg input:checked + label { background: var(--sea); color: var(--on-sea); }
 .seg input:checked + label .dot { box-shadow: 0 0 0 1.5px var(--on-sea); }
 .seg input:focus-visible + label { outline: 2px solid var(--sea); outline-offset: 1px; }
+.seg label span:not(.dot) { overflow: hidden; text-overflow: ellipsis; }
+.seg .u-short { display: none; }
+@media (max-width: 480px) { .seg .u-long { display: none; } .seg .u-short { display: inline; } }
 
 .switch {
   -webkit-appearance: none; appearance: none; flex: none; margin: 0; cursor: pointer;
