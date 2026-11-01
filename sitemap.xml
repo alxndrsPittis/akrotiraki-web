@@ -21,9 +21,54 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/archaeology.html"/>
     <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/archaeology.html"/>
   </url>
-  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/sifnos.html</loc></url>
-  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/beaches.html</loc></url>
-  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/outdoors.html</loc></url>
-  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/food.html</loc></url>
-  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/faq.html</loc></url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/sifnos.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/sifnos.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/sifnos.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/sifnos.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/sifnos.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/sifnos.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/beaches.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/beaches.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/beaches.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/beaches.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/beaches.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/beaches.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/outdoors.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/outdoors.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/outdoors.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/outdoors.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/outdoors.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/outdoors.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/food.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/food.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/food.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/food.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/food.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/food.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/faq.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/faq.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/faq.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/faq.html"/>
+  </url>
 </urlset>
