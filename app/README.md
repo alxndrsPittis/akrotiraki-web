@@ -46,6 +46,12 @@ Edit `config.js`:
   Writes update local state from the object the server returns.
 - **Roles**: managers can add and edit everything but cannot confirm reservations; owners can, and can
   "Confirm anyway" over an overlap (`force: true`).
+- **Requests** (tab with a badge; also the "Pending (n)" chip on the calendar): every pending reservation as a card
+  with contact, message, price breakdown (accommodation + cleaning = total, deposit) and overlaps. Approve (owners)
+  asks for a price first when it is 0, then confirms with `setReservationStatus` and a "Send email" switch
+  (`notify`); Decline does the same with status `cancelled`. "Email guest" opens a `mailto:` in your own mail app.
+- **Prices**: the reservation form quotes from the price list with `quoteFor` (automatically for new reservations
+  until you type a price; "Recalculate price" any time). `saveReservation` always sends `autoprice` explicitly.
 - **Totals** are computed on the device from loaded data; when the `totals` action answers, its numbers are used.
 
 ## Files
@@ -57,7 +63,7 @@ api.js, auth.js, state.js       API client, Google sign-in, state + cache
 actions.js                      writes (save/cancel/confirm, expenses, receipts)
 lib.js, calc.js, ui.js          dates/formatting/overlap, totals maths, DOM helpers
 mock.js                         in-memory fake backend for demo mode
-views/                          calendar, reservation form, expenses, totals
+views/                          calendar, requests, reservation form, expenses, totals
 sw.js, manifest.webmanifest     PWA
 icons/                          icon.svg + PNGs (regenerate: node tools/make-icons.js)
 ```

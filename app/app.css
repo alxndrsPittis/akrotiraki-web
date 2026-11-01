@@ -453,3 +453,78 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .receipt-link { border: 0; border-left: 1px solid var(--line); background: transparent; cursor: pointer; padding: 0; }
 .linkish { border: 0; background: none; padding: 0; color: var(--sea); text-decoration: underline; cursor: pointer; font-size: 14px; }
 .receipt-full { display: block; max-width: 100%; height: auto; border-radius: 8px; margin: 0 auto; }
+
+/* ---------- Requests ---------- */
+.tab-ic { position: relative; display: inline-flex; }
+.tab-badge {
+  position: absolute; top: -5px; left: 13px; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px; background: var(--sand); color: #1f2a33; border: 2px solid var(--paper);
+  font-size: 10.5px; font-weight: 700; line-height: 14px; text-align: center; font-variant-numeric: tabular-nums;
+}
+@media (min-width: 900px) {
+  .tabs a { position: relative; }
+  .tab-badge { position: static; margin-left: auto; border: 0; height: 20px; line-height: 20px; font-size: 11.5px; }
+  .tab-ic { position: static; display: contents; }
+  .tabs a > span:last-child { flex: 1; }
+  .tabs a .tab-ic { order: 0; }
+  .tabs a .tab-badge { order: 2; }
+}
+.ic.tiny { width: 13px; height: 13px; vertical-align: -2px; }
+.bar-mail { width: 13px; height: 13px; flex: none; color: var(--ink); opacity: .8; }
+.legend-ic { width: 14px; height: 14px; }
+.badge.web { display: inline-flex; align-items: center; gap: 4px; margin-left: 0; background: var(--sea-soft); color: var(--ink); }
+
+.req-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; min-height: 40px; max-width: 1100px; }
+.req-head .summary { margin: 0; }
+.req-sort { width: auto; }
+.req-sort select { min-height: 36px; padding-top: 5px; padding-bottom: 5px; font-size: 14px; }
+.req-note { margin: 0 0 12px; }
+.req-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; align-items: start; max-width: 1100px; }
+.pitem.req { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.pitem.req.web { border-left: 3px solid var(--sand); }
+.req-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-stay { font-size: 15px; }
+.pitem.req .pitem-meta { margin-top: 0; }
+.contacts { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 4px; }
+.contact {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 36px; padding: 0 10px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink);
+  font-size: 14px; text-decoration: none; cursor: pointer;
+}
+.contact:hover { border-color: var(--muted); }
+.contact .ic { width: 16px; height: 16px; color: var(--muted); }
+.contact .copy-ic { width: 14px; height: 14px; }
+.contact-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.req-msg {
+  margin: 6px 0 0; padding: 8px 12px; border-left: 3px solid var(--line); background: var(--paper);
+  border-radius: 0 var(--radius) var(--radius) 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.req-noprice { margin-top: 4px; }
+.pitem.req .warn { margin: 6px 0 0; }
+.req-actions { flex-wrap: wrap; margin-top: 8px; }
+@media (max-width: 480px) {
+  .req-actions .btn { flex: 1 1 auto; }
+  .req-actions .push-left { flex-basis: 100%; margin-right: 0; }
+}
+
+.breakdown {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; margin: 6px 0 0; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); font-size: 14px;
+}
+.breakdown dt { color: var(--muted); }
+.breakdown dd { margin: 0; }
+.breakdown .total { color: var(--ink); font-weight: 600; border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.breakdown dt.total { margin-right: -16px; padding-right: 16px; }
+.breakdown .dep { color: var(--muted); }
+
+/* Reservation form: quote */
+.quote-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: -6px 0 14px; }
+.quote { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+.quote:empty { display: none; }
+.quote strong { color: var(--ink); }
+.quote p + p { margin-top: 2px; }
+.quote-row .btn { margin-left: auto; }
+.info-note { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--radius); background: var(--sea-soft); font-size: 14px; }
+.dlg-extra { margin-top: 10px; }
+.dlg-extra .warn { margin: 10px 0 0; }
+.check-row { margin: 14px 0 0; }

@@ -1,11 +1,12 @@
 // Akrotiraki management app: shell, auth flow, routing.
 import config from './config.js';
-import { state, loadCache, applyBootstrap, clearState, subscribe, emit } from './state.js';
+import { state, loadCache, applyBootstrap, clearState, subscribe, emit, pendingCount } from './state.js';
 import * as auth from './auth.js';
 import { configureApi, call, ApiError } from './api.js';
 import { $, h, icon, toast, openDialog } from './ui.js';
 import { fmtDateTime, capitalize } from './lib.js';
 import { renderCalendar } from './views/calendar.js';
+import { renderRequests } from './views/requests.js';
 import { renderExpenses } from './views/expenses.js';
 import { renderTotals } from './views/totals.js';
 
@@ -15,6 +16,7 @@ state.mock = MOCK;
 
 const ROUTES = {
   calendar: { title: 'Calendar', render: renderCalendar },
+  requests: { title: 'Requests', render: renderRequests },
   expenses: { title: 'Expenses', render: renderExpenses },
   totals: { title: 'Totals', render: renderTotals },
 };
@@ -147,6 +149,11 @@ function renderChrome() {
   const btn = $('#account-btn');
   btn.textContent = initials || '?';
   btn.setAttribute('aria-label', `Account: ${user?.name || 'signed in'}`);
+  const n = state.loaded ? pendingCount() : 0;
+  const badge = $('#req-badge');
+  badge.hidden = !n;
+  badge.textContent = n > 99 ? '99+' : String(n);
+  $('#req-badge-sr').textContent = n ? `, ${n} pending` : '';
   const foot = $('#rail-foot');
   foot.replaceChildren();
   if (user) {

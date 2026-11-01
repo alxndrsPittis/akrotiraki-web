@@ -4,23 +4,42 @@ import { upsert, removeById, normRes, normExp } from './state.js';
 import { toast } from './ui.js';
 
 const RES_FIELDS = ['id', 'unit_id', 'check_in', 'check_out', 'guest_name', 'guests', 'source', 'status',
-  'price', 'paid', 'checked', 'notes', 'external_uid'];
+  'price', 'paid', 'checked', 'notes', 'external_uid', 'email', 'phone', 'lang', 'cleaning_fee'];
 const EXP_FIELDS = ['id', 'date', 'category', 'amount', 'unit_id', 'paid_by', 'receipt_url', 'notes'];
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
 
-export async function saveReservation(reservation, force = false) {
+/**
+ * opts.notify (boolean): guest email on pending → confirmed/cancelled; omitted = server default (send).
+ * opts.autoprice: let the server fill price and cleaning_fee from the price list (sent as false otherwise).
+ */
+export async function saveReservation(reservation, force = false, opts = {}) {
   const payload = { reservation: pick(reservation, RES_FIELDS) };
   if (!payload.reservation.id) delete payload.reservation.id;
+  // Always explicit: the server defaults to repricing new direct stays with price 0.
+  payload.autoprice = !!opts.autoprice;
+  if (opts.autoprice) {
+    delete payload.reservation.price;
+    delete payload.reservation.cleaning_fee;
+  }
   if (force) payload.force = true;
+  if (typeof opts.notify === 'boolean') payload.notify = opts.notify;
   const d = await call('saveReservation', payload);
+  upsert('reservations', normRes(d.reservation));
+  return { reservation: d.reservation, conflicts: d.conflicts || [], quote: d.quote || null };
+}
+
+export async function setReservationStatus(id, status, { force = false, notify } = {}) {
+  const payload = { id, status };
+  if (force) payload.force = true;
+  if (typeof notify === 'boolean') payload.notify = notify;
+  const d = await call('setReservationStatus', payload);
   upsert('reservations', normRes(d.reservation));
   return { reservation: d.reservation, conflicts: d.conflicts || [] };
 }
 
-export async function setReservationStatus(id, status) {
-  const d = await call('setReservationStatus', { id, status });
-  upsert('reservations', normRes(d.reservation));
-  return { reservation: d.reservation, conflicts: d.conflicts || [] };
+/** Price-list quote: { nights, nightly:[{date,price}], accommodation, cleaning_fee, total, currency, incomplete, min_nights, below_min } */
+export function quoteFor(unit_id, check_in, check_out) {
+  return call('quoteFor', { unit_id, check_in, check_out });
 }
 
 export async function saveExpense(expense) {

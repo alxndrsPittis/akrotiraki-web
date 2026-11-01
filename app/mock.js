@@ -1,6 +1,6 @@
 // In-memory fake backend implementing the API.md actions with sample data.
 // Used when config.API_URL is empty, config.MOCK is true, or the URL has ?mock=1.
-import { addDays, diffDays, todayISO, isISODate, conflictsFor, SOURCES, STATUSES, CATEGORIES, pad } from './lib.js';
+import { addDays, diffDays, todayISO, isISODate, conflictsFor, isEmail, round2, SOURCES, STATUSES, CATEGORIES, LANGS, pad } from './lib.js';
 import { computeTotals } from './calc.js';
 import { decodeJwt } from './auth.js';
 
@@ -15,6 +15,44 @@ const GUESTS = ['Sophie Laurent', 'Lukas Becker', 'Emma Johansson', 'Marco Rossi
   'Anna Kowalska', 'Oliver Smith', 'Lucía Fernández', 'Matteo Bianchi', 'Sarah Cohen', 'Pieter de Vries',
   'Yuki Tanaka', 'Claire Dubois', 'Jonas Lindqvist', 'Maya Patel', 'Felix Hoffmann', 'Giulia Conti', 'Ethan Brooks'];
 const PAYERS = ['Owner (demo)', 'Maria', 'Giorgos'];
+const SETTINGS = {
+  season_start: '05-01', season_end: '10-31', currency: 'EUR',
+  cleaning_fee_maisonette: '30', cleaning_fee_studio: '20', deposit_percent: '30', // Settings arrive as strings
+  site_url: 'https://alxndrspittis.github.io/akrotiraki-web/',
+};
+// Price list (Prices tab). from/to inclusive. 20–31 Dec is deliberately unpriced to show an incomplete quote.
+function makePrices() {
+  const Y = +todayISO().slice(0, 4);
+  const bands = [['01-01', '04-30', 120, 70, 3, 'Low season'], ['05-01', '06-30', 160, 95, 3, 'Shoulder'],
+    ['07-01', '08-31', 220, 130, 5, 'High season'], ['09-01', '10-31', 160, 95, 3, 'Shoulder'], ['11-01', '12-19', 120, 70, 3, 'Low season']];
+  const rows = [];
+  for (const y of [Y - 1, Y, Y + 1]) {
+    for (const [f, t, pm, ps, min, notes] of bands) {
+      rows.push({ unit_type: 'maisonette', from: `${y}-${f}`, to: `${y}-${t}`, price_per_night: pm, min_nights: min, notes });
+      rows.push({ unit_type: 'studio', from: `${y}-${f}`, to: `${y}-${t}`, price_per_night: ps, min_nights: min, notes });
+    }
+  }
+  return rows;
+}
+const PRICES = makePrices();
+
+/** Same shape as the backend quoteFor. Missing nights count 0 and mark the quote incomplete. */
+function quote(unit_id, check_in, check_out) {
+  const u = UNITS.find((x) => x.id === unit_id);
+  const nightly = [];
+  let min = 0;
+  for (let d = check_in; d < check_out; d = addDays(d, 1)) {
+    const row = PRICES.findLast((p) => p.unit_type.toLowerCase() === u.type && p.from <= d && d <= p.to && p.price_per_night > 0);
+    nightly.push({ date: d, price: row ? row.price_per_night : null });
+    if (row) min = Math.max(min, Number(row.min_nights) || 0);
+  }
+  const accommodation = round2(nightly.reduce((s, n) => s + (n.price || 0), 0));
+  const cleaning_fee = Number(SETTINGS[`cleaning_fee_${u.type}`]) || 0;
+  return {
+    nights: nightly.length, nightly, accommodation, cleaning_fee, total: round2(accommodation + cleaning_fee),
+    currency: SETTINGS.currency, incomplete: nightly.some((n) => n.price == null), min_nights: min, below_min: nightly.length < min,
+  };
+}
 
 function rng(seed) {
   return () => {
@@ -46,7 +84,11 @@ function seed() {
     const nights = diffDays(o.check_in, o.check_out);
     const free = o.source === 'family' || o.source === 'block';
     const rate = u.type === 'maisonette' ? ri(15, 22) * 10 : ri(8, 12) * 10;
-    const price = free ? 0 : nights * rate;
+    const fee = free ? 0 : Number(SETTINGS[`cleaning_fee_${u.type}`]);
+    let price = free ? 0 : nights * rate + fee;
+    let cleaning_fee = fee;
+    if (o.priced === 'quote') ({ total: price, cleaning_fee } = quote(o.unit_id, o.check_in, o.check_out));
+    else if (o.priced === false) { price = 0; cleaning_fee = 0; }
     const past = o.check_in <= T;
     const created = addDays(o.check_in, -ri(15, 90));
     const r = {
@@ -62,7 +104,10 @@ function seed() {
       created_at: stamp(created),
       updated_at: o.status === 'cancelled' ? stamp(addDays(T, -ri(2, 20))) : stamp(created),
       created_by: 'owner@example.com',
+      cleaning_fee, email: '', phone: '', lang: '',
+      ...o.extra,
     };
+    if (o.hoursAgo != null) r.created_at = r.updated_at = new Date(Date.now() - o.hoursAgo * 3600e3).toISOString();
     reservations.push(r);
     return r;
   };
@@ -84,8 +129,19 @@ function seed() {
   mk({ unit_id: 'u2', check_in: addDays(T, -2), check_out: addDays(T, 3), source: 'booking', status: 'confirmed' });
   mk({ unit_id: 'u4', check_in: addDays(T, 1), check_out: addDays(T, 5), source: 'airbnb', status: 'confirmed' });
   mk({ unit_id: 'u1', check_in: addDays(T, 9), check_out: addDays(T, 14), source: 'direct', status: 'confirmed', notes: 'Arriving with the evening ferry.' });
-  mk({ unit_id: 'u1', check_in: addDays(T, 12), check_out: addDays(T, 16), source: 'direct', status: 'pending', notes: 'Asked by email, waiting for the deposit.' });
-  mk({ unit_id: 'u3', check_in: addDays(T, 5), check_out: addDays(T, 8), source: 'direct', status: 'pending' });
+  // Website requests (requestStay): pending, direct, created_by "website", notes = the guest's message, price 0.
+  const web = (email, phone, lang) => ({ email, phone, lang, created_by: 'website' });
+  mk({ unit_id: 'u1', check_in: addDays(T, 12), check_out: addDays(T, 16), source: 'direct', status: 'pending', priced: false, hoursAgo: 3,
+    guest_name: 'Sarah Cohen', extra: web('sarah.cohen@example.com', '+44 7700 900123', 'en'),
+    notes: 'Hello! We are two adults and a seven-year-old, arriving on the morning ferry from Piraeus. Would an early check-in be possible? Many thanks.' });
+  mk({ unit_id: 'u3', check_in: addDays(T, 5), check_out: addDays(T, 8), source: 'direct', status: 'pending', priced: false, hoursAgo: 27,
+    guest_name: 'Amélie Roux', extra: web('amelie.roux@example.fr', '', 'fr'),
+    notes: 'Bonjour, nous sommes deux et aimerions le studio pour trois nuits. Merci beaucoup !' });
+  mk({ unit_id: 'u4', check_in: addDays(T, 30), check_out: addDays(T, 37), source: 'direct', status: 'pending', priced: 'quote', hoursAgo: 52,
+    guest_name: 'Νίκος Γεωργίου', extra: web('n.georgiou@example.gr', '+30 694 123 4567', 'el'),
+    notes: 'Καλησπέρα σας, θα θέλαμε το στούντιο για μία εβδομάδα. Υπάρχει δυνατότητα για παρκάρισμα κοντά;' });
+  mk({ unit_id: 'u1', check_in: addDays(T, 40), check_out: addDays(T, 44), source: 'direct', status: 'pending', priced: 'quote',
+    guest_name: 'Ingrid Olsen', extra: { email: 'ingrid.olsen@example.com', lang: 'en' }, notes: 'Asked by email, waiting for the deposit.' });
   mk({ unit_id: 'u2', check_in: addDays(T, 19), check_out: addDays(T, 24), source: 'booking', status: 'pending' });
   mk({ unit_id: 'u3', check_in: addDays(T, 2), check_out: addDays(T, 4), source: 'airbnb', status: 'cancelled' });
   mk({ unit_id: 'u3', check_in: addDays(T, 15), check_out: addDays(T, 18), source: 'family', status: 'confirmed', guest_name: 'Family: Kostas' });
@@ -133,6 +189,12 @@ function validateReservation(r) {
   if (r.check_out <= r.check_in) throw new E('bad_request', 'Check-out must be after check-in.');
   if (!SOURCES[r.source]) throw new E('bad_request', 'Unknown source.');
   if (!STATUSES[r.status]) throw new E('bad_request', 'Unknown status.');
+  r.email = String(r.email || '').trim();
+  if (r.email && !isEmail(r.email)) throw new E('bad_request', 'email is not a valid address', { field: 'email' });
+  r.phone = String(r.phone || '').trim().slice(0, 40);
+  r.lang = LANGS[r.lang] ? r.lang : r.lang ? 'en' : '';
+  r.price = Number(r.price) || 0;
+  r.cleaning_fee = Number(r.cleaning_fee) || 0;
 }
 
 function applyStatusRules(user, prev, next, force) {
@@ -146,12 +208,22 @@ function applyStatusRules(user, prev, next, force) {
   return conflicts;
 }
 
+/** Backend Notify.js: pending → confirmed / cancelled emails the guest unless notify === false. Here: just log. */
+function simulateNotify(prevStatus, r, notify) {
+  if (prevStatus !== 'pending' || !r.email) return;
+  const kind = r.status === 'confirmed' ? 'confirmation' : r.status === 'cancelled' ? 'decline' : null;
+  if (!kind) return;
+  if (notify === false) console.info(`[mock] ${kind} email to ${r.email} suppressed (notify: false)`);
+  else console.info(`[mock] would send ${kind} email to ${r.email} in ${r.lang || 'en'}, price ${r.price}, deposit ${SETTINGS.deposit_percent}%`);
+}
+
 const actions = {
   bootstrap(user) {
     return {
       user,
       units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
-      settings: { season_start: '05-01', season_end: '10-31', currency: 'EUR' },
+      settings: { ...SETTINGS },
+      prices: PRICES,
       reservations: db.reservations,
       expenses: db.expenses,
     };
@@ -159,29 +231,47 @@ const actions = {
   listReservations(user, { from, to } = {}) {
     return db.reservations.filter((r) => (!to || r.check_in < to) && (!from || r.check_out > from));
   },
-  saveReservation(user, { reservation, force } = {}) {
+  quoteFor(user, { unit_id, check_in, check_out } = {}) {
+    if (!UNITS.some((u) => u.id === unit_id)) throw new E('bad_request', 'Unknown unit.');
+    if (!isISODate(check_in) || !isISODate(check_out) || check_out <= check_in) throw new E('bad_request', 'Check-out must be after check-in.');
+    return quote(unit_id, check_in, check_out);
+  },
+  saveReservation(user, { reservation, force, notify, autoprice } = {}) {
     if (!reservation) throw new E('bad_request', 'Missing reservation.');
     const prev = reservation.id ? db.reservations.find((r) => r.id === reservation.id) : null;
     if (reservation.id && !prev) throw new E('not_found', 'Reservation not found.');
     const now = new Date().toISOString();
     const next = {
-      external_uid: '', notes: '', guests: 0, price: 0, paid: 0, checked: false,
+      external_uid: '', notes: '', guests: 0, price: 0, paid: 0, checked: false, cleaning_fee: 0, email: '', phone: '', lang: '',
       ...prev, ...reservation,
       id: prev?.id || `r${++seq}`,
       created_at: prev?.created_at || now, created_by: prev?.created_by || user.email, updated_at: now,
     };
     validateReservation(next);
+    // autoprice: explicit flag, else default true only when creating a direct stay with price 0 (API.md).
+    const datesChanged = !prev || prev.unit_id !== next.unit_id || prev.check_in !== next.check_in || prev.check_out !== next.check_out;
+    const auto = autoprice === undefined ? !prev && next.source === 'direct' && !next.price : autoprice === true;
+    let q = null;
+    if (auto && datesChanged) {
+      q = quote(next.unit_id, next.check_in, next.check_out);
+      next.price = q.incomplete ? 0 : q.total;
+      next.cleaning_fee = q.incomplete ? 0 : q.cleaning_fee;
+    }
     const conflicts = applyStatusRules(user, prev, next, force);
+    const prevStatus = prev?.status || null;
     if (prev) Object.assign(prev, next); else db.reservations.push(next);
-    return { reservation: next, conflicts };
+    simulateNotify(prevStatus, next, notify);
+    return { reservation: next, conflicts, quote: q };
   },
-  setReservationStatus(user, { id, status } = {}) {
+  setReservationStatus(user, { id, status, force, notify } = {}) {
     const prev = db.reservations.find((r) => r.id === id);
     if (!prev) throw new E('not_found', 'Reservation not found.');
     if (!STATUSES[status]) throw new E('bad_request', 'Unknown status.');
     const next = { ...prev, status, updated_at: new Date().toISOString() };
-    const conflicts = applyStatusRules(user, prev, next, false);
+    const conflicts = applyStatusRules(user, prev, next, force);
+    const prevStatus = prev.status;
     Object.assign(prev, next);
+    simulateNotify(prevStatus, next, notify);
     return { reservation: next, conflicts };
   },
   saveExpense(user, { expense } = {}) {
@@ -212,7 +302,7 @@ const actions = {
   },
   totals(user, { year } = {}) {
     const t = computeTotals({ year: year || new Date().getFullYear(), reservations: db.reservations, expenses: db.expenses,
-      units: UNITS, settings: { season_start: '05-01', season_end: '10-31' } });
+      units: UNITS, settings: SETTINGS });
     const strip = ({ nights, revenue, expenses }) => ({ nights, revenue, expenses });
     return { months: t.months.map((m) => ({ month: m.month, ...strip(m) })), season: strip(t.season), year: strip(t.year) };
   },

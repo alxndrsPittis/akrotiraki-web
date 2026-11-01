@@ -12,6 +12,7 @@ export const state = {
   user: null,          // {email, name, role}
   units: [],
   settings: {},
+  prices: [],          // price list rows {unit_type, from, to, price_per_night, min_nights, notes}
   reservations: [],
   expenses: [],
 };
@@ -24,10 +25,13 @@ function normalize(data) {
   state.user = data.user || null;
   state.units = (data.units || []).map((u) => ({ ...u, capacity: Number(u.capacity) || 0 }));
   state.settings = data.settings || {};
+  state.prices = data.prices || [];
   state.reservations = (data.reservations || []).map(normRes);
   state.expenses = (data.expenses || []).map(normExp);
 }
-export const normRes = (r) => ({ ...r, checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0, guests: Number(r.guests) || 0 });
+export const normRes = (r) => ({ ...r, checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0,
+  cleaning_fee: Number(r.cleaning_fee) || 0, guests: Number(r.guests) || 0,
+  email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '' });
 export const normExp = (e) => ({ ...e, amount: Number(e.amount) || 0, unit_id: e.unit_id || '' });
 
 export function applyBootstrap(data, persistIt = true) {
@@ -53,14 +57,14 @@ export function loadCache() {
 export function persist() {
   if (state.mock) return;
   try {
-    const { user, units, settings, reservations, expenses } = state;
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ updatedAt: state.updatedAt, data: { user, units, settings, reservations, expenses } }));
+    const { user, units, settings, prices, reservations, expenses } = state;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ updatedAt: state.updatedAt, data: { user, units, settings, prices, reservations, expenses } }));
   } catch { /* quota or private mode */ }
 }
 
 export function clearState() {
   try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
-  Object.assign(state, { loaded: false, offline: false, updatedAt: null, user: null, units: [], settings: {}, reservations: [], expenses: [] });
+  Object.assign(state, { loaded: false, offline: false, updatedAt: null, user: null, units: [], settings: {}, prices: [], reservations: [], expenses: [] });
 }
 
 /** Replace-or-insert an object by id in a state list, persist and notify. */
@@ -79,6 +83,11 @@ export function removeById(listName, id) {
 
 export const isOwner = () => state.user?.role === 'owner';
 export const currency = () => state.settings?.currency || 'EUR';
+export const depositPercent = () => {
+  const n = Number(state.settings?.deposit_percent);
+  return isFinite(n) && n >= 0 && n <= 100 && state.settings?.deposit_percent !== '' && state.settings?.deposit_percent != null ? n : 30;
+};
+export const pendingCount = () => state.reservations.filter((r) => r.status === 'pending').length;
 export const unitById = (id) => state.units.find((u) => u.id === id);
 export const activeUnits = () => {
   const act = state.units.filter((u) => u.active === undefined || u.active === '' || truthy(u.active));

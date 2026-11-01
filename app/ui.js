@@ -37,6 +37,11 @@ const P = {
   attach: '<path d="M8 12.5l5.2-5.2a2.6 2.6 0 0 1 3.7 3.7l-6.6 6.6a4.2 4.2 0 0 1-6-6L10.6 5"/>',
   warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/>',
   refresh: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/>',
+  mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
+  inbox: '<path d="M3.5 13.5l2.6-7.2a1.5 1.5 0 0 1 1.4-.8h9a1.5 1.5 0 0 1 1.4.8l2.6 7.2V18a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 18z"/><path d="M3.5 13.5h4.5l1.5 2.5h5l1.5-2.5h4.5"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
+  phone: '<path d="M6.5 4h3l1.5 4-2 1.3a10 10 0 0 0 5.7 5.7l1.3-2 4 1.5v3a2 2 0 0 1-2 2A15.5 15.5 0 0 1 4.5 6a2 2 0 0 1 2-2z"/>',
+  calc: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 7.5h8M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01"/>',
 };
 export function icon(name, cls = 'ic') {
   const span = document.createElement('span');
@@ -81,17 +86,45 @@ export function openDialog({ title, body, foot, dismissable = false, cls = '' })
   return dlg;
 }
 
-export function confirmDialog(message, { ok = 'OK', cancel = 'Back', danger = false, title = 'Are you sure?' } = {}) {
+/**
+ * Confirmation dialog. Resolves false when dismissed, otherwise true — or, with `check`
+ * ({label, checked, okUnchecked}), an object {checked} with the checkbox state.
+ * `extra` is an optional node shown under the message.
+ */
+export function confirmDialog(message, { ok = 'OK', cancel = 'Back', danger = false, title = 'Are you sure?', check = null, extra = null } = {}) {
   return new Promise((resolve) => {
     let result = false;
     const okBtn = h('button', { class: `btn ${danger ? 'danger-solid' : 'primary'}`, type: 'button' }, ok);
     const backBtn = h('button', { class: 'btn', type: 'button' }, cancel);
-    const dlg = openDialog({ title, body: h('p', { class: 'confirm-text' }, message), foot: [backBtn, okBtn], dismissable: true, cls: 'small' });
-    okBtn.addEventListener('click', () => { result = true; dlg.close(); });
+    const box = check ? h('input', { type: 'checkbox', class: 'switch', role: 'switch', checked: check.checked !== false, id: `dlg-chk-${dlgSeq + 1}` }) : null;
+    const body = h('div', null,
+      h('p', { class: 'confirm-text' }, message),
+      extra,
+      box ? h('div', { class: 'switch-row check-row' }, h('label', { for: box.id }, check.label), box) : null);
+    const dlg = openDialog({ title, body, foot: [backBtn, okBtn], dismissable: true, cls: 'small' });
+    if (box && check.okUnchecked) box.addEventListener('change', () => { okBtn.textContent = box.checked ? ok : check.okUnchecked; });
+    okBtn.addEventListener('click', () => { result = box ? { checked: box.checked } : true; dlg.close(); });
     backBtn.addEventListener('click', () => dlg.close());
     dlg.addEventListener('close', () => resolve(result));
     okBtn.focus();
   });
+}
+
+/** Copy text to the clipboard (falls back to a hidden textarea where the API is unavailable). */
+export async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = h('textarea', { 'aria-hidden': 'true', style: 'position:fixed;opacity:0;left:-1000px' });
+    ta.value = text;
+    (document.querySelector('dialog[open]') || document.body).append(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { /* ignore */ }
+    ta.remove();
+    return ok;
+  }
 }
 
 /** Downscale an image file to max `max` px on the long edge, JPEG at `quality`. */

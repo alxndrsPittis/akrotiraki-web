@@ -1,7 +1,8 @@
 // Totals computed locally from state (same definitions the backend `totals` action uses).
 //  - nights: nights of confirmed stays falling in the month (blocked dates excluded)
 //  - occupancy: nights / (active units × days)
-//  - revenue: price of confirmed stays by check-in month
+//  - revenue: price of confirmed stays by check-in month (price already includes the cleaning fee)
+//  - cleaning: the cleaning_fee part of that revenue (informational; never added again)
 //  - expenses: by expense date
 import { addDays, daysInMonth, diffDays, num, truthy } from './lib.js';
 
@@ -14,21 +15,24 @@ export function computeTotals({ year, reservations, expenses, units, settings })
   const Y = String(year);
   const active = activeUnitCount(units);
   const months = Array.from({ length: 12 }, (_, i) => ({
-    month: i + 1, nights: 0, revenue: 0, expenses: 0, capacity: active * daysInMonth(+Y, i),
+    month: i + 1, nights: 0, revenue: 0, cleaning: 0, expenses: 0, capacity: active * daysInMonth(+Y, i),
   }));
   const ss = /^\d{2}-\d{2}$/.test(settings?.season_start || '') ? settings.season_start : '05-01';
   const se = /^\d{2}-\d{2}$/.test(settings?.season_end || '') ? settings.season_end : '10-31';
   const sStart = `${Y}-${ss}`, sEnd = `${Y}-${se}`; // inclusive
   const inSeason = (d) => d >= sStart && d <= sEnd;
-  const season = { nights: 0, revenue: 0, expenses: 0, capacity: active * (diffDays(sStart, sEnd) + 1), start: ss, end: se };
+  const season = { nights: 0, revenue: 0, cleaning: 0, expenses: 0, capacity: active * (diffDays(sStart, sEnd) + 1), start: ss, end: se };
   const yStart = `${Y}-01-01`, yEnd = `${+Y + 1}-01-01`;
 
   for (const r of reservations) {
     if (r.status !== 'confirmed' || !r.check_in || !r.check_out) continue;
     if (r.check_in.startsWith(Y)) {
       const p = num(r.price);
-      months[+r.check_in.slice(5, 7) - 1].revenue += p;
-      if (inSeason(r.check_in)) season.revenue += p;
+      const c = Math.min(num(r.cleaning_fee), p);
+      const mo = months[+r.check_in.slice(5, 7) - 1];
+      mo.revenue += p;
+      mo.cleaning += c;
+      if (inSeason(r.check_in)) { season.revenue += p; season.cleaning += c; }
     }
     if (r.source === 'block') continue;
     let d = r.check_in > yStart ? r.check_in : yStart;
@@ -45,6 +49,6 @@ export function computeTotals({ year, reservations, expenses, units, settings })
     if (inSeason(e.date)) season.expenses += a;
   }
   const sum = (k) => months.reduce((s, m) => s + m[k], 0);
-  const yearRow = { nights: sum('nights'), revenue: sum('revenue'), expenses: sum('expenses'), capacity: sum('capacity') };
+  const yearRow = { nights: sum('nights'), revenue: sum('revenue'), cleaning: sum('cleaning'), expenses: sum('expenses'), capacity: sum('capacity') };
   return { months, season, year: yearRow };
 }

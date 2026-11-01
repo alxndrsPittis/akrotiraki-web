@@ -90,9 +90,16 @@ export function renderTotals(root) {
       h('tr', { class: 'season' }, h('th', { scope: 'row' }, sLabel), rowCells(t.season)),
       h('tr', { class: 'year' }, h('th', { scope: 'row' }, String(year)), rowCells(t.year))))));
 
+  // Cleaning fees are part of the price, so of revenue; shown as a secondary figure only (local data).
+  if (Math.round(local.year.cleaning)) {
+    root.append(h('p', { class: 'summary foot-note' }, 'Of which cleaning fees: ',
+      h('strong', null, money(Math.round(local.year.cleaning), cur)), ` in ${year}`,
+      Math.round(local.season.cleaning) ? [', ', h('strong', null, money(Math.round(local.season.cleaning), cur)), ' in the season'] : null, '.'));
+  }
+
   const units = activeUnitCount(state.units);
   root.append(h('p', { class: 'hint foot-note' },
     `Nights and occupancy count confirmed stays across ${units} active unit${units === 1 ? '' : 's'} (blocked dates excluded). ` +
-    'Revenue is the price of confirmed stays by check-in month. ' +
+    'Revenue is the price of confirmed stays by check-in month, cleaning fees included. ' +
     (t.source === 'server' ? 'Figures from the server.' : 'Computed on this device from loaded data (last ~13 months).')));
 }

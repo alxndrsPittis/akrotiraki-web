@@ -93,6 +93,14 @@ export const STATUSES = {
   confirmed: 'Confirmed',
   cancelled: 'Cancelled',
 };
+export const LANGS = { en: 'English', el: 'Greek', fr: 'French' };
+export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+/** Came in through the public request form (requestStay sets created_by = "website"). */
+export const fromWebsite = (r) => r?.created_by === 'website';
+export const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+/** Deposit as the backend computes it for the confirmation email (Mail.js depositAmount). */
+export const depositOf = (price, percent) => round2((Number(price) || 0) * (Number(percent) || 0) / 100);
+
 export const CATEGORIES = ['cleaning', 'laundry', 'supplies', 'linen', 'electricity', 'water', 'internet',
   'maintenance', 'garden', 'insurance', 'accountant', 'software', 'municipal fee', 'other'];
 
