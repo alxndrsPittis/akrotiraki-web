@@ -892,3 +892,10 @@ p { max-width: 66ch; }
 .lang-list a:hover, .lang-list a:focus-visible, .nav-langs a:hover, .nav-langs a:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--lang-accent) 12%, transparent); }
 .lang-list a[aria-current]::after, .nav-langs a[aria-current]::after { color: var(--lang-accent); }
 .lang-list { border-color: color-mix(in srgb, var(--lang-accent) 35%, var(--line)); }
+
+/* Date inputs: native pickers (iOS/Android) ignore CSS width unless the native appearance is reset */
+input[type="date"] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.field-row > .field { min-width: 0; }
+/* step 1: arrival and departure side by side when they fit, stacked otherwise */
+.step1-fields .field-row { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
