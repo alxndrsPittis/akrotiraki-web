@@ -10,6 +10,8 @@
   --sand: #c9a46b;         /* accent: rules and small marks only, never body text (low contrast) */
   --sand-soft: #f1e7d3;
   --surface: #faf8f4;     /* panels (request form), a hair warmer than the paper */
+  --lang: #6f6274;        /* language menu text: #897c8d darkened to pass 4.5:1 */
+  --lang-accent: #897c8d; /* owner's greyed mauve: chevron, hover wash, list accents */
   --sand-text: #8a6528;   /* sand darkened for text, AA on paper */
   --staff: #536b80;       /* muted grey-blue for the Staff link */
   --grey-soft: #ececea;
@@ -38,6 +40,8 @@
     --staff: #8fa6b8;
     --sand-soft: #2a261f;
     --surface: #1c242b;
+    --lang: #b8acbb;
+    --lang-accent: #b8acbb;
     --grey-soft: #20282f;
     --field: #151c22;
     color-scheme: dark;
@@ -880,3 +884,11 @@ p { max-width: 66ch; }
 @media (min-width: 760px) { .apt-card.is-house { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; } .apt-card.is-house img { height: 100%; aspect-ratio: auto; } }
 .house-windows[hidden] { display: none; }
 .win-list { list-style: none; margin: .2rem 0 0; padding: 0; display: grid; gap: .3rem; font-size: .92rem; }
+
+/* Language menu in its own colour */
+.lang-menu summary { color: var(--lang); font-weight: 600; text-transform: none; letter-spacing: .08em; }
+.lang-menu .chev { color: var(--lang-accent); }
+.lang-list a[aria-current], .nav-langs a[aria-current] { color: var(--lang); font-weight: 600; }
+.lang-list a:hover, .lang-list a:focus-visible, .nav-langs a:hover, .nav-langs a:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--lang-accent) 12%, transparent); }
+.lang-list a[aria-current]::after, .nav-langs a[aria-current]::after { color: var(--lang-accent); }
+.lang-list { border-color: color-mix(in srgb, var(--lang-accent) 35%, var(--line)); }
