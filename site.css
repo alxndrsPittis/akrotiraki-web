@@ -138,13 +138,15 @@ p { margin: 0 0 1em; max-width: 62ch; }
 
 
 
-/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: en 1180px, el 1220px, fr 1260px, es 1230px, de 1180px (labels differ in length per language) */
+
+
+/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: en 1120px, el 1140px, fr 1130px, es 1170px, de 1050px (labels differ in length per language) */
 /* Longer labels (el, fr, es, de): tighter gaps, capped, so the expanded nav fits */
 html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="fr"] .header-inner, html[lang="fr"] .site-nav, html[lang="fr"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="es"] .header-inner, html[lang="es"] .site-nav, html[lang="es"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
-@media (max-width: 1180px) {
+@media (max-width: 1120px) {
   html[lang="en"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="en"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="en"].js .site-nav {
@@ -169,7 +171,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="en"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="en"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1220px) {
+@media (max-width: 1140px) {
   html[lang="el"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="el"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="el"].js .site-nav {
@@ -194,7 +196,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="el"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="el"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1260px) {
+@media (max-width: 1130px) {
   html[lang="fr"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="fr"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="fr"].js .site-nav {
@@ -219,7 +221,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="fr"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="fr"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1230px) {
+@media (max-width: 1170px) {
   html[lang="es"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="es"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="es"].js .site-nav {
@@ -244,7 +246,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="es"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="es"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1180px) {
+@media (max-width: 1050px) {
   html[lang="de"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="de"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="de"].js .site-nav {
@@ -805,15 +807,15 @@ p { max-width: 66ch; }
 .rates-notes { list-style: none; margin: 1.2rem 0 0; padding: 0; color: var(--ink); }
 .rates-notes li { margin: .3rem 0; }
 .rates-foot { margin-top: 1.2rem; font-size: .92rem; color: var(--muted-text); }
-@media (max-width: 480px) { .rates-table th, .rates-table td { padding-right: .6rem; font-size: .92rem; } }
+@media (max-width: 480px) {
+  .rates-table th, .rates-table td { padding: .65rem .5rem .65rem 0; font-size: .88rem; }
+  .rates-table tbody th { width: 34%; }
+  .rates-table thead th { font-size: .66rem; letter-spacing: .1em; }
+  .rates-min { font-size: .72rem; }
+}
 .rates-skeleton { display: grid; gap: .6rem; }
 .rates-skeleton span { display: block; height: 1.1rem; border-radius: 3px; background: var(--grey-soft); animation: rates-pulse 1.4s ease-in-out infinite; }
 .rates-skeleton span:nth-child(odd) { width: 92%; }
 .rates-skeleton span:nth-child(even) { width: 78%; }
 @keyframes rates-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .rates-skeleton span { animation: none; } }
-
-/* With eight nav items the header gets a wider frame than the content, and slightly tighter tracking */
-.site-header .wrap { max-width: 1400px; }
-.site-nav ul a, .site-nav .nav-accent { letter-spacing: .1em; }
-.site-nav .btn { letter-spacing: .1em; padding: .7rem 1rem; }

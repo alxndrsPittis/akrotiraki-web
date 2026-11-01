@@ -116,3 +116,5 @@ export function conflictsFor(res, list) {
     .sort((x, y) => x.check_in.localeCompare(y.check_in));
 }
 export const byCheckIn = (a, b) => a.check_in.localeCompare(b.check_in) || a.unit_id.localeCompare(b.unit_id);
+/** Label of a quote's discount rule, as the backend stores it in discount_label: "Long stay 7+ nights, 10%". */
+export const ruleLabel = (q) => (q && Number(q.rule_discount) > 0 && q.rule_name ? `${q.rule_name}, ${Number(q.rule_percent) || 0}%` : '');

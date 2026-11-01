@@ -49,7 +49,12 @@
     var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
     var fmtDay = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'long' });
     var day = function (s) { return fmtDay.format(parse(s)); };
-    var range = function (a, b) { return a === b ? day(a) : day(a) + ' – ' + day(b); };
+    // Compact ranges where the locale allows ("1–31 May", "1.–31. Mai"); otherwise "1 May – 31 May".
+    var range = function (a, b) {
+      if (a === b) return day(a);
+      try { if (fmtDay.formatRange) return fmtDay.formatRange(parse(a), parse(b)); } catch (e) {}
+      return day(a) + ' – ' + day(b);
+    };
     function fail() { box.remove(); }
     function discountLine(d, cur) {
       var p = Number(d.percent);
