@@ -15,7 +15,7 @@
   var LOCALE = { en: 'en-GB', el: 'el-GR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE' }[LANG] || 'en-GB';
   var OPENED = Date.now();                     // `t`: when the form was opened
   var MIN_FILL_MS = 4000;                       // backend rejects faster submissions
-  var MAX_GUESTS = 12;   // the whole house; single apartments are marked "sleeps up to N"
+  var MAX_GUESTS = 12, DEFAULT_GUESTS = 2, HOUSE_GUESTS = 8;   // the whole house; single apartments are marked "sleeps up to N"
 
   // Fallback units if `availability` is unreachable (ids as seeded by the backend's setup).
   var FALLBACK = (root.getAttribute('data-fallback-units') || '').split(',').filter(Boolean).map(function (s) {
@@ -180,11 +180,12 @@
       fOut.value = day;
       announce(T.pickedRange(nights(a, day), fmtShort.format(parse(a)), fmtShort.format(parse(day))));
     } else if (st === 'free' || st === 'pending') {
-      fIn.value = day; fOut.value = '';
-      announce(T.pickedArrival(fmtShort.format(parse(day))));
+      fIn.value = day; fOut.value = quickN ? addDays(day, quickN) : '';
+      announce(quickN ? T.pickedRange(quickN, fmtShort.format(parse(day)), fmtShort.format(parse(fOut.value)))
+        : T.pickedArrival(fmtShort.format(parse(day))));
     } else return;
     clearFieldError('check_in'); clearFieldError('check_out');
-    syncMin(); focusDay = day; render();
+    syncMin(); focusDay = day; render(); nightsUI();
     var btn = monthsEl.querySelector('[data-day="' + day + '"]'); if (btn) btn.focus();
   }
   if (cal) {
@@ -210,13 +211,37 @@
     wide.addEventListener('change', render);
   }
   function syncMin() { fIn.min = TODAY; fOut.min = fIn.value ? addDays(fIn.value, 1) : addDays(TODAY, 1); }
+  // "Nights" quick choice: sets departure = arrival + n; editing the departure updates the count and
+  // clears the choice when it no longer matches.
+  var nightsSeg = document.getElementById('nights-seg'), nightsOut = document.getElementById('nights-out'), quickN = 0;
+  function nightsUI() {
+    var n = fIn.value && fOut.value && fOut.value > fIn.value ? nights(fIn.value, fOut.value) : 0;
+    if (quickN && n && n !== quickN) quickN = 0;   // a different departure clears the quick choice
+    if (nightsSeg) Array.prototype.forEach.call(nightsSeg.querySelectorAll('[data-n]'), function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-n')) === quickN));
+    });
+    if (nightsOut) nightsOut.textContent = n ? T.nightsN(n) : '';
+  }
+  function applyQuick() {
+    if (!quickN || !fIn.value) return;
+    fOut.value = addDays(fIn.value, quickN);
+    clearFieldError('check_out'); syncMin(); render();
+  }
+  if (nightsSeg) nightsSeg.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-n]'); if (!b) return;
+    quickN = Number(b.getAttribute('data-n'));
+    if (fIn.value) applyQuick(); else { nightsUI(); fIn.focus(); return; }
+    nightsUI();
+  });
   fIn.addEventListener('change', function () {
+    if (quickN && fIn.value) fOut.value = addDays(fIn.value, quickN);
     if (fOut.value && fOut.value <= fIn.value) fOut.value = '';
     syncMin(); focusDay = fIn.value || null;
     if (fIn.value) { var d = parse(fIn.value); first = new Date(d.getFullYear(), d.getMonth(), 1); }
     render();
   });
-  fOut.addEventListener('change', render);
+  fOut.addEventListener('change', function () { render(); nightsUI(); });
+  fIn.addEventListener('change', nightsUI);
   fGuests.max = MAX_GUESTS;
   syncMin();
 
@@ -224,7 +249,7 @@
   var errBox = document.getElementById('form-error');
   var FIELD_INPUT = { unit_id: 'unit_id', check_in: 'check_in', check_out: 'check_out', guests: 'guests',
     email: 'email', guest_name: 'guest_name', phone: 'phone', message: 'message', extras_note: 'extras_note', extras: 'extras_note' };
-  var FIELD_STEP = { check_in: 1, check_out: 1, guests: 1, unit_id: 2 };
+  var FIELD_STEP = { check_in: 1, check_out: 1, unit_id: 2 };
   function fieldError(field, text) {
     var p = document.getElementById('err-' + field); if (p) { p.textContent = text; p.hidden = false; }
     Array.prototype.forEach.call(form.querySelectorAll('[name="' + FIELD_INPUT[field] + '"]'), function (el) { el.setAttribute('aria-invalid', 'true'); });
@@ -241,27 +266,27 @@
   function focusField(f) { var el = form.querySelector('[name="' + FIELD_INPUT[f] + '"]'); if (el && el.focus) el.focus(); }
 
   /* ----------------------------------------------------- step 1 → step 2 */
-  var sel = null;                 // {a, b, guests}
+  var sel = null;                 // {a, b}
+  var lastChosen = null;
   var chosen = null;              // unit id
   var quotes = {};                // 'unit|a|b' → promise of quote data (or null)
   var cards = document.getElementById('apt-cards');
   var availP = Promise.resolve();
 
   function step1Errors() {
-    var a = fIn.value, b = fOut.value, g = Number(fGuests.value), errs = {};
+    var a = fIn.value, b = fOut.value, errs = {};
     if (!a) errs.check_in = T.err.check_in;
     else if (a < TODAY) errs.check_in = T.err.check_in_past;
     if (!b || (a && b <= a)) errs.check_out = T.err.check_out;
     else if (a && nights(a, b) > 60) errs.check_out = T.err.check_out_long;
-    if (!(Math.floor(g) === g && g >= 1 && g <= MAX_GUESTS)) errs.guests = T.err.guests(MAX_GUESTS);
     return errs;
   }
   function search() {
-    ['check_in', 'check_out', 'guests'].forEach(clearFieldError);
+    ['check_in', 'check_out'].forEach(clearFieldError);
     var errs = step1Errors(), keys = Object.keys(errs);
     if (keys.length) { keys.forEach(function (k) { fieldError(k, errs[k]); }); focusField(keys[0]); return; }
-    sel = { a: fIn.value, b: fOut.value, guests: Number(fGuests.value) };
-    document.getElementById('s2-summary').textContent = range(sel.a, sel.b) + ' · ' + T.nightsN(nights(sel.a, sel.b)) + ' · ' + T.guestsN(sel.guests);
+    sel = { a: fIn.value, b: fOut.value };
+    document.getElementById('s2-summary').textContent = range(sel.a, sel.b) + ' · ' + T.nightsN(nights(sel.a, sel.b));
     cards.setAttribute('aria-busy', 'true');
     cards.innerHTML = '<p class="cards-loading">' + esc(T.cardLoading) + '</p>' +
       '<div class="apt-card is-skeleton" aria-hidden="true"></div><div class="apt-card is-skeleton" aria-hidden="true"></div>';
@@ -271,15 +296,15 @@
       var list = units().slice(0, 4).map(function (u) {
         var st = unitState(u.id, s.a, s.b), key = u.id + '|' + s.a + '|' + s.b;
         if (st !== 'taken' && !quotes[key]) {
-          quotes[key] = call('quote', { unit_id: u.id, check_in: s.a, check_out: s.b })
+          quotes[key] = call('quote', { unit_id: u.id, check_in: s.a, check_out: s.b, guests: DEFAULT_GUESTS })
             .then(function (r) { return r && r.ok && r.data ? r.data : null; }, function () { return null; });
         }
         return { u: u, st: st, q: st === 'taken' ? Promise.resolve(null) : quotes[key] };
       });
       var houseFree = list.length > 0 && list.every(function (x) { return x.st !== 'taken'; });
-      var hk = 'ALL|' + s.a + '|' + s.b + '|' + s.guests;
+      var hk = 'ALL|' + s.a + '|' + s.b;
       if (houseFree && !quotes[hk]) {
-        quotes[hk] = call('quote', { unit_id: 'ALL', check_in: s.a, check_out: s.b, guests: s.guests, lang: LANG })
+        quotes[hk] = call('quote', { unit_id: 'ALL', check_in: s.a, check_out: s.b, guests: HOUSE_GUESTS, lang: LANG })
           .then(function (r) { return r && r.ok && r.data ? r.data : null; }, function () { return null; });
       }
       list.push({ u: HOUSE, st: houseFree ? 'free' : 'taken', house: true, q: houseFree ? quotes[hk] : Promise.resolve(null) });
@@ -341,7 +366,7 @@
   function renderCards(list, s) {
     list.forEach(function (x) {
       var cap = Number(x.u.capacity) || 2;
-      x.small = !x.house && cap < s.guests;
+      x.small = false;   // capacity is information only; the guest count is asked in step 3
       x.min = x.quote && x.quote.below_min ? x.quote.min_nights : 0;
       x.ok = x.st !== 'taken' && !x.small && !x.min;
       x.price = x.quote && !x.quote.incomplete ? Number(x.quote.total) : Infinity;
@@ -472,8 +497,12 @@
         return o;
       });
   }
+  function guestsNow() {
+    var g = Math.floor(Number(fGuests.value));
+    return g >= 1 ? g : (chosenX && chosenX.house ? HOUSE_GUESTS : DEFAULT_GUESTS);
+  }
   function setSummary(q) {
-    var x = chosenX, parts = [unitName(x.u), range(sel.a, sel.b), T.guestsN(sel.guests)];
+    var x = chosenX, parts = [unitName(x.u), range(sel.a, sel.b), T.guestsN(guestsNow())];
     if (q && !q.incomplete) parts.push(money(q.total, q.currency));
     var line = parts.join(' · ');
     var ex = q && Number(q.extras_total) > 0 ? q.extras_total : 0;
@@ -490,13 +519,14 @@
   function requote() {
     clearTimeout(exTimer);
     var seq = ++exSeq, sel0 = exSelection();
-    if (!sel0.length) { setSummary(chosenX.quote); return; }
+    if (!sel0.length) { setSummary(chosenX.quote); return; }   // the price does not depend on guests without extras
     exTimer = setTimeout(function () {
-      call('quote', { unit_id: chosenX.u.id, check_in: sel.a, check_out: sel.b, guests: sel.guests, extras: sel0, lang: LANG }).then(function (r) {
+      call('quote', { unit_id: chosenX.u.id, check_in: sel.a, check_out: sel.b, guests: guestsNow(), extras: sel0, lang: LANG }).then(function (r) {
         if (seq === exSeq && r && r.ok && r.data) setSummary(r.data);
       }).catch(function () {});
     }, 300);
   }
+  fGuests.addEventListener('change', function () { if (chosenX) requote(); });
   if (exBox) {
     exBox.addEventListener('change', function (e) {
       var item = e.target.closest('[data-ex]'); if (!item) return;
@@ -519,6 +549,11 @@
     form.elements.unit_id.value = chosen;
     if (!chosenX || chosenX.u.id !== x.u.id) exState = {};
     chosenX = x;
+    var cap = x.house ? MAX_GUESTS : (Number(x.u.capacity) || 2), def = x.house ? HOUSE_GUESTS : DEFAULT_GUESTS;
+    fGuests.max = cap;
+    if (!fGuests.value || Number(fGuests.value) > cap || chosen !== lastChosen) fGuests.value = Math.min(def, cap);
+    lastChosen = chosen;
+    clearFieldError('guests');
     renderExtras(x.u);
     setSummary(x.quote);
     requote();
@@ -534,6 +569,8 @@
     if (v.phone.length > 40) errs.phone = T.err.phone;
     if (v.message.length > 2000) errs.message = T.err.message;
     if (v.extras_note.length > 500) errs.extras_note = T.err.extras_note;
+    var cap = Number(fGuests.max) || MAX_GUESTS;
+    if (fGuests.value !== '' && !(Math.floor(v.guests) === v.guests && v.guests >= 1 && v.guests <= cap)) errs.guests = T.err.guests(cap);
     return errs;
   }
   // Server messages are English; show the page-language string for known cases.
@@ -572,7 +609,8 @@
       guest_name: form.elements.guest_name.value.replace(/\s+/g, ' ').trim(),
       email: form.elements.email.value.trim(), phone: form.elements.phone.value.trim(),
       message: form.elements.message.value.trim(),
-      extras_note: form.elements.extras_note ? form.elements.extras_note.value.replace(/\s+/g, ' ').trim() : ''
+      extras_note: form.elements.extras_note ? form.elements.extras_note.value.replace(/\s+/g, ' ').trim() : '',
+      guests: Number(fGuests.value)
     };
     var errs = validate(v), keys = Object.keys(errs);
     if (keys.length) {
@@ -581,7 +619,7 @@
       return;
     }
     var payload = {
-      unit_id: chosen, check_in: sel.a, check_out: sel.b, guests: sel.guests,
+      unit_id: chosen, check_in: sel.a, check_out: sel.b, guests: guestsNow(),
       guest_name: v.guest_name, email: v.email, phone: v.phone, message: v.message,
       lang: LANG, hp: form.elements.hp.value, t: OPENED, extras: exSelection()
     };

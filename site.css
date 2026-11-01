@@ -899,3 +899,10 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .field-row > .field { min-width: 0; }
 /* step 1: arrival and departure side by side when they fit, stacked otherwise */
 .step1-fields .field-row { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+
+/* Step 1: nights quick choice */
+.field-label { font-size: .85rem; color: var(--ink); }
+.nights-seg { flex-wrap: wrap; justify-self: start; }
+.nights-seg button { min-width: 2.4rem; padding: .45rem .7rem; }
+.nights-out { margin: -.3rem 0 0; font-size: .88rem; color: var(--muted-text); min-height: 1.3em; }
+#step-3 .field-narrow { max-width: 12rem; }

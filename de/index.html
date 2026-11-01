@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <!-- Asset version: ?v=20261102h. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261102i. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Vier Ferienwohnungen über Platys Gialos, Sifnos</title>
@@ -30,12 +30,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261102h">
+  <link rel="stylesheet" href="../site.css?v=20261102i">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261102h"></script>
-  <script src="../site.js?v=20261102h" defer></script>
-  <script src="../mark.js?v=20261102h" defer></script>
-  <script src="../booking.js?v=20261102h" defer></script>
+  <script src="./strings.js?v=20261102i"></script>
+  <script src="../site.js?v=20261102i" defer></script>
+  <script src="../mark.js?v=20261102i" defer></script>
+  <script src="../booking.js?v=20261102i" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Zum Inhalt springen</a>
@@ -284,13 +284,13 @@
         <div class="booking" id="booking" data-photo-base="../photos/" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
           <form class="form flow" id="stay-form" novalidate>
             <ol class="steps" aria-label="Anfrage in drei Schritten">
-              <li aria-current="step"><span class="step-n">1</span> Daten und Personen</li>
+              <li aria-current="step"><span class="step-n">1</span> Reisedaten</li>
               <li><span class="step-n">2</span> Wählen Sie Ihre Wohnung</li>
               <li><span class="step-n">3</span> Ihre Angaben</li>
             </ol>
 
             <section class="step" id="step-1" aria-labelledby="s1-title">
-              <h3 id="s1-title" tabindex="-1">Daten und Personen</h3>
+              <h3 id="s1-title" tabindex="-1">Reisedaten</h3>
               <div class="step1-grid">
               <div class="cal" id="cal" hidden>
                 <div class="cal-body">
@@ -307,23 +307,21 @@
                 <p class="cal-status" id="cal-status" aria-live="polite"></p>
               </div>
                 <div class="step1-fields">
-                <div class="field-row">
                   <div class="field">
                     <label for="f-in">Anreise</label>
                     <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
                     <p class="field-error" id="err-check_in" hidden></p>
                   </div>
                   <div class="field">
+                    <span class="field-label" id="nights-label">Nächte</span>
+                    <div class="seg nights-seg" id="nights-seg" role="group" aria-labelledby="nights-label"><button type="button" data-n="2" aria-pressed="false">2</button><button type="button" data-n="3" aria-pressed="false">3</button><button type="button" data-n="4" aria-pressed="false">4</button><button type="button" data-n="5" aria-pressed="false">5</button><button type="button" data-n="7" aria-pressed="false">7</button><button type="button" data-n="10" aria-pressed="false">10</button><button type="button" data-n="14" aria-pressed="false">14</button></div>
+                  </div>
+                  <div class="field">
                     <label for="f-out">Abreise</label>
                     <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
                     <p class="field-error" id="err-check_out" hidden></p>
                   </div>
-                </div>
-                <div class="field field-narrow">
-                  <label for="f-guests">Personen</label>
-                  <input id="f-guests" name="guests" type="number" min="1" max="12" value="2" inputmode="numeric" aria-describedby="err-guests">
-                  <p class="field-error" id="err-guests" hidden></p>
-                </div>
+                  <p class="nights-out" id="nights-out" aria-live="polite"></p>
                   <button class="btn btn-solid" type="button" id="s1-go">Verfügbarkeit anzeigen</button>
                 </div>
               </div>
@@ -341,6 +339,11 @@
               <p class="step-summary"><span id="chosen"></span> · <button type="button" class="link-btn" data-go="2">Ändern</button></p>
               <input type="hidden" name="unit_id">
               <p class="extras-sum" id="extras-sum" aria-live="polite" hidden></p>
+              <div class="field field-narrow">
+                    <label for="f-guests">Personen <span class="opt">(optional)</span></label>
+                    <input id="f-guests" name="guests" type="number" min="1" max="12" value="2" inputmode="numeric" aria-describedby="err-guests">
+                    <p class="field-error" id="err-guests" hidden></p>
+                  </div>
               <div class="extras" id="extras"></div>
               <div class="field">
                 <label for="f-name">Name</label>
