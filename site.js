@@ -39,7 +39,16 @@
       cap: 'We cannot take more requests right now. Please try again later or write to us by email.',
       reload: 'Your request could not be sent. Please reload the page and try again.',
       blocked: 'Your request could not be sent. Please write to us by email instead.',
-      closed: 'Online requests are closed at the moment. Please write to us by email.'
+      closed: 'Online requests are closed at the moment. Please write to us by email.',
+      // indicative price (quote)
+      nightsN: function (n) { return n + (n === 1 ? ' night' : ' nights'); },
+      quote: function (total, n) { return 'Indicative price: ' + total + ' for ' + n + ', including the cleaning fee. We confirm it in our reply.'; },
+      quoteNoFee: function (total, n) { return 'Indicative price: ' + total + ' for ' + n + '. We confirm it in our reply.'; },
+      quoteIncomplete: 'We will send you the price by email.',
+      quoteHow: 'How it is calculated',
+      quoteRate: function (n, price) { return n + ' × ' + price; },
+      quoteCleaning: function (fee) { return 'cleaning ' + fee; },
+      minStay: function (n) { return 'Minimum stay for these dates: ' + n + ' nights.'; }
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
@@ -73,7 +82,15 @@
       cap: 'Δεν μπορούμε να δεχτούμε άλλα αιτήματα αυτή τη στιγμή. Δοκιμάστε αργότερα ή γράψτε μας με email.',
       reload: 'Το αίτημα δεν στάλθηκε. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.',
       blocked: 'Το αίτημα δεν στάλθηκε. Γράψτε μας καλύτερα με email.',
-      closed: 'Τα αιτήματα μέσω της σελίδας είναι προσωρινά κλειστά. Γράψτε μας με email.'
+      closed: 'Τα αιτήματα μέσω της σελίδας είναι προσωρινά κλειστά. Γράψτε μας με email.',
+      nightsN: function (n) { return n + (n === 1 ? ' νύχτα' : ' νύχτες'); },
+      quote: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + ', με το κόστος καθαριότητας. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
+      quoteNoFee: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + '. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
+      quoteIncomplete: 'Θα σας στείλουμε την τιμή με email.',
+      quoteHow: 'Πώς υπολογίζεται',
+      quoteRate: function (n, price) { return n + ' × ' + price; },
+      quoteCleaning: function (fee) { return 'καθαριότητα ' + fee; },
+      minStay: function (n) { return 'Ελάχιστη διαμονή για αυτές τις ημερομηνίες: ' + n + ' νύχτες.'; }
     }
   };
   var T = STR[LANG] || STR.en;

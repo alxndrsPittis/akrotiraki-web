@@ -549,3 +549,11 @@ textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: #a33a
 @media (min-width: 1060px) { .request-ok { grid-column: 1 / -1; max-width: 46rem; } }
 .form[hidden] { display: none; }
 .field { align-content: start; }
+/* Indicative price under the dates */
+.quote { border-left: 1px solid var(--sand); padding: .1rem 0 .1rem .9rem; font-size: .92rem; }
+.quote[hidden] { display: none; }
+.quote p { margin: 0; }
+.quote details { margin-top: .35rem; color: var(--muted-text); font-size: .86rem; }
+.quote summary { cursor: pointer; color: var(--ink); width: max-content; }
+.quote details p { margin-top: .25rem; }
+.rates-note { font-size: .9rem; color: var(--muted-text); margin: 1.2rem 0 0; }

@@ -141,6 +141,7 @@
     syncMin();
     focusDay = day;
     render();
+    if (typeof scheduleQuote === 'function') scheduleQuote();
     var btn = monthsEl.querySelector('[data-day="' + day + '"]'); if (btn) btn.focus();
   }
 
@@ -267,6 +268,7 @@
       if (f === 'check_out' && /longer/i.test(m)) text = T.err.check_out_long;
       if (f === 'guest_name' && /too long/i.test(m)) text = T.err.guest_name_long;
       if (f === 'guests') text = T.err.guests(capacity(chosenType()));
+      var mm = /Minimum stay[^0-9]*(\d+)/i.exec(m); if (f === 'check_out' && mm) text = T.minStay(+mm[1]);
       fieldError(f, typeof text === 'string' ? text : m);
       general(T.checkFields);
       var el = form.querySelector('[name="' + FIELD_INPUT[f] + '"]'); if (el) el.focus();
@@ -279,6 +281,53 @@
     if (/by email instead/i.test(m)) return general(T.blocked);
     general(LANG === 'en' && m ? m : T.network);
   }
+
+  /* ----------------------------------------------------------------- quote */
+  // Indicative price from the public `quote` action; any failure just hides the line.
+  var quoteEl = document.getElementById('quote'), quoteTimer = null, quoteSeq = 0, minStayShown = false;
+  function money(v, cur) {
+    try {
+      return new Intl.NumberFormat(LANG, { style: 'currency', currency: cur || 'EUR',
+        minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(v);
+    } catch (e) { return v + ' ' + (cur || 'EUR'); }
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function hideQuote() { if (quoteEl) { quoteEl.hidden = true; quoteEl.innerHTML = ''; } }
+  function clearMinStay() { if (minStayShown) { clearFieldError('check_out'); minStayShown = false; } }
+  function scheduleQuote() {
+    clearTimeout(quoteTimer);
+    var type = chosenType(), a = fIn.value, b = fOut.value, seq = ++quoteSeq;
+    if (!quoteEl || !API || !type || !a || !b || b <= a || a < TODAY || nights(a, b) > 60) { hideQuote(); clearMinStay(); return; }
+    quoteTimer = setTimeout(function () {
+      call('quote', { unit_id: chooseUnit(type, a, b), check_in: a, check_out: b }).then(function (res) {
+        if (seq !== quoteSeq) return;                       // a newer selection is on its way
+        if (!res || !res.ok || !res.data) { hideQuote(); return; }
+        showQuote(res.data);
+      }).catch(function () { if (seq === quoteSeq) hideQuote(); });
+    }, 300);
+  }
+  function showQuote(q) {
+    clearMinStay();
+    if (q.below_min && q.min_nights) { fieldError('check_out', T.minStay(q.min_nights)); minStayShown = true; }
+    var n = T.nightsN(q.nights);
+    if (q.incomplete) { quoteEl.innerHTML = '<p>' + esc(T.quoteIncomplete) + '</p>'; quoteEl.hidden = false; return; }
+    var fee = Number(q.cleaning_fee) || 0;
+    var line = fee ? T.quote(money(q.total, q.currency), n) : T.quoteNoFee(money(q.total, q.currency), n);
+    var groups = [], byPrice = {};
+    (q.nightly || []).forEach(function (x) {
+      var k = String(x.price);
+      if (!byPrice[k]) { byPrice[k] = { price: x.price, count: 0 }; groups.push(byPrice[k]); }
+      byPrice[k].count++;
+    });
+    var parts = groups.map(function (g) { return T.quoteRate(T.nightsN(g.count), money(g.price, q.currency)); });
+    if (fee) parts.push(T.quoteCleaning(money(fee, q.currency)));
+    quoteEl.innerHTML = '<p>' + esc(line) + '</p>' +
+      (parts.length ? '<details><summary>' + esc(T.quoteHow) + '</summary><p>' + esc(parts.join(', ')) + '</p></details>' : '');
+    quoteEl.hidden = false;
+  }
+  fIn.addEventListener('change', scheduleQuote);
+  fOut.addEventListener('change', scheduleQuote);
+  Array.prototype.forEach.call(form.querySelectorAll('input[name="type"]'), function (r) { r.addEventListener('change', scheduleQuote); });
 
   var btn = form.querySelector('button[type="submit"]');
   form.addEventListener('submit', function (e) {
@@ -334,6 +383,7 @@
       onType();
       setFilter(chosenType() || 'any', false);
       announce(T.hint);
+      scheduleQuote();
     }).catch(function () {
       // Calendar stays hidden; the form still works with the fallback units.
     });

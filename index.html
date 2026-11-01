@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Asset version: ?v=20261101d. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101e. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Four apartments above Platys Gialos, Sifnos</title>
@@ -24,10 +24,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="photos/bay-panorama.webp" fetchpriority="high">
-  <link rel="stylesheet" href="site.css?v=20261101d">
+  <link rel="stylesheet" href="site.css?v=20261101e">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="site.js?v=20261101d" defer></script>
-  <script src="booking.js?v=20261101d" defer></script>
+  <script src="site.js?v=20261101e" defer></script>
+  <script src="booking.js?v=20261101e" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -105,8 +105,6 @@
                 <li>Private terrace with sea view</li>
                 <li>Air conditioning, Wi-Fi</li>
               </ul>
-              <!-- TODO: confirm — nightly rate -->
-              <p class="price">From € ··· / night <span class="tbc">(to confirm)</span></p>
             </div>
           </article>
 
@@ -120,11 +118,11 @@
                 <li>Private terrace with sea view</li>
                 <li>Air conditioning, Wi-Fi</li>
               </ul>
-              <!-- TODO: confirm — nightly rate -->
-              <p class="price">From € ··· / night <span class="tbc">(to confirm)</span></p>
             </div>
           </article>
         </div>
+        <p class="rates-note">Seasonal rates; the <a href="#contact">request form</a> shows the price for your dates.</p>
+
 
         <figure class="wide wide-after">
           <img src="photos/houses-above.webp" width="1360" height="906" loading="lazy" decoding="async"
@@ -299,6 +297,7 @@
                 <p class="field-error" id="err-check_out" hidden></p>
               </div>
             </div>
+            <div class="quote" id="quote" aria-live="polite" hidden></div>
             <div class="field">
               <label for="f-name">Name</label>
               <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
