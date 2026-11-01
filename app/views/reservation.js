@@ -116,7 +116,7 @@ function extrasEditor(initial, ctx, onChange, uid) {
         l.unit_price = st && (st.option || '') === l.option ? st.unit_price : listPrice;
         l.needsGuests = x.kind === 'per_person_night' && !(guests >= 1);
         l.missingOption = x.options.length > 0 && !opt;
-        l.amount = l.needsGuests ? 0 : extraAmount(x.kind, l.unit_price, l.qty, nights, guests);
+        l.amount = l.needsGuests || l.missingOption ? 0 : extraAmount(x.kind, l.unit_price, l.qty, nights, guests);
         l.amountSet = true;
       } else if (x.category === 'quote' && s.amountText.trim() !== '') {
         l.amount = round2(num(s.amountText));
@@ -203,7 +203,7 @@ function extrasEditor(initial, ctx, onChange, uid) {
     const shown = all.filter((x) => (x.active && fits(x)) || sel.has(x.id));
     const groups = [['paid', 'Paid'], ['request', 'Requests'], ['quote', 'On request (price agreed later)']];
     const missing = [...sel.keys()].filter((id) => !extraById(id));
-    list.replaceChildren(
+    list.replaceChildren(...[
       ...groups.map(([cat, title]) => {
         const xs = shown.filter((x) => x.category === cat);
         if (!xs.length) return null;
@@ -211,7 +211,7 @@ function extrasEditor(initial, ctx, onChange, uid) {
           xs.map((x) => rowFor(x, !x.active ? 'inactive' : !fits(x) ? 'other apartment' : '')));
       }),
       missing.length ? h('p', { class: 'hint' }, `No longer in the Extras list: ${missing.join(', ')} (kept as booked).`) : null,
-      !all.length ? h('p', { class: 'hint' }, 'No extras defined yet (Prices → Extras).') : null);
+      !all.length ? h('p', { class: 'hint' }, 'No extras defined yet (Prices → Extras).') : null].filter(Boolean));
     refresh();
   }
   build();
