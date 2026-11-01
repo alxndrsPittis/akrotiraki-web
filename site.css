@@ -1,14 +1,15 @@
 /* Akrotiraki — public site. Tokens shared with the ops app (akrotiraki-ops/docs/API.md). */
 :root {
-  --paper: #faf7f2;
+  --paper: #fcfbf9;      /* clean warm white (was #faf7f2) */
   --ink: #1f2a33;
   --muted: #6b7680;
   --muted-text: #5b6670;   /* darker than --muted so small text passes WCAG AA on paper */
-  --line: #e6e0d6;
+  --line: #e8e4dc;
   --sea: #1f5f8b;
   --sea-soft: #d8e8f0;
   --sand: #c9a46b;         /* accent: rules and small marks only, never body text (low contrast) */
   --sand-soft: #f1e7d3;
+  --surface: #faf8f4;     /* panels (request form), a hair warmer than the paper */
   --sand-text: #8a6528;   /* sand darkened for text, AA on paper */
   --staff: #536b80;       /* muted grey-blue for the Staff link */
   --grey-soft: #ececea;
@@ -36,6 +37,7 @@
     --sand-text: #d4b07a;
     --staff: #8fa6b8;
     --sand-soft: #2a261f;
+    --surface: #1c242b;
     --grey-soft: #20282f;
     --field: #151c22;
     color-scheme: dark;
@@ -142,13 +144,18 @@ p { margin: 0 0 1em; max-width: 62ch; }
 
 
 
-/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: en 1040px, el 1080px, fr 1060px, es 1090px, de 980px (labels differ in length per language) */
+
+
+
+
+
+/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: en 1120px, el 1160px, fr 1140px, es 1170px, de 1060px (labels differ in length per language) */
 /* Longer labels (el, fr, es, de): tighter gaps, capped, so the expanded nav fits */
 html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="fr"] .header-inner, html[lang="fr"] .site-nav, html[lang="fr"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="es"] .header-inner, html[lang="es"] .site-nav, html[lang="es"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
-@media (max-width: 1040px) {
+@media (max-width: 1120px) {
   html[lang="en"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="en"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="en"].js .site-nav {
@@ -173,7 +180,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="en"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="en"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1080px) {
+@media (max-width: 1160px) {
   html[lang="el"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="el"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="el"].js .site-nav {
@@ -198,7 +205,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="el"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="el"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1060px) {
+@media (max-width: 1140px) {
   html[lang="fr"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="fr"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="fr"].js .site-nav {
@@ -223,7 +230,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="fr"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="fr"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 1090px) {
+@media (max-width: 1170px) {
   html[lang="es"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="es"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="es"].js .site-nav {
@@ -248,7 +255,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
   html[lang="es"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="es"]:not(.js) .site-nav { width: 100%; }
 }
-@media (max-width: 980px) {
+@media (max-width: 1060px) {
   html[lang="de"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="de"] .lang-menu { margin-left: auto; order: 1; }
   html[lang="de"].js .site-nav {
@@ -370,7 +377,7 @@ html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-
 .label { min-width: 5rem; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-text); padding-top: .2rem; }
 .also { color: var(--muted-text); }
 
-.form { display: grid; gap: 1.1rem; background: var(--sand-soft); padding: clamp(20px, 4vw, 40px); border-radius: var(--radius); }
+.form { display: grid; gap: 1.1rem; background: var(--surface); border: 1px solid var(--line); padding: clamp(20px, 4vw, 40px); border-radius: var(--radius); }
 .field { display: grid; gap: .35rem; min-width: 0; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 label { font-size: .85rem; color: var(--ink); }
@@ -646,7 +653,7 @@ textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: #a33a
 .hp { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .form .btn[disabled] { opacity: .6; cursor: progress; }
 
-.request-ok { background: var(--sand-soft); border-radius: var(--radius); padding: clamp(24px, 4vw, 44px); }
+.request-ok { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(24px, 4vw, 44px); }
 .request-ok[hidden] { display: none; }
 .request-ok:focus { outline: none; }
 .request-ok h3 { font-size: 2rem; margin-bottom: .4em; }
@@ -797,3 +804,14 @@ p { max-width: 66ch; }
 .pano-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .pano figcaption { margin-top: .6rem; font-size: .88rem; color: var(--muted-text); }
 .quote .quote-discount { color: var(--muted-text); font-size: .86rem; margin-top: .2rem; }
+
+/* Header mark: the logo roofline (mark.js draws it; without JS it takes no space) */
+.wordmark { flex-direction: row; align-items: center; gap: .7rem; }
+.wordmark-text { display: flex; flex-direction: column; line-height: 1; }
+.site-mark { display: block; flex: none; width: 0; height: 0; touch-action: manipulation; position: relative; z-index: 1; }
+/* Narrow phones: the mark, wordmark, language menu and menu button must share 360px */
+@media (max-width: 420px) {
+  .nav-toggle-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .wordmark { gap: .5rem; }
+  .header-inner { gap: .6rem; }
+}

@@ -3,6 +3,10 @@
    All text colours below are ≥ 4.5:1 on their backgrounds. */
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap");
 
+/* site.css now uses --surface for the form panel and a whiter paper; keep the previews as they were */
+html[data-theme] { --surface: var(--sand-soft); }
+html[data-theme="terracotta"] { --paper: #faf7f2; --line: #e6e0d6; }
+
 /* --- dusk: dark by default, warm white text, ochre accent, editorial --- */
 html[data-theme="dusk"] {
   --paper: #121a24; --ink: #efe7da; --muted: #a6adb5; --muted-text: #b4bcc4; --line: #2a3542;
