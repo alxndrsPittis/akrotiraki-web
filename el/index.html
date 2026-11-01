@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="el">
 <head>
-  <!-- Asset version: ?v=20261101o. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261102a. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ακρωτηράκι · Τέσσερα διαμερίσματα πάνω από τον Πλατύ Γιαλό, Σίφνος</title>
@@ -29,11 +29,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Noto+Serif+Display:ital,wght@0,300;0,400;1,300&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101o">
+  <link rel="stylesheet" href="../site.css?v=20261102a">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="../site.js?v=20261101o" defer></script>
-  <script src="../mark.js?v=20261101o" defer></script>
-  <script src="../booking.js?v=20261101o" defer></script>
+  <script src="../site.js?v=20261102a" defer></script>
+  <script src="../mark.js?v=20261102a" defer></script>
+  <script src="../booking.js?v=20261102a" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Μετάβαση στο περιεχόμενο</a>
@@ -41,7 +41,7 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="wordmark" href="#top" aria-label="Akrotiraki, επιστροφή στην αρχή">
-        <canvas class="site-mark" role="img" aria-label="Akrotiraki"></canvas>
+        <canvas class="site-mark" data-variant="fine" role="img" aria-label="Akrotiraki"></canvas>
         <span class="wordmark-text"><span class="wordmark-name">Akrotiraki</span><span class="wordmark-place">Πλατύς Γιαλός · Σίφνος</span></span>
       </a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>
@@ -279,84 +279,98 @@
         </div>
 
         <!-- Backend URL: one place, data-api. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
-        <div class="booking" id="booking" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
-          <div class="cal" id="cal" hidden>
-            <div class="cal-top">
-              <h3 class="cal-title">Διαθεσιμότητα</h3>
-              <div class="seg" role="group" aria-label="Διαθεσιμότητα για">
-                <button type="button" data-type="any" aria-pressed="true">Όλα</button><button type="button" data-type="maisonette" aria-pressed="false">Μεζονέτα</button><button type="button" data-type="studio" aria-pressed="false">Στούντιο</button>
-              </div>
-            </div>
-            <div class="cal-body">
-              <button type="button" class="cal-prev" aria-label="Προηγούμενος μήνας">←</button>
-              <div class="cal-months" id="cal-months"></div>
-              <button type="button" class="cal-next" aria-label="Επόμενος μήνας">→</button>
-            </div>
-            <ul class="cal-legend" role="list">
-              <li><span class="sw sw-free" aria-hidden="true"></span>Ελεύθερο</li>
-              <li><span class="sw sw-pending" aria-hidden="true"></span>Κατόπιν αιτήματος</li>
-              <li><span class="sw sw-taken" aria-hidden="true"></span>Κλεισμένο</li>
-              <li><span class="sw sw-sel" aria-hidden="true"></span>Οι ημερομηνίες σας</li>
-            </ul>
-            <p class="cal-status" id="cal-status" aria-live="polite"></p>
-          </div>
+        <div class="booking" id="booking" data-photo-base="../photos/" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
+          <form class="form flow" id="stay-form" novalidate>
+            <ol class="steps" aria-label="Αίτημα σε τρία βήματα">
+              <li aria-current="step"><span class="step-n">1</span> Ημερομηνίες και άτομα</li>
+              <li><span class="step-n">2</span> Διαλέξτε διαμέρισμα</li>
+              <li><span class="step-n">3</span> Τα στοιχεία σας</li>
+            </ol>
 
-          <form class="form" id="stay-form" novalidate>
-            <fieldset class="field apt-choice">
-              <legend>Διαμέρισμα</legend>
-              <label class="apt-opt"><input type="radio" name="type" value="maisonette" checked><span><strong>Μεζονέτα</strong> 55 τ.μ., 2–4 άτομα</span></label>
-              <label class="apt-opt"><input type="radio" name="type" value="studio"><span><strong>Στούντιο</strong> 21 τ.μ., 2 άτομα</span></label>
+            <section class="step" id="step-1" aria-labelledby="s1-title">
+              <h3 id="s1-title" tabindex="-1">Ημερομηνίες και άτομα</h3>
+              <div class="step1-grid">
+              <div class="cal" id="cal" hidden>
+                <div class="cal-body">
+                  <button type="button" class="cal-prev" aria-label="Προηγούμενος μήνας">←</button>
+                  <div class="cal-months" id="cal-months"></div>
+                  <button type="button" class="cal-next" aria-label="Επόμενος μήνας">→</button>
+                </div>
+                <ul class="cal-legend" role="list">
+                  <li><span class="sw sw-free" aria-hidden="true"></span>Ελεύθερο</li>
+                  <li><span class="sw sw-pending" aria-hidden="true"></span>Κατόπιν αιτήματος</li>
+                  <li><span class="sw sw-taken" aria-hidden="true"></span>Κλεισμένο</li>
+                  <li><span class="sw sw-sel" aria-hidden="true"></span>Οι ημερομηνίες σας</li>
+                </ul>
+                <p class="cal-status" id="cal-status" aria-live="polite"></p>
+              </div>
+                <div class="step1-fields">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="f-in">Άφιξη</label>
+                    <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
+                    <p class="field-error" id="err-check_in" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="f-out">Αναχώρηση</label>
+                    <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
+                    <p class="field-error" id="err-check_out" hidden></p>
+                  </div>
+                </div>
+                <div class="field field-narrow">
+                  <label for="f-guests">Άτομα</label>
+                  <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
+                  <p class="field-error" id="err-guests" hidden></p>
+                </div>
+                  <button class="btn btn-solid" type="button" id="s1-go">Δείτε τη διαθεσιμότητα</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="step" id="step-2" aria-labelledby="s2-title" hidden>
+              <h3 id="s2-title" tabindex="-1">Διαλέξτε διαμέρισμα</h3>
+              <p class="step-summary"><span id="s2-summary"></span> · <button type="button" class="link-btn" data-go="1">Αλλαγή</button></p>
               <p class="field-error" id="err-unit_id" hidden></p>
-            </fieldset>
-            <div class="field-row">
+              <div class="apt-cards" id="apt-cards" aria-live="polite"></div>
+            </section>
+
+            <section class="step" id="step-3" aria-labelledby="s3-title" hidden>
+              <h3 id="s3-title" tabindex="-1">Τα στοιχεία σας</h3>
+              <p class="step-summary"><span id="chosen"></span> · <button type="button" class="link-btn" data-go="2">Αλλαγή</button></p>
+              <input type="hidden" name="unit_id">
               <div class="field">
-                <label for="f-in">Άφιξη</label>
-                <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
-                <p class="field-error" id="err-check_in" hidden></p>
+                <label for="f-name">Ονοματεπώνυμο</label>
+                <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
+                <p class="field-error" id="err-guest_name" hidden></p>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="f-email">Email</label>
+                  <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
+                  <p class="field-error" id="err-email" hidden></p>
+                </div>
+                <div class="field">
+                  <label for="f-phone">Τηλέφωνο <span class="opt">(προαιρετικό)</span></label>
+                  <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
+                  <p class="field-error" id="err-phone" hidden></p>
+                </div>
               </div>
               <div class="field">
-                <label for="f-out">Αναχώρηση</label>
-                <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
-                <p class="field-error" id="err-check_out" hidden></p>
+                <label for="f-msg">Μήνυμα <span class="opt">(προαιρετικό)</span></label>
+                <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
+                <p class="field-error" id="err-message" hidden></p>
               </div>
-            </div>
-            <div class="quote" id="quote" aria-live="polite" hidden></div>
-            <div class="field">
-              <label for="f-name">Ονοματεπώνυμο</label>
-              <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
-              <p class="field-error" id="err-guest_name" hidden></p>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label for="f-email">Email</label>
-                <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
-                <p class="field-error" id="err-email" hidden></p>
+              <div class="hp" aria-hidden="true">
+                <label for="f-hp">Αφήστε αυτό το πεδίο κενό</label>
+                <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
               </div>
-              <div class="field">
-                <label for="f-phone">Τηλέφωνο <span class="opt">(προαιρετικό)</span></label>
-                <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
-                <p class="field-error" id="err-phone" hidden></p>
-              </div>
-            </div>
-            <div class="field field-narrow">
-              <label for="f-guests">Άτομα</label>
-              <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
-              <p class="field-error" id="err-guests" hidden></p>
-            </div>
-            <div class="field">
-              <label for="f-msg">Μήνυμα <span class="opt">(προαιρετικό)</span></label>
-              <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
-              <p class="field-error" id="err-message" hidden></p>
-            </div>
-            <div class="hp" aria-hidden="true">
-              <label for="f-hp">Αφήστε αυτό το πεδίο κενό</label>
-              <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
-            </div>
-            <p class="form-error" id="form-error" role="alert" hidden></p>
-            <button class="btn btn-solid" type="submit">Αποστολή αιτήματος</button>
-            <p class="form-note">Θα σας απαντήσουμε προσωπικά μέσα σε μία με δύο ημέρες. Αν οι ημερομηνίες σας ταιριάζουν καλύτερα στο άλλο διαμέρισμα του ίδιου τύπου, ίσως σας προτείνουμε εκείνο.</p>
-            <p class="form-note">Προτιμάτε email; Χρησιμοποιήστε τη φόρμα και θα σας απαντήσουμε από τη δική μας διεύθυνση.</p>
-            <noscript><p class="form-error">Η φόρμα χρειάζεται JavaScript. Καλέστε μας στο <a href="tel:+302284072007">+30 22840 72007</a> ή στο <a href="tel:+306945907209">+30 6945 907209</a>.</p></noscript>
+              <p class="form-error" id="form-error" role="alert" hidden></p>
+              <button class="btn btn-solid" type="submit">Αποστολή αιτήματος</button>
+              <p class="form-note">Θα σας απαντήσουμε προσωπικά μέσα σε μία με δύο ημέρες. Αν οι ημερομηνίες σας ταιριάζουν καλύτερα στο άλλο διαμέρισμα του ίδιου τύπου, ίσως σας προτείνουμε εκείνο.</p>
+              <p class="form-note">Προτιμάτε email; Χρησιμοποιήστε τη φόρμα και θα σας απαντήσουμε από τη δική μας διεύθυνση.</p>
+              <noscript><p class="form-error">Η φόρμα χρειάζεται JavaScript. Καλέστε μας στο <a href="tel:+302284072007">+30 22840 72007</a> ή στο <a href="tel:+306945907209">+30 6945 907209</a>.</p></noscript>
+              <p><button type="button" class="link-btn" data-go="2">← Πίσω στα διαμερίσματα</button></p>
+            </section>
           </form>
 
           <div class="request-ok" id="request-ok" tabindex="-1" hidden>

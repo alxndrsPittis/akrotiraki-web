@@ -11,6 +11,15 @@
   // roofline, 16 x 4 cells
   var PTS = [[0, 3], [3, 3], [3, 2], [4, 2], [4, 0], [6, 0], [6, 1], [10, 1], [10, 2], [12, 2], [12, 3], [15, 3]];
   var C = [], seen = {}, i, j, GW = 16, GH = 4;
+  // data-variant: "fine" = double resolution, one fine cell thick; "dotted" = small squares on the same grid
+  var V = cv.getAttribute('data-variant');
+  if (V === 'fine') {
+    PTS = PTS.map(function (p) { return [p[0] * 2, p[1] * 2]; });
+    GW = 32; GH = 8; BOX = 3; GAP = 1; P = 4; PAD = 6;
+    REPEL = 640; RANGE = 8; RMIN = 2;
+  } else if (V === 'dotted') {
+    BOX = 3.3; GAP = 2.7;
+  }
   for (i = 1; i < PTS.length; i++) {
     var a = PTS[i - 1], b = PTS[i], n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
     for (j = 0; j <= n; j++) {

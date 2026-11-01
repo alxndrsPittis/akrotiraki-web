@@ -1,6 +1,22 @@
 // Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.de = {
+  // Anfrage in drei Schritten: Wohnungskarten (booking.js)
+  guestsN: function (n) { return n + (n === 1 ? ' Person' : ' Personen'); },
+  sqm: function (n) { return n + ' m²'; },
+  cardSleeps: function (a, b) { return 'für ' + (a === b ? b : a + '–' + b) + ' Personen'; },
+  cardUpTo: function (n) { return 'Für höchstens ' + n + ' Personen.'; },
+  descMaisonette: 'Oben ein Schlafzimmer mit Doppelbett und Balkon; unten ein Wohnraum mit Schlafsofa, die Küche und das Bad.',
+  descStudio: 'Ein offener Raum zum Schlafen und Wohnen, mit Küche und Bad.',
+  cardTaken: 'Für diese Daten nicht verfügbar.',
+  cardFree: function (r) { return 'Frei: ' + r + '.'; },
+  cardPending: 'Für diese Daten liegt bereits eine andere Anfrage vor; wir bestätigen schnell.',
+  cardOnRequest: 'Preis auf Anfrage',
+  cardTotal: function (t, n) { return t + ' für ' + n; },
+  cardNights: function (s, n) { return s + (n === 1 ? ' Nacht' : ' Nächte'); },
+  cardRequest: 'Diese Wohnung anfragen',
+  cardLoading: 'Wir suchen die Preise für Ihre Daten…',
+  cardNone: 'Für diese Daten ist keine Wohnung frei. Versuchen Sie andere Daten oder rufen Sie uns an.',
   photo: function (i, n) { return 'Foto ' + i + ' von ' + n; },
   // booking.js (Anfrage)
   name: 'Name', email: 'E-Mail', arrival: 'Anreise', departure: 'Abreise', house: 'Wohnung', guests: 'Personen',

@@ -815,3 +815,50 @@ p { max-width: 66ch; }
   .wordmark { gap: .5rem; }
   .header-inner { gap: .6rem; }
 }
+
+/* ---------- Request in three steps (booking.js) ---------- */
+.booking { display: block; }
+@media (min-width: 1060px) { .booking { grid-template-columns: none; } .request-ok { grid-column: auto; } }
+.flow { gap: 0; }
+.flow[hidden] { display: none; }
+.steps { list-style: none; margin: 0 0 1.6rem; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-text); }
+.steps li { display: inline-flex; align-items: center; gap: .5rem; }
+.step-n { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--line); font-size: .78rem; letter-spacing: 0; }
+.steps li[aria-current] { color: var(--ink); }
+.steps li[aria-current] .step-n { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.steps li.is-done .step-n { border-color: var(--ink); color: var(--ink); }
+.step[hidden] { display: none; }
+.step > h3 { font-size: 1.6rem; margin: 0 0 1rem; }
+.step > h3:focus { outline: none; }
+.step { display: grid; gap: 1.1rem; }
+.step1-grid { display: grid; gap: clamp(24px, 4vw, 48px); align-items: start; }
+@media (min-width: 980px) { .step1-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
+.step1-grid .cal { border-top: 0; padding-top: 0; }
+.step1-fields { display: grid; gap: 1.1rem; align-content: start; }
+.step1-fields .btn { justify-self: start; }
+.step-summary { margin: -.4rem 0 .4rem; color: var(--muted-text); }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--sea); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.apt-cards { display: grid; gap: 1.2rem; }
+@media (min-width: 760px) { .apt-cards { grid-template-columns: 1fr 1fr; } }
+.cards-loading, .cards-none { grid-column: 1 / -1; margin: 0; color: var(--muted-text); }
+.apt-card { display: grid; grid-template-rows: auto 1fr; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.apt-card img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+.apt-body { display: grid; gap: .45rem; padding: 1.1rem 1.2rem 1.3rem; align-content: start; }
+.apt-body h4 { font-family: var(--serif); font-weight: 500; font-size: 1.45rem; margin: 0; }
+.apt-meta { margin: 0; font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-text); }
+.apt-desc { margin: 0 0 .3rem; font-size: .92rem; }
+.apt-price { border-top: 1px solid var(--line); padding-top: .7rem; display: grid; gap: .2rem; }
+.apt-price p { margin: 0; }
+.apt-total { font-family: var(--serif); font-size: 1.35rem; }
+.apt-breakdown, .apt-discount { font-size: .86rem; color: var(--muted-text); }
+.apt-note { margin: 0; font-size: .86rem; color: var(--muted-text); }
+.apt-note.is-strong { color: var(--ink); }
+.apt-card .btn { justify-self: start; margin-top: .5rem; }
+.apt-card.is-taken img, .apt-card.is-off img { filter: grayscale(1); opacity: .55; }
+.apt-card.is-taken { background: var(--grey-soft); }
+.apt-card.is-skeleton { min-height: 280px; background: var(--grey-soft); animation: rates-pulse 1.4s ease-in-out infinite; }
+@keyframes rates-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .apt-card.is-skeleton { animation: none; } }
+.step1-grid .cal-months { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1.2rem; }
+.step1-grid .cal-day { min-height: 28px; font-size: .84rem; }

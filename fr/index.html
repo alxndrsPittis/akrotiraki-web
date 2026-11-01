@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <!-- Asset version: ?v=20261101o. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261102a. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Quatre appartements au-dessus de Platys Gialos, Sifnos</title>
@@ -30,12 +30,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101o">
+  <link rel="stylesheet" href="../site.css?v=20261102a">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101o"></script>
-  <script src="../site.js?v=20261101o" defer></script>
-  <script src="../mark.js?v=20261101o" defer></script>
-  <script src="../booking.js?v=20261101o" defer></script>
+  <script src="./strings.js?v=20261102a"></script>
+  <script src="../site.js?v=20261102a" defer></script>
+  <script src="../mark.js?v=20261102a" defer></script>
+  <script src="../booking.js?v=20261102a" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Aller au contenu</a>
@@ -43,7 +43,7 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="wordmark" href="#top" aria-label="Akrotiraki, retour en haut de page">
-        <canvas class="site-mark" role="img" aria-label="Akrotiraki"></canvas>
+        <canvas class="site-mark" data-variant="fine" role="img" aria-label="Akrotiraki"></canvas>
         <span class="wordmark-text"><span class="wordmark-name">Akrotiraki</span><span class="wordmark-place">Platys Gialos · Sifnos</span></span>
       </a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>
@@ -281,84 +281,98 @@
         </div>
 
         <!-- Backend URL: one place, data-api. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
-        <div class="booking" id="booking" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
-          <div class="cal" id="cal" hidden>
-            <div class="cal-top">
-              <h3 class="cal-title">Disponibilités</h3>
-              <div class="seg" role="group" aria-label="Afficher les disponibilités pour">
-                <button type="button" data-type="any" aria-pressed="true">Tous</button><button type="button" data-type="maisonette" aria-pressed="false">Duplex</button><button type="button" data-type="studio" aria-pressed="false">Studio</button>
-              </div>
-            </div>
-            <div class="cal-body">
-              <button type="button" class="cal-prev" aria-label="Mois précédent">←</button>
-              <div class="cal-months" id="cal-months"></div>
-              <button type="button" class="cal-next" aria-label="Mois suivant">→</button>
-            </div>
-            <ul class="cal-legend" role="list">
-              <li><span class="sw sw-free" aria-hidden="true"></span>Libre</li>
-              <li><span class="sw sw-pending" aria-hidden="true"></span>Sur demande</li>
-              <li><span class="sw sw-taken" aria-hidden="true"></span>Occupé</li>
-              <li><span class="sw sw-sel" aria-hidden="true"></span>Vos dates</li>
-            </ul>
-            <p class="cal-status" id="cal-status" aria-live="polite"></p>
-          </div>
+        <div class="booking" id="booking" data-photo-base="../photos/" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
+          <form class="form flow" id="stay-form" novalidate>
+            <ol class="steps" aria-label="Demande en trois étapes">
+              <li aria-current="step"><span class="step-n">1</span> Dates et voyageurs</li>
+              <li><span class="step-n">2</span> Choisissez votre appartement</li>
+              <li><span class="step-n">3</span> Vos coordonnées</li>
+            </ol>
 
-          <form class="form" id="stay-form" novalidate>
-            <fieldset class="field apt-choice">
-              <legend>Appartement</legend>
-              <label class="apt-opt"><input type="radio" name="type" value="maisonette" checked><span><strong>Duplex</strong> 55 m², 2 à 4 personnes</span></label>
-              <label class="apt-opt"><input type="radio" name="type" value="studio"><span><strong>Studio</strong> 21 m², 2 personnes</span></label>
+            <section class="step" id="step-1" aria-labelledby="s1-title">
+              <h3 id="s1-title" tabindex="-1">Dates et voyageurs</h3>
+              <div class="step1-grid">
+              <div class="cal" id="cal" hidden>
+                <div class="cal-body">
+                  <button type="button" class="cal-prev" aria-label="Mois précédent">←</button>
+                  <div class="cal-months" id="cal-months"></div>
+                  <button type="button" class="cal-next" aria-label="Mois suivant">→</button>
+                </div>
+                <ul class="cal-legend" role="list">
+                  <li><span class="sw sw-free" aria-hidden="true"></span>Libre</li>
+                  <li><span class="sw sw-pending" aria-hidden="true"></span>Sur demande</li>
+                  <li><span class="sw sw-taken" aria-hidden="true"></span>Occupé</li>
+                  <li><span class="sw sw-sel" aria-hidden="true"></span>Vos dates</li>
+                </ul>
+                <p class="cal-status" id="cal-status" aria-live="polite"></p>
+              </div>
+                <div class="step1-fields">
+                <div class="field-row">
+                  <div class="field">
+                    <label for="f-in">Arrivée</label>
+                    <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
+                    <p class="field-error" id="err-check_in" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="f-out">Départ</label>
+                    <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
+                    <p class="field-error" id="err-check_out" hidden></p>
+                  </div>
+                </div>
+                <div class="field field-narrow">
+                  <label for="f-guests">Personnes</label>
+                  <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
+                  <p class="field-error" id="err-guests" hidden></p>
+                </div>
+                  <button class="btn btn-solid" type="button" id="s1-go">Voir les disponibilités</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="step" id="step-2" aria-labelledby="s2-title" hidden>
+              <h3 id="s2-title" tabindex="-1">Choisissez votre appartement</h3>
+              <p class="step-summary"><span id="s2-summary"></span> · <button type="button" class="link-btn" data-go="1">Modifier</button></p>
               <p class="field-error" id="err-unit_id" hidden></p>
-            </fieldset>
-            <div class="field-row">
+              <div class="apt-cards" id="apt-cards" aria-live="polite"></div>
+            </section>
+
+            <section class="step" id="step-3" aria-labelledby="s3-title" hidden>
+              <h3 id="s3-title" tabindex="-1">Vos coordonnées</h3>
+              <p class="step-summary"><span id="chosen"></span> · <button type="button" class="link-btn" data-go="2">Modifier</button></p>
+              <input type="hidden" name="unit_id">
               <div class="field">
-                <label for="f-in">Arrivée</label>
-                <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
-                <p class="field-error" id="err-check_in" hidden></p>
+                <label for="f-name">Nom</label>
+                <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
+                <p class="field-error" id="err-guest_name" hidden></p>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="f-email">E-mail</label>
+                  <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
+                  <p class="field-error" id="err-email" hidden></p>
+                </div>
+                <div class="field">
+                  <label for="f-phone">Téléphone <span class="opt">(facultatif)</span></label>
+                  <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
+                  <p class="field-error" id="err-phone" hidden></p>
+                </div>
               </div>
               <div class="field">
-                <label for="f-out">Départ</label>
-                <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
-                <p class="field-error" id="err-check_out" hidden></p>
+                <label for="f-msg">Message <span class="opt">(facultatif)</span></label>
+                <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
+                <p class="field-error" id="err-message" hidden></p>
               </div>
-            </div>
-            <div class="quote" id="quote" aria-live="polite" hidden></div>
-            <div class="field">
-              <label for="f-name">Nom</label>
-              <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
-              <p class="field-error" id="err-guest_name" hidden></p>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label for="f-email">E-mail</label>
-                <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
-                <p class="field-error" id="err-email" hidden></p>
+              <div class="hp" aria-hidden="true">
+                <label for="f-hp">Laissez ce champ vide</label>
+                <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
               </div>
-              <div class="field">
-                <label for="f-phone">Téléphone <span class="opt">(facultatif)</span></label>
-                <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
-                <p class="field-error" id="err-phone" hidden></p>
-              </div>
-            </div>
-            <div class="field field-narrow">
-              <label for="f-guests">Personnes</label>
-              <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
-              <p class="field-error" id="err-guests" hidden></p>
-            </div>
-            <div class="field">
-              <label for="f-msg">Message <span class="opt">(facultatif)</span></label>
-              <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
-              <p class="field-error" id="err-message" hidden></p>
-            </div>
-            <div class="hp" aria-hidden="true">
-              <label for="f-hp">Laissez ce champ vide</label>
-              <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
-            </div>
-            <p class="form-error" id="form-error" role="alert" hidden></p>
-            <button class="btn btn-solid" type="submit">Envoyer la demande</button>
-            <p class="form-note">Nous vous répondrons personnellement sous un ou deux jours. Si l’autre appartement du même type convient mieux à vos dates, nous pourrons vous le proposer.</p>
-            <p class="form-note">Vous préférez l’e-mail ? Utilisez le formulaire : nous vous répondrons depuis notre propre adresse.</p>
-            <noscript><p class="form-error">Ce formulaire nécessite JavaScript. Appelez-nous au <a href="tel:+302284072007">+30 22840 72007</a> ou au <a href="tel:+306945907209">+30 6945 907209</a>.</p></noscript>
+              <p class="form-error" id="form-error" role="alert" hidden></p>
+              <button class="btn btn-solid" type="submit">Envoyer la demande</button>
+              <p class="form-note">Nous vous répondrons personnellement sous un ou deux jours. Si l’autre appartement du même type convient mieux à vos dates, nous pourrons vous le proposer.</p>
+              <p class="form-note">Vous préférez l’e-mail ? Utilisez le formulaire : nous vous répondrons depuis notre propre adresse.</p>
+              <noscript><p class="form-error">Ce formulaire nécessite JavaScript. Appelez-nous au <a href="tel:+302284072007">+30 22840 72007</a> ou au <a href="tel:+306945907209">+30 6945 907209</a>.</p></noscript>
+              <p><button type="button" class="link-btn" data-go="2">← Retour aux appartements</button></p>
+            </section>
           </form>
 
           <div class="request-ok" id="request-ok" tabindex="-1" hidden>

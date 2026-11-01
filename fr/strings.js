@@ -2,6 +2,22 @@
 //   = no-break space,   = narrow no-break space (French typography).
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.fr = {
+  // demande en trois étapes : cartes des appartements (booking.js)
+  guestsN: function (n) { return n + (n === 1 ? ' personne' : ' personnes'); },
+  sqm: function (n) { return n + ' m²'; },
+  cardSleeps: function (a, b) { return (a === b ? b : a + '–' + b) + ' personnes'; },
+  cardUpTo: function (n) { return 'Jusqu’à ' + n + ' personnes.'; },
+  descMaisonette: 'À l’étage, une chambre avec lit double et balcon ; en bas, un séjour avec canapé-lit, la cuisine et la salle de bains.',
+  descStudio: 'Une seule pièce pour dormir et vivre, avec cuisine et salle de bains.',
+  cardTaken: 'Indisponible à ces dates.',
+  cardFree: function (r) { return 'Libre : ' + r + '.'; },
+  cardPending: 'Une autre demande est en attente pour ces dates ; nous confirmerons rapidement.',
+  cardOnRequest: 'Prix sur demande',
+  cardTotal: function (t, n) { return t + ' pour ' + n; },
+  cardNights: function (s, n) { return s + (n === 1 ? ' nuit' : ' nuits'); },
+  cardRequest: 'Demander cet appartement',
+  cardLoading: 'Recherche des prix pour vos dates…',
+  cardNone: 'Aucun appartement n’est libre à ces dates. Essayez d’autres dates ou appelez-nous.',
   photo: function (i, n) { return 'Photo ' + i + ' sur ' + n; },
   // booking.js (demande de séjour)
   name: 'Nom', email: 'E-mail', arrival: 'Arrivée', departure: 'Départ', house: 'Appartement', guests: 'Personnes',
