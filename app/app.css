@@ -1050,6 +1050,54 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--da
   .rate-row input[type=date] { padding-right: 4px; }
 }
 
+/* Monthly rates: 12-row table (Month | Maisonettes | Studios | Min | Closed), the note under each row on phones */
+.m-table { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.m-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 44px 40px; align-items: center; gap: 4px 6px; padding: 5px 8px 5px 10px; background: var(--surface); position: relative; }
+.m-row + .m-row { border-top: 1px solid var(--rule); }
+.m-row input[type=text] { min-height: 36px; padding: 5px 8px; font-size: 15px; text-align: right; width: 100%; }
+.m-row input[type=text]::placeholder { color: var(--muted); opacity: .8; font-size: 13px; }
+.m-head { background: var(--paper); font-size: 12px; font-weight: 600; color: var(--muted); padding-top: 8px; padding-bottom: 8px; }
+.m-head .num { text-align: right; padding-right: 8px; }
+.m-name { font-weight: 600; font-size: 14px; }
+.m-long { display: none; }
+.m-cell { min-width: 0; }
+.m-tog { display: flex; justify-content: center; }
+.m-note { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+.m-note:empty { display: none; }
+.m-tag-muted { font-style: italic; }
+.m-tag-closed { font-weight: 600; color: var(--ink); }
+.m-tag-warn { color: var(--sand-ink); }
+.m-link { color: var(--link); }
+.m-row.marked::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--sand); }
+.m-row.norate .m-name { color: var(--muted); font-weight: 500; }
+.m-row.norate input[type=text] { background: transparent; }
+.m-row.closed { background: repeating-linear-gradient(135deg, var(--surface) 0 8px, var(--paper) 8px 16px); }
+.m-row.closed input[type=text] { opacity: .6; }
+.m-row.has-error { background: var(--danger-soft); }
+@media (min-width: 760px) {
+  .m-row { grid-template-columns: 110px 150px 150px 96px 64px minmax(0, 1fr); gap: 8px; padding: 5px 10px 5px 14px; }
+  .m-note { grid-column: auto; font-size: 13px; }
+  .m-long { display: inline; }
+  .m-short { display: none; }
+  .m-row input[type=text] { font-size: 14px; }
+}
+/* Closed periods: same row layout as the advanced rate rows */
+.c-row .c-act { justify-content: flex-end; }
+@media (min-width: 760px) {
+  .c-row { grid-template-columns: 56px minmax(128px, 1fr) minmax(128px, 1fr) minmax(140px, 1.2fr) minmax(120px, 2fr) 40px; }
+  .c-row .row-no { font-size: 12px; }
+}
+/* Advanced: rate rows (collapsed by default) */
+.adv-card > .adv-sum { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; min-height: 32px; }
+.adv-card > .adv-sum::-webkit-details-marker { display: none; }
+.adv-card > .adv-sum::before { content: ""; width: 8px; height: 8px; border-right: 1.7px solid var(--muted); border-bottom: 1.7px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; }
+.adv-card[open] > .adv-sum { margin-bottom: 8px; }
+.adv-card[open] > .adv-sum::before { transform: rotate(45deg); }
+.adv-sum h2 { font-size: 17px; font-weight: 600; }
+.adv-sum .save-status { margin-left: auto; }
+.adv-card > .hint { margin-bottom: 12px; }
+.card-tools .year-pick { margin: 0; }
+
 /* Discount rules */
 .rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
 .rule { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); display: flex; flex-direction: column; gap: 10px; min-width: 0; }

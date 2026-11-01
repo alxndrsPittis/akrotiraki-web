@@ -1,7 +1,7 @@
 // In-memory fake backend implementing the API.md actions with sample data.
 // Used when config.API_URL is empty, config.MOCK is true, or the URL has ?mock=1.
 import { addDays, diffDays, todayISO, isISODate, conflictsFor, isEmail, round2, SOURCES, STATUSES, CATEGORIES, LANGS, pad,
-  normExtra, extraAmount, parseExtrasLines, EXTRA_LANGS } from './lib.js';
+  daysInMonth, ymd, normExtra, extraAmount, parseExtrasLines, EXTRA_LANGS } from './lib.js';
 import { computeTotals } from './calc.js';
 import { decodeJwt } from './auth.js';
 
@@ -461,12 +461,59 @@ function bad(row, field, msg) { throw new E('bad_request', `Row ${row + 1}: ${ms
 function rowsOk(rows, max) {
   if (!Array.isArray(rows) || rows.length > max) throw new E('bad_request', Array.isArray(rows) ? `At most ${max} rows.` : 'rows must be a list.', { field: 'rows' });
 }
+// Closed tab: {from, to, unit_id ('' = every unit), notes}. Demo: next year closed January–March, one studio repainted in April.
+let CLOSED = (() => {
+  const N = +todayISO().slice(0, 4) + 1;
+  return [
+    { from: `${N}-01-01`, to: `${N}-03-31`, unit_id: '', notes: 'Winter' },
+    { from: `${N}-04-10`, to: `${N}-04-20`, unit_id: 'u3', notes: 'Painting' },
+  ];
+})();
+/** getPricing `monthly`: per year with type-level rows, per month 1..12: {maisonette, studio, min_nights, partial}.
+ *  A price is the nightly rate of the month's type-level rows (later row wins) when every night has the same one;
+ *  when nights differ or some are unpriced, partial is true and the price is the most common one (null = no night priced).
+ *  min_nights is from the rows that set the prices (partial too when they differ). Per-unit rows are not included. */
+function monthlyOf(rows) {
+  const typeRows = rows.filter((r) => !String(r.unit_id || '').trim() && isISODate(r.from) && isISODate(r.to) && Number(r.price_per_night) > 0);
+  const years = new Set();
+  typeRows.forEach((r) => { for (let y = +r.from.slice(0, 4); y <= +r.to.slice(0, 4); y++) years.add(y); });
+  const out = {};
+  for (const y of [...years].sort()) {
+    out[y] = {};
+    for (let m = 0; m < 12; m++) {
+      const n = daysInMonth(y, m);
+      const cell = { maisonette: null, studio: null, min_nights: null, partial: false };
+      const mins = new Set();
+      for (const t of ['maisonette', 'studio']) {
+        const counts = new Map();
+        let unpriced = 0;
+        for (let d = 1; d <= n; d++) {
+          const day = ymd(y, m, d);
+          let hit = null;
+          for (const r of typeRows) if (String(r.unit_type).toLowerCase() === t && r.from <= day && day <= r.to) hit = r;
+          if (!hit) { unpriced++; continue; }
+          const p = Number(hit.price_per_night);
+          counts.set(p, (counts.get(p) || 0) + 1);
+          mins.add(Number(hit.min_nights) || 0);
+        }
+        if (counts.size) {
+          cell[t] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+          if (counts.size > 1 || unpriced) cell.partial = true;
+        }
+      }
+      if (mins.size) cell.min_nights = Math.max(...mins);
+      if (mins.size > 1) cell.partial = true;
+      out[y][m + 1] = cell;
+    }
+  }
+  return out;
+}
 function pricing() {
   if (FIX) return fixturePricing();
   const per_unit = {};
   for (const u of UNITS) { const v = SETTINGS[`cleaning_fee_${u.id}`]; if (v !== undefined && v !== '') per_unit[u.id] = Number(v) || 0; }
   return {
-    prices: PRICES, discounts: DISCOUNTS, extras: EXTRAS,
+    prices: PRICES, monthly: monthlyOf(PRICES), discounts: DISCOUNTS, extras: EXTRAS,
     cleaning_fees: { maisonette: Number(SETTINGS.cleaning_fee_maisonette) || 0, studio: Number(SETTINGS.cleaning_fee_studio) || 0, per_unit },
     currency: SETTINGS.currency, units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
   };
@@ -508,7 +555,7 @@ function fixturePricing() {
   const per_unit = {};
   for (const u of UNITS) { const v = SETTINGS[`cleaning_fee_${u.id}`]; if (v !== undefined && v !== '') per_unit[u.id] = v; }
   return {
-    prices: PRICES, discounts: DISCOUNTS, extras: EXTRAS,
+    prices: PRICES, monthly: monthlyOf(PRICES), discounts: DISCOUNTS, extras: EXTRAS,
     cleaning_fees: { maisonette: SETTINGS.cleaning_fee_maisonette ?? 0, studio: SETTINGS.cleaning_fee_studio ?? 0, per_unit },
     currency: SETTINGS.currency || 'EUR', units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
   };
@@ -704,6 +751,72 @@ const actions = {
       return { unit_type, unit_id, from: r.from, to: r.to, price_per_night: p, min_nights: Number(r.min_nights) || 0, notes };
     });
     return pricing();
+  },
+  /** Rewrites the type-level rows of each month sent: rows of that type overlapping the month are cut back (pieces
+   *  outside the month kept), then one whole-month row per type with a price is added (null = no rate). Months not sent
+   *  and per-unit rows are untouched. */
+  saveMonthlyRates(user, { year, rows } = {}) {
+    owner(user);
+    const Y = Number(year);
+    if (!(Number.isInteger(Y) && Y >= 2000 && Y <= 2100)) throw new E('bad_request', 'year must be a year (2000–2100).', { field: 'year' });
+    rowsOk(rows, 12);
+    const seen = new Set();
+    const clean = rows.map((r, i) => {
+      if (!r || typeof r !== 'object' || Array.isArray(r)) bad(i, '', 'Row is not an object.');
+      const m = Number(r.month);
+      if (!(Number.isInteger(m) && m >= 1 && m <= 12)) bad(i, 'month', 'month must be 1..12.');
+      if (seen.has(m)) bad(i, 'month', 'Duplicate month.');
+      seen.add(m);
+      const price = (f) => {
+        const v = r[f];
+        if (v === '' || v == null) return null;
+        const n = Number(v);
+        if (!(isFinite(n) && n > 0 && n <= 100000)) bad(i, f, 'Price per night must be more than 0 (or empty for no rate).');
+        return n;
+      };
+      if (!isWhole(r.min_nights)) bad(i, 'min_nights', 'Min nights must be a whole number ≥ 0.');
+      return { m, maisonette: price('maisonette'), studio: price('studio'), min_nights: Number(r.min_nights) || 0 };
+    });
+    let next = PRICES.slice();
+    for (const c of clean) {
+      const first = ymd(Y, c.m - 1, 1), last = ymd(Y, c.m - 1, daysInMonth(Y, c.m - 1));
+      for (const t of ['maisonette', 'studio']) {
+        let notes = '';
+        const kept = [];
+        for (const r of next) {
+          const isType = !String(r.unit_id || '').trim() && String(r.unit_type).toLowerCase() === t;
+          if (!isType || r.to < first || r.from > last) { kept.push(r); continue; }
+          if (r.from <= first && r.to >= last) notes = r.notes || '';
+          if (r.from < first) kept.push({ ...r, to: addDays(first, -1) });
+          if (r.to > last) kept.push({ ...r, from: addDays(last, 1) });
+        }
+        next = kept;
+        if (c[t] != null) next.push({ unit_type: t, unit_id: '', from: first, to: last, price_per_night: c[t], min_nights: c.min_nights, notes });
+      }
+    }
+    // Type rows by date (per-unit rows keep their order after them, so they still read as overrides).
+    const typeRows = next.filter((r) => !String(r.unit_id || '').trim());
+    const unitRows = next.filter((r) => String(r.unit_id || '').trim());
+    typeRows.sort((a, b) => String(a.from).localeCompare(String(b.from)) || String(a.unit_type).localeCompare(String(b.unit_type)));
+    PRICES = [...typeRows, ...unitRows];
+    return pricing();
+  },
+  getClosed(user) { owner(user); return { rows: CLOSED }; },
+  saveClosed(user, { rows } = {}) {
+    owner(user);
+    rowsOk(rows, 200);
+    CLOSED = rows.map((r, i) => {
+      if (!r || typeof r !== 'object' || Array.isArray(r)) bad(i, '', 'Row is not an object.');
+      if (!isISODate(r.from)) bad(i, 'from', 'From must be a date.');
+      if (!isISODate(r.to)) bad(i, 'to', 'To must be a date.');
+      if (r.from > r.to) bad(i, 'to', 'To must be on or after From.');
+      const unit_id = String(r.unit_id || '').trim();
+      if (unit_id && !UNITS.some((u) => u.id === unit_id)) bad(i, 'unit_id', 'Unknown unit.');
+      const notes = String(r.notes ?? '');
+      if (notes.length > 500) bad(i, 'notes', 'Notes are limited to 500 characters.');
+      return { from: r.from, to: r.to, unit_id, notes };
+    });
+    return { rows: CLOSED };
   },
   saveDiscounts(user, { rows } = {}) {
     owner(user);

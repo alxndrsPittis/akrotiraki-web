@@ -1,6 +1,6 @@
 // Service worker: caches the app shell so the app opens offline.
 // Bump VERSION when deploying changes so clients pick them up promptly.
-const VERSION = 'v11';
+const VERSION = 'v12';
 const CACHE = `akrotiraki-app-${VERSION}`;
 const SHELL = [
   './', './index.html', './app.css', './app.js', './config.js', './api.js', './auth.js', './state.js',

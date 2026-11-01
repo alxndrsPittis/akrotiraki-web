@@ -117,6 +117,11 @@ export const savePrices = (rows) => call('savePrices', { rows }).then(syncPricin
 export const saveDiscounts = (rows) => call('saveDiscounts', { rows }).then(syncPricing);
 export const saveExtras = (rows) => call('saveExtras', { rows }).then(syncPricing);
 export const saveCleaningFees = (fees) => call('saveCleaningFees', fees).then(syncPricing);
+/** rows: [{month 1..12, maisonette, studio, min_nights}] (null price = no rate); rewrites that year's type-level rows. */
+export const saveMonthlyRates = (year, rows) => call('saveMonthlyRates', { year, rows }).then(syncPricing);
+/** Closed tab: {rows:[{from, to, unit_id ('' = all), notes}]}; saveClosed replaces all rows. */
+export const getClosed = () => call('getClosed', {});
+export const saveClosed = (rows) => call('saveClosed', { rows });
 
 /** Surface an API error as a toast (sign-in errors are handled by the app shell). */
 export function report(err) {

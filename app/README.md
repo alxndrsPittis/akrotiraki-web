@@ -95,6 +95,14 @@ Edit `config.js`:
   Last-minute discount (updates the first `last_minute` rule or adds one, sets `from` = today and `to` = the
   "until" date, turns it on and saves). Discount kinds include `gap` (`max_gap_nights`, `touching`); unknown kinds
   are kept and saved back unchanged.
+- **Monthly rates** (first Prices card): year selector (years in `getPricing.monthly` plus the next), 12 rows with
+  maisonette/studio €/night, min nights and a Closed switch. Edited rows are marked; Save sends only those to
+  `saveMonthlyRates` (both prices empty = no rate) and, when closed months changed, the whole Closed tab to
+  `saveClosed`. Closed on = a whole-month row for all apartments (merged with touching ones); off cuts the month out
+  of all-apartment rows. Months whose rates vary (`partial`) show "varies → see rows" (opens Advanced at that year);
+  "Raise/lower all by %" skips them; "Copy to <year+1>" copies the shown values. **Closed periods** edits the
+  Closed tab row by row. The old seasonal-rates card is now **Advanced: rate rows**, collapsed by default; saving
+  either rates card reloads the other (they write the same tab; a confirm guards unsaved changes in the other).
 - **Prices** (owners; side rail on desktop, Account menu or the Totals header on phones): seasonal rates, cleaning
   fees, discount rules and extras via `getPricing` / `savePrices` / `saveCleaningFees` / `saveDiscounts` / `saveExtras`. Each card saves on
   its own and replaces the whole tab; server `data.row` / `data.field` errors are marked on the cell.

@@ -1,9 +1,11 @@
-// Prices (owners): seasonal rates, cleaning fees, discount rules and extras (getPricing / savePrices /
-// saveCleaningFees / saveDiscounts / saveExtras, API.md "Owner pricing actions"). Edits live in module drafts, so a
-// background refresh never wipes them; each card saves on its own and is reloaded from the reply.
+// Prices (owners): monthly rates + closed months (getPricing.monthly / saveMonthlyRates, getClosed / saveClosed), closed
+// periods, advanced rate rows, cleaning fees, discount rules and extras (getPricing / savePrices / saveCleaningFees /
+// saveDiscounts / saveExtras, API.md "Owner pricing actions"). Edits live in module drafts, so a background refresh
+// never wipes them; each card saves on its own and is reloaded from the reply.
 import { state, isOwner } from '../state.js';
 import { h, icon, toast, confirmDialog, openDialog } from '../ui.js';
-import { fmtDate, isISODate, money, num, todayISO, plural, capitalize, addDays, round2, EXTRA_CATEGORIES, EXTRA_KINDS, EXTRA_LANGS } from '../lib.js';
+import { fmtDate, fmtRange, isISODate, money, num, todayISO, plural, capitalize, addDays, round2, daysInMonth, ymd, MONTHS, MON,
+  EXTRA_CATEGORIES, EXTRA_KINDS, EXTRA_LANGS } from '../lib.js';
 import * as actions from '../actions.js';
 
 const KINDS = {
@@ -35,10 +37,17 @@ let rules = [];         // {_k, id, name, kind, percent, min_nights, days_before
                         // kind is kept as sent, also when this app does not know it (it is saved back unchanged)
 let fees = { maisonette: '', studio: '', per_unit: {} };
 let extras = [];        // {_k, id, locked, name_en…name_de, category, kind, price, options, unit_type, unit_id, max_qty, active, sort, notes}
-const dirty = { rates: false, fees: false, rules: false, extras: false };
-const errors = { rates: null, fees: null, rules: null, extras: null }; // {row, field, message}
-const CARDS = ['rates', 'fees', 'rules', 'extras'];
+let monthly = {};       // {'2027': [12 × {m, __i, maisonette, studio, min_nights, partial, marked}]} (prices as typed strings)
+let monthYear = null;   // year shown in Monthly rates
+let closed = [];        // {_k, from, to, unit_id ('' = all apartments), notes} (Closed tab, getClosed / saveClosed)
+let closedReady = false;
+let closedError = '';
+const dirty = { monthly: false, closed: false, rates: false, fees: false, rules: false, extras: false };
+const errors = { monthly: null, closed: null, rates: null, fees: null, rules: null, extras: null }; // {row, field, message}
+const PCARDS = ['monthly', 'rates', 'fees', 'rules', 'extras']; // drafts rebuilt from a getPricing payload
+const CARDS = [...PCARDS, 'closed'];
 let yearFilter = null;  // 'all' | '2027'
+let advOpen = false;    // "Advanced: rate rows" expanded
 let rootEl = null;
 
 const str = (v) => (v == null ? '' : String(v));
@@ -72,17 +81,39 @@ function fromPayload(p) {
     price: str(x.price), options: str(x.options), unit_type: str(x.unit_type).toLowerCase(), unit_id: str(x.unit_id),
     max_qty: str(x.max_qty), active: x.active === true || /^true$/i.test(str(x.active)), sort: str(x.sort), notes: str(x.notes),
   }));
-  for (const c of CARDS) { dirty[c] = false; errors[c] = null; }
+  monthly = {};
+  for (const [y, months] of Object.entries(p.monthly || {})) monthly[y] = monthRows(months);
+  for (const c of PCARDS) { dirty[c] = false; errors[c] = null; }
+}
+/** getPricing.monthly[year] → 12 draft rows. */
+function monthRows(months = {}) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const c = months?.[i + 1] || months?.[String(i + 1)] || {};
+    const pr = (v) => (v == null || v === '' ? '' : str(v));
+    return { m: i + 1, __i: i, maisonette: pr(c.maisonette), studio: pr(c.studio),
+      min_nights: Number(c.min_nights) ? String(c.min_nights) : '', partial: !!c.partial, marked: false };
+  });
+}
+function fromClosed(c) {
+  closed = (c?.rows || c?.closed || []).map((r) => ({ _k: key(), from: str(r.from), to: str(r.to), unit_id: str(r.unit_id), notes: str(r.notes) }));
+  sortClosed();
+  dirty.closed = false;
+  errors.closed = null;
+  closedReady = true;
 }
 
 function load(force = false) {
   if (loading) return loading;
   if (!force && data && Date.now() - fetchedAt < 60000) return Promise.resolve();
-  loading = actions.getPricing().then((p) => {
+  // Closed tab: optional (an older backend answers bad_request); the rest of the screen works without it.
+  const closedP = actions.getClosed().then((c) => { if (!dirty.closed) fromClosed(c); closedError = ''; })
+    .catch((e) => { closedError = e.code === 'network' ? 'Offline.' : (e.message || 'Could not load closed dates.'); });
+  loading = actions.getPricing().then(async (p) => {
     // Unsaved drafts win over a background reload.
-    if (!CARDS.some((c) => dirty[c])) fromPayload(p); else data = p;
+    if (!PCARDS.some((c) => dirty[c])) fromPayload(p); else data = p;
     fetchedAt = Date.now();
     loadError = '';
+    await closedP;
   }).catch((e) => {
     loadError = e.code === 'network' ? 'Offline: prices can only be edited online.' : e.code === 'forbidden' ? 'forbidden' : (e.message || 'Could not load prices.');
   }).finally(() => {
@@ -124,7 +155,7 @@ function buildView(root) {
     return;
   }
   wrap.classList.add('ready');
-  wrap.append(ratesCard(), feesCard(), rulesCard(), extrasCard());
+  wrap.append(monthlyCard(), closedCard(), ratesCard(), feesCard(), rulesCard(), extrasCard());
 }
 
 const rebuild = () => rootEl && build(rootEl);
@@ -148,22 +179,32 @@ function cellSelect(row, field, options, props, card, onchange) {
 function markDirty(card) {
   if (!dirty[card]) {
     dirty[card] = true;
-    const st = rootEl?.querySelector(`[data-status="${card}"]`);
-    if (st) { st.textContent = 'Unsaved changes'; st.classList.add('unsaved'); }
+    // Monthly rates' Save also writes the closed months, so its status follows both.
+    for (const c of card === 'closed' ? ['closed', 'monthly'] : [card]) {
+      rootEl?.querySelectorAll(`[data-status="${c}"]`).forEach((st) => { st.textContent = 'Unsaved changes'; st.classList.add('unsaved'); });
+    }
   }
 }
-const statusLine = (card) => h('span', { class: `save-status${dirty[card] ? ' unsaved' : ''}`, 'data-status': card, 'aria-live': 'polite' },
-  dirty[card] ? 'Unsaved changes' : '');
+const isDirty = (card) => (card === 'monthly' ? dirty.monthly || dirty.closed : dirty[card]);
+const statusLine = (card) => h('span', { class: `save-status${isDirty(card) ? ' unsaved' : ''}`, 'data-status': card, 'aria-live': 'polite' },
+  isDirty(card) ? 'Unsaved changes' : '');
 const errorLine = (card) => (errors[card] ? h('p', { class: 'form-error', role: 'alert' }, errors[card].message) : null);
 const fieldLabel = (text) => h('span', { class: 'cell-label' }, text);
 
-function handleSaveError(card, e) {
+/** sent (monthly only): {year, months} of the request that failed, to map data.row back to the month row. */
+function handleSaveError(card, e, sent = null) {
   const count = card === 'rates' ? rates.length : card === 'rules' ? rules.length : extras.length;
   if (e.code === 'bad_request' && e.data && (Number.isInteger(e.data.row) || e.data.field)) {
     errors[card] = { row: Number.isInteger(e.data.row) ? e.data.row : -1, field: e.data.field || '', message: e.message || 'Check the highlighted field.' };
+    if (card === 'rates') advOpen = true;
     if (card === 'rates' && errors.rates.row >= 0 && errors.rates.row < count) {
       const r = rates[errors.rates.row];
       if (r && yearFilter !== 'all' && !inYear(r, yearFilter)) yearFilter = 'all';
+    }
+    if (card === 'monthly' && sent) {
+      monthYear = sent.year;
+      const m = sent.months[errors.monthly.row];
+      errors.monthly.row = m ? m - 1 : -1;
     }
     rebuild();
     const target = rootEl?.querySelector(`[data-card="${card}"] [aria-invalid="true"]`) || rootEl?.querySelector(`[data-card="${card}"] .form-error`);
@@ -177,32 +218,317 @@ function handleSaveError(card, e) {
   }
 }
 
-async function runSave(card, btn, fn, okMsg) {
+const DRAFTS = {
+  monthly: [() => monthly, (v) => { monthly = v; }],
+  rates: [() => rates, (v) => { rates = v; }],
+  fees: [() => fees, (v) => { fees = v; }],
+  rules: [() => rules, (v) => { rules = v; }],
+  extras: [() => extras, (v) => { extras = v; }],
+};
+/** Save one pricing card. `alsoReset`: other cards whose drafts are dropped and reloaded from the reply (monthly rates
+ *  and the advanced rows write the same tab). `sent()` gives handleSaveError the failed request (monthly). Resolves true when saved. */
+async function runSave(card, btn, fn, okMsg, { alsoReset = [], sent = null } = {}) {
   btn.disabled = true;
   const label = btn.textContent;
   btn.textContent = 'Saving…';
   try {
     const p = await fn();
     // Keep the other cards' unsaved drafts; reload this card from the reply.
-    const drafts = { rates, rules, fees, extras };
-    const keepDirty = { ...dirty };
+    const keep = {};
+    for (const k of PCARDS) if (k !== card && !alsoReset.includes(k) && dirty[k]) keep[k] = DRAFTS[k][0]();
     fromPayload(p);
     fetchedAt = Date.now();
-    for (const k of CARDS) {
-      if (k === card || !keepDirty[k]) continue;
-      if (k === 'rates') rates = drafts.rates; else if (k === 'rules') rules = drafts.rules; else if (k === 'fees') fees = drafts.fees; else extras = drafts.extras;
-      dirty[k] = true;
-    }
+    for (const [k, v] of Object.entries(keep)) { DRAFTS[k][1](v); dirty[k] = true; }
     rebuild();
     toast(okMsg(p));
+    return true;
   } catch (e) {
-    handleSaveError(card, e);
+    handleSaveError(card, e, sent?.());
+    return false;
   } finally {
     if (btn.isConnected) { btn.disabled = false; btn.textContent = label; }
   }
 }
 
-// ---------- Card 1: seasonal rates ----------
+// ---------- Card 1: monthly rates (type level) + closed months ----------
+const monthBounds = (y, m) => [ymd(+y, m - 1, 1), ymd(+y, m - 1, daysInMonth(+y, m - 1))];
+const validClosed = () => closed.filter((c) => isISODate(c.from) && isISODate(c.to) && c.from <= c.to);
+function sortClosed() { closed.sort((a, b) => (a.from || '9999').localeCompare(b.from || '9999') || (a.unit_id || '').localeCompare(b.unit_id || '')); }
+/** {full: every apartment closed for the whole month, part: other Closed rows touching the month}. */
+function closedState(y, m) {
+  const [a, b] = monthBounds(y, m);
+  const rows = validClosed();
+  const full = rows.some((c) => !c.unit_id && c.from <= a && c.to >= b);
+  return { full, part: full ? [] : rows.filter((c) => c.from <= b && c.to >= a) };
+}
+/** Closed toggle: on adds a whole-month row for all apartments (merged with touching all-apartment rows that have the
+ *  same notes); off cuts the month out of every all-apartment row (rows for one apartment are left alone). */
+function setMonthClosed(y, m, on) {
+  const [a, b] = monthBounds(y, m);
+  if (on) {
+    closed.push({ _k: key(), from: a, to: b, unit_id: '', notes: '' });
+    let merged = true;
+    while (merged) {
+      merged = false;
+      const all = closed.filter((c) => !c.unit_id && isISODate(c.from) && isISODate(c.to));
+      outer: for (const x of all) {
+        for (const z of all) {
+          if (x === z || x.notes.trim() !== z.notes.trim()) continue;
+          if (z.from <= addDays(x.to, 1) && x.from <= addDays(z.to, 1)) {
+            x.from = x.from < z.from ? x.from : z.from;
+            x.to = x.to > z.to ? x.to : z.to;
+            closed.splice(closed.indexOf(z), 1);
+            merged = true;
+            break outer;
+          }
+        }
+      }
+    }
+  } else {
+    const out = [];
+    for (const c of closed) {
+      if (c.unit_id || !isISODate(c.from) || !isISODate(c.to) || c.to < a || c.from > b) { out.push(c); continue; }
+      if (c.from < a) out.push({ ...c, _k: key(), to: addDays(a, -1) });
+      if (c.to > b) out.push({ ...c, _k: key(), from: addDays(b, 1) });
+    }
+    closed = out;
+  }
+  sortClosed();
+  errors.closed = null;
+  markDirty('closed');
+}
+const unitShort = (id) => (id ? unitNameOf(id) : 'All apartments');
+function monthYears() {
+  const ys = new Set([...Object.keys(data?.monthly || {}), ...Object.keys(monthly)].filter((y) => /^\d{4}$/.test(y)));
+  if (!ys.size) ys.add(defaultYear());
+  const max = Math.max(...[...ys].map(Number));
+  ys.add(String(max + 1));
+  return [...ys].sort();
+}
+const yearRows = (y) => (monthly[y] ||= monthRows(data?.monthly?.[y]));
+const priceOut = (v) => (str(v).trim() === '' ? null : num(v));
+const wholeOut = (v) => { const t = str(v).trim(); return t === '' ? 0 : /^\d+$/.test(t) ? Number(t) : t; };
+
+function monthlyCard() {
+  const years = monthYears();
+  if (monthYear == null || !years.includes(monthYear)) monthYear = years.includes(defaultYear()) ? defaultYear() : years[years.length - 2] || years[0];
+  const y = monthYear;
+  const rowsY = yearRows(y);
+  const hasMonthly = !!data?.monthly;
+  const err = errors.monthly;
+
+  const yearSel = h('select', { value: y, 'aria-label': 'Year', onchange: (e) => { monthYear = e.target.value; rebuild(); } },
+    years.map((v) => h('option', { value: v }, `${v}${monthly[v]?.some((r) => r.marked) ? ' •' : ''}`)));
+
+  const showAdvanced = (e) => {
+    e?.preventDefault();
+    advOpen = true;
+    yearFilter = y;
+    rebuild();
+    rootEl?.querySelector('#pr-advanced')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+  const showClosed = (e) => {
+    e?.preventDefault();
+    rootEl?.querySelector('[data-card="closed"]')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+
+  const rowEls = rowsY.map((r) => {
+    const name = MONTHS[r.m - 1];
+    const cs = closedReady ? closedState(y, r.m) : { full: false, part: [] };
+    const note = h('span', { class: 'm-note' });
+    const el = h('div', { class: 'm-row', role: 'group', 'aria-label': `${name} ${y}` });
+    const refresh = () => {
+      const none = str(r.maisonette).trim() === '' && str(r.studio).trim() === '';
+      el.className = `m-row${r.marked ? ' marked' : ''}${none ? ' norate' : ''}${cs.full ? ' closed' : ''}${err?.row === r.__i ? ' has-error' : ''}`;
+      const bits = [];
+      if (cs.full) bits.push(h('span', { class: 'm-tag m-tag-closed' }, 'Closed'));
+      else if (cs.part.length) {
+        bits.push(h('a', { href: '#', class: 'm-link', onclick: showClosed, title: cs.part.map((c) => `${unitShort(c.unit_id)} ${fmtRange(c.from, addDays(c.to, 1))}`).join('; ') },
+          `Partly closed: ${cs.part.map((c) => `${unitShort(c.unit_id)} ${fmtDate(c.from, { year: false })}–${fmtDate(c.to, { year: false })}`).join(', ')}`));
+      }
+      if (none && !cs.full) bits.push(h('span', { class: 'm-tag m-tag-muted' }, 'no rate yet'));
+      if (r.partial) {
+        bits.push(r.marked
+          ? h('span', { class: 'm-tag m-tag-warn' }, none ? 'varied; saving removes the month\'s rates' : 'varied; saving sets one rate for the whole month')
+          : h('span', { class: 'm-tag' }, 'varies ', h('a', { href: '#pr-advanced', class: 'm-link', onclick: showAdvanced }, 'see rows')));
+      }
+      note.replaceChildren(...bits);
+    };
+    const inp = (field, lbl, ph) => {
+      const bad = err && err.row === r.__i && err.field === field;
+      const i = h('input', { type: 'text', inputmode: field === 'min_nights' ? 'numeric' : 'decimal', autocomplete: 'off', value: str(r[field]),
+        placeholder: ph, 'data-field': field, 'aria-label': `${name}: ${lbl}`, 'aria-invalid': bad ? 'true' : null });
+      i.addEventListener('input', () => {
+        r[field] = i.value;
+        r.marked = true;
+        markDirty('monthly');
+        refresh();
+      });
+      return i;
+    };
+    const tog = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: cs.full, disabled: !closedReady,
+      'aria-label': `${name} ${y}: closed (all apartments)`, title: closedReady ? 'Closed for the whole month, all apartments' : 'Closed dates could not be loaded' });
+    tog.addEventListener('change', () => { setMonthClosed(y, r.m, tog.checked); rebuild(); });
+    el.append(
+      h('span', { class: 'm-name' }, h('span', { class: 'm-long' }, name), h('span', { class: 'm-short' }, MON[r.m - 1])),
+      h('span', { class: 'm-cell' }, inp('maisonette', 'maisonettes, per night', 'no rate')),
+      h('span', { class: 'm-cell' }, inp('studio', 'studios, per night', 'no rate')),
+      h('span', { class: 'm-cell' }, inp('min_nights', 'minimum nights', '–')),
+      h('span', { class: 'm-cell m-tog' }, tog),
+      note);
+    refresh();
+    return el;
+  });
+
+  // Copy to next year
+  const next = String(+y + 1);
+  const copyBtn = h('button', { class: 'btn sm', type: 'button' }, icon('copy'), `Copy to ${next}`);
+  copyBtn.addEventListener('click', async () => {
+    const src = rowsY;
+    if (!src.some((r) => str(r.maisonette).trim() || str(r.studio).trim())) { toast(`${y} has no monthly rates to copy.`, 'error'); return; }
+    const dst = yearRows(next);
+    const has = dst.filter((r) => str(r.maisonette).trim() || str(r.studio).trim()).length;
+    if (has && !(await confirmDialog(`${next} already has rates in ${plural(has, 'month')}. Replace all 12 months with the ${y} rates?`,
+      { title: 'Copy monthly rates', ok: 'Replace' }))) return;
+    dst.forEach((d, i) => Object.assign(d, { maisonette: src[i].maisonette, studio: src[i].studio, min_nights: src[i].min_nights, marked: true }));
+    monthYear = next;
+    markDirty('monthly');
+    rebuild();
+    const varies = src.filter((r) => r.partial).length;
+    toast(`Copied ${y} to ${next}.${varies ? ` ${varies === 1 ? '1 month that varies' : `${varies} months that vary`} got the main rate only (Advanced → Copy year copies rows exactly).` : ''} Check, then Save.`, 'info', 6000);
+  });
+
+  // Raise/lower by %
+  const adjBtn = h('button', { class: 'btn sm', type: 'button' }, icon('calc'), 'Raise/lower all by %');
+  adjBtn.addEventListener('click', () => {
+    const items = rowsY.filter((r) => !r.partial).flatMap((r) => ['maisonette', 'studio'].map((t) => ({
+      who: t === 'studio' ? 'Studios' : 'Maisonettes', when: `${MONTHS[r.m - 1]} ${y}`, price: r[t],
+      set: (v) => { r[t] = v; r.marked = true; },
+    })));
+    const skipped = rowsY.filter((r) => r.partial).length;
+    adjustDialog({
+      title: `Raise/lower ${y}`,
+      scopes: [{ label: String(y), items: () => items }],
+      help: `Months without a rate are left as they are.${skipped ? ` ${skipped === 1 ? '1 month that varies within the month is' : `${skipped} months that vary within the month are`} skipped: adjust ${skipped === 1 ? 'it' : 'them'} in Advanced.` : ''}`,
+      noun: 'price',
+      onApplied: (n, p) => { markDirty('monthly'); rebuild(); toast(`${plural(n, 'price')} changed by ${p > 0 ? '+' : ''}${p}%. Check them, then Save.`); },
+    });
+  });
+
+  const saveBtn = h('button', { class: 'btn primary', type: 'button' }, 'Save');
+  saveBtn.addEventListener('click', () => saveMonthly(saveBtn));
+
+  const unitRows = rates.filter((r) => r.target.startsWith('unit:') && inYear(r, y)).length;
+  return h('section', { class: 'card', 'data-card': 'monthly', 'aria-labelledby': 'pr-monthly' },
+    h('div', { class: 'card-head' }, h('h2', { id: 'pr-monthly' }, 'Monthly rates'),
+      h('label', { class: 'field compact year-pick' }, h('span', { class: 'sr-only' }, 'Year'), yearSel)),
+    h('p', { class: 'hint' }, `Price per night for each month (${cur()}). Leave both prices empty for no rate. Closed switches off a whole month for every apartment.`),
+    !hasMonthly ? h('p', { class: 'info-note' }, 'The server does not send monthly rates yet. Use Advanced: rate rows below.') : null,
+    dirty.rates ? h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Advanced rate rows have unsaved changes; this table shows the saved prices.') : null,
+    h('div', { class: 'card-tools' }, copyBtn, adjBtn),
+    h('div', { class: 'm-table' },
+      h('div', { class: 'm-row m-head', 'aria-hidden': 'true' },
+        h('span', null, 'Month'),
+        h('span', { class: 'num' }, h('span', { class: 'm-long' }, 'Maisonettes €/night'), h('span', { class: 'm-short' }, 'Mais. €')),
+        h('span', { class: 'num' }, h('span', { class: 'm-long' }, 'Studios €/night'), h('span', { class: 'm-short' }, 'Studio €')),
+        h('span', { class: 'num' }, h('span', { class: 'm-long' }, 'Min nights'), h('span', { class: 'm-short' }, 'Min')),
+        h('span', { class: 'center' }, 'Closed'),
+        h('span', { class: 'm-note' })),
+      rowEls),
+    unitRows ? h('p', { class: 'hint' }, `${plural(unitRows, 'per-apartment row')} for ${y} in `,
+      h('a', { href: '#pr-advanced', class: 'm-link', onclick: showAdvanced }, 'Advanced'), ' override these for that apartment.') : null,
+    closedError ? h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ` Closed months unavailable: ${closedError}`) : null,
+    errorLine('monthly'),
+    h('div', { class: 'card-foot' },
+      h('p', { class: 'hint' }, 'Saving rewrites the maisonette and studio rows of the changed months only.'),
+      statusLine('monthly'), saveBtn));
+}
+
+async function saveMonthly(btn) {
+  const years = Object.keys(monthly).filter((v) => monthly[v].some((r) => r.marked)).sort();
+  if (!years.length && !dirty.closed) { toast('Nothing to save.'); return; }
+  if (years.length && dirty.rates && !(await confirmDialog('Advanced rate rows have unsaved changes. Saving monthly rates reloads them from the Sheet, so those changes are lost.',
+    { title: 'Unsaved rate rows', ok: 'Save monthly rates', danger: true }))) return;
+  let ok = true;
+  if (years.length) {
+    let sent = null;
+    ok = await runSave('monthly', btn, async () => {
+      let p = null;
+      for (const y of years) {
+        const rows = monthly[y].filter((r) => r.marked);
+        sent = { year: y, months: rows.map((r) => r.m) };
+        p = await actions.saveMonthlyRates(Number(y), rows.map((r) => ({
+          month: r.m, maisonette: priceOut(r.maisonette), studio: priceOut(r.studio), min_nights: wholeOut(r.min_nights),
+        })));
+      }
+      return p;
+    }, () => `Monthly rates saved (${years.join(', ')}).`, { alsoReset: ['rates'], sent: () => sent });
+  }
+  if (ok && dirty.closed) await saveClosedRows(btn);
+}
+
+// ---------- Card 2: closed periods ----------
+async function saveClosedRows(btn) {
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = 'Saving…';
+  try {
+    const c = await actions.saveClosed(validRowsOut());
+    fromClosed(c);
+    rebuild();
+    toast(`Closed dates saved (${plural(closed.length, 'period')}).`);
+    return true;
+  } catch (e) {
+    closed.forEach((c, i) => { c.__i = i; });
+    handleSaveError('closed', e);
+    return false;
+  } finally {
+    if (btn.isConnected) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+const validRowsOut = () => closed.map((c) => ({ from: c.from, to: c.to, unit_id: c.unit_id || '', notes: str(c.notes).trim() }));
+
+function closedCard() {
+  closed.forEach((c, i) => { c.__i = i; });
+  const unitOpts = [['', 'All apartments'], ...units().map((u) => [u.id, u.name || u.id])];
+  const addBtn = h('button', { class: 'btn sm', type: 'button', disabled: !closedReady }, icon('plus'), 'Add period');
+  addBtn.addEventListener('click', () => {
+    const t = todayISO();
+    closed.push({ _k: key(), from: t, to: addDays(t, 6), unit_id: '', notes: '' });
+    markDirty('closed');
+    rebuild();
+    rootEl.querySelector('[data-card="closed"] .c-row:last-of-type [data-field="from"]')?.focus();
+  });
+  const rows = closed.map((c) => {
+    const label = `Closed period ${c.__i + 1}`;
+    const del = h('button', { class: 'btn ghost icon-btn sm danger', type: 'button', 'aria-label': `Delete ${label}`, title: 'Delete' }, icon('trash'));
+    del.addEventListener('click', () => { closed.splice(c.__i, 1); markDirty('closed'); errors.closed = null; rebuild(); });
+    const len = isISODate(c.from) && isISODate(c.to) && c.from <= c.to ? plural(Math.round((Date.parse(c.to) - Date.parse(c.from)) / 864e5) + 1, 'day') : '';
+    return h('div', { class: `rate-row c-row${errors.closed?.row === c.__i ? ' has-error' : ''}`, role: 'group', 'aria-label': label },
+      h('span', { class: 'row-no', 'aria-hidden': 'true' }, len),
+      h('label', { class: 'cell c-from' }, fieldLabel('From'), cellInput(c, 'from', { type: 'date', 'aria-label': `${label}: from` }, 'closed')),
+      h('label', { class: 'cell c-to' }, fieldLabel('To (included)'), cellInput(c, 'to', { type: 'date', 'aria-label': `${label}: to` }, 'closed')),
+      h('label', { class: 'cell c-target' }, fieldLabel('Apartment'), cellSelect(c, 'unit_id', unitOpts, { 'aria-label': `${label}: apartment` }, 'closed')),
+      h('label', { class: 'cell c-notes' }, fieldLabel('Notes'), cellInput(c, 'notes', { type: 'text', maxlength: 500, 'aria-label': `${label}: notes`, autocomplete: 'off' }, 'closed')),
+      h('div', { class: 'cell c-act' }, del));
+  });
+  const saveBtn = h('button', { class: 'btn primary', type: 'button', disabled: !closedReady }, 'Save closed dates');
+  saveBtn.addEventListener('click', () => saveClosedRows(saveBtn));
+  return h('section', { class: 'card', 'data-card': 'closed', 'aria-labelledby': 'pr-closed' },
+    h('div', { class: 'card-head' }, h('h2', { id: 'pr-closed' }, 'Closed periods')),
+    h('p', { class: 'hint' }, 'Dates when an apartment (or all) cannot be booked; the website shows them as taken. Whole months can also be switched in Monthly rates.'),
+    !closedReady ? h('p', { class: closedError ? 'empty bad' : 'empty' }, closedError || 'Loading…') : h('div', { class: 'card-tools' }, addBtn),
+    closedReady ? (rows.length ? h('div', { class: 'rate-table c-table' },
+      h('div', { class: 'rate-row c-row rate-headrow', 'aria-hidden': 'true' },
+        h('span', { class: 'row-no' }, 'Days'), h('span', null, 'From'), h('span', null, 'To'), h('span', null, 'Apartment'), h('span', null, 'Notes'), h('span')),
+      rows) : h('p', { class: 'empty' }, 'Open all year.')) : null,
+    errorLine('closed'),
+    h('div', { class: 'card-foot' },
+      h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Closed tab in the Sheet.'),
+      statusLine('closed'), saveBtn));
+}
+
+// ---------- Card 3: advanced rate rows ----------
 const yearOf = (d) => (isISODate(d) ? d.slice(0, 4) : '');
 const inYear = (r, y) => y === 'all' || yearOf(r.from) === y || yearOf(r.to) === y;
 function shiftYear(d) {
@@ -252,7 +578,20 @@ function ratesCard() {
     toast(`Copied ${plural(src.length, 'row')} to ${next}. Check the dates, then save.`);
   });
   const adjBtn = rates.length ? h('button', { class: 'btn sm', type: 'button' }, icon('calc'), 'Adjust by %') : null;
-  adjBtn?.addEventListener('click', () => adjustDialog());
+  adjBtn?.addEventListener('click', () => {
+    const opts = Object.fromEntries(targetOptions());
+    const items = (pred) => rates.filter(pred).map((r) => ({
+      who: opts[r.target] || r.target,
+      when: isISODate(r.from) && isISODate(r.to) ? `${fmtDate(r.from, { year: true })} – ${fmtDate(r.to, { year: true })}` : '–',
+      price: r.price_per_night, set: (v) => { r.price_per_night = v; },
+    }));
+    const all = { label: `All rows (${rates.length})`, items: () => items(() => true) };
+    adjustDialog({
+      scopes: yearFilter !== 'all' ? [{ label: `Rows of ${yearFilter} (${rates.filter((r) => inYear(r, yearFilter)).length})`, items: () => items((r) => inYear(r, yearFilter)) }, all] : [all],
+      help: 'Rows without a price are left as they are.', noun: 'row',
+      onApplied: (n, p) => { markDirty('rates'); rebuild(); toast(`${plural(n, 'rate')} changed by ${p > 0 ? '+' : ''}${p}%. Check them, then Save rates.`); },
+    });
+  });
   const sortBtn = h('button', { class: 'btn sm', type: 'button', title: 'Sort by start date; longer ranges first so short special weeks come after them' }, icon('sort'), 'Sort by date');
   sortBtn.addEventListener('click', () => {
     const len = (r) => (isISODate(r.from) && isISODate(r.to) ? r.to.localeCompare(r.from) : 0);
@@ -289,7 +628,12 @@ function ratesCard() {
   });
 
   const saveBtn = h('button', { class: 'btn primary', type: 'button' }, 'Save rates');
-  saveBtn.addEventListener('click', () => runSave('rates', saveBtn, () => actions.savePrices(rates.map((r) => {
+  saveBtn.addEventListener('click', async () => {
+    if (dirty.monthly && !(await confirmDialog('Monthly rates has unsaved changes. Saving these rows reloads the monthly table from the Sheet, so those changes are lost.',
+      { title: 'Unsaved monthly rates', ok: 'Save rows anyway', danger: true }))) return;
+    saveRates(saveBtn);
+  });
+  const saveRates = (btn) => runSave('rates', btn, () => actions.savePrices(rates.map((r) => {
     const [kind, id] = r.target.split(':');
     const u = kind === 'unit' ? units().find((x) => x.id === id) : null;
     return {
@@ -297,13 +641,17 @@ function ratesCard() {
       from: r.from, to: r.to, price_per_night: r.price_per_night === '' ? '' : num(r.price_per_night),
       min_nights: r.min_nights === '' ? '' : Number(String(r.min_nights).trim()), notes: r.notes.trim(),
     };
-  })), (p) => `Rates saved (${plural((p.prices || []).length, 'row')}).`));
+  })), (p) => `Rates saved (${plural((p.prices || []).length, 'row')}).`, { alsoReset: ['monthly'] });
 
-  return h('section', { class: 'card', 'data-card': 'rates', 'aria-labelledby': 'pr-rates' },
-    h('div', { class: 'card-head' }, h('h2', { id: 'pr-rates' }, 'Seasonal rates'),
-      h('label', { class: 'field compact year-pick' }, h('span', { class: 'sr-only' }, 'Year'), yearSel)),
-    h('p', { class: 'hint' }, 'Nightly price per type or per apartment; From and To are both included. A row for one apartment beats a type row; otherwise the lower row wins where rows overlap.'),
-    h('div', { class: 'card-tools' }, addBtn, sortBtn, copyBtn, adjBtn),
+  const card = h('details', { class: 'card adv-card', 'data-card': 'rates', id: 'pr-advanced', open: advOpen },
+    h('summary', { class: 'adv-sum' },
+      h('h2', { id: 'pr-rates' }, 'Advanced: rate rows'),
+      h('span', { class: 'hint adv-count' }, plural(rates.length, 'row')),
+      statusLine('rates')),
+    h('p', { class: 'hint' }, 'The Prices tab row by row: special weeks, per-apartment prices, ranges across months. Nightly price per type or per apartment; From and To are both included. A row for one apartment beats a type row; otherwise the lower row wins where rows overlap.'),
+    h('div', { class: 'card-tools' },
+      h('label', { class: 'field compact year-pick' }, h('span', { class: 'sr-only' }, 'Year'), yearSel),
+      addBtn, sortBtn, copyBtn, adjBtn),
     shown.length ? h('div', { class: 'rate-table' },
       h('div', { class: 'rate-row rate-headrow', 'aria-hidden': 'true' },
         h('span', { class: 'row-no' }, '#'), h('span', null, 'Applies to'), h('span', null, 'From'), h('span', null, 'To'),
@@ -315,16 +663,16 @@ function ratesCard() {
     h('div', { class: 'card-foot' },
       h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Prices tab in the Sheet with these rows.'),
       statusLine('rates'), saveBtn));
+  card.addEventListener('toggle', () => { advOpen = card.open; });
+  return card;
 }
 
-/** "Adjust all rates by ±%": preview of every changed row, then the drafts are updated (Save rates writes them). */
-function adjustDialog() {
-  const opts = Object.fromEntries(targetOptions());
-  const scoped = yearFilter !== 'all';
+/** "Raise/lower by %": preview of every changed price, then the drafts are updated (the card's Save writes them).
+ *  scopes: [{label, items: () => [{who, when, price, set(v)}]}] (a select when more than one); help: extra hint line;
+ *  noun: what Apply counts; onApplied(n, percent). Items without a price are skipped. */
+function adjustDialog({ title = 'Adjust rates', scopes, help = '', noun = 'price', onApplied }) {
   const pct = h('input', { type: 'text', inputmode: 'text', autocomplete: 'off', placeholder: 'e.g. 5 or -10', 'aria-describedby': 'adj-help' });
-  const scope = scoped ? h('select', null,
-    h('option', { value: 'shown' }, `Rows of ${yearFilter} (${rates.filter((r) => inYear(r, yearFilter)).length})`),
-    h('option', { value: 'all' }, `All rows (${rates.length})`)) : null;
+  const scope = scopes.length > 1 ? h('select', null, scopes.map((sc, i) => h('option', { value: String(i) }, sc.label))) : null;
   const roundBox = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: true, id: 'adj-round' });
   const preview = h('div', { class: 'adj-preview', 'aria-live': 'polite' });
   const applyBtn = h('button', { class: 'btn primary', type: 'button', disabled: true }, 'Apply');
@@ -338,7 +686,7 @@ function adjustDialog() {
     const x = num(v) * (1 + p / 100);
     return roundBox.checked ? Math.max(1, Math.round(x)) : Math.max(0.01, round2(x));
   };
-  const rowsInScope = () => rates.filter((r) => (!scope || scope.value === 'all' || inYear(r, yearFilter)) && num(r.price_per_night) > 0);
+  const inScope = () => scopes[scope ? +scope.value : 0].items().filter((it) => num(it.price) > 0);
   const draw = () => {
     const p = parse();
     preview.replaceChildren();
@@ -347,24 +695,25 @@ function adjustDialog() {
       preview.append(h('p', { class: 'hint' }, pct.value.trim() ? 'Enter a percent between −99 and 200, not 0.' : 'Enter a percent to see the new prices.'));
       return;
     }
-    const list = rowsInScope();
-    applyBtn.textContent = `Apply to ${plural(list.length, 'row')}`;
+    const list = inScope();
+    applyBtn.textContent = `Apply to ${plural(list.length, noun)}`;
+    applyBtn.disabled = !list.length;
     preview.append(h('table', { class: 'table compact adj-table' },
       h('thead', null, h('tr', null, h('th', null, 'Applies to'), h('th', null, 'Dates'), h('th', { class: 'num' }, 'Now'), h('th', { class: 'num' }, 'New'))),
-      h('tbody', null, list.map((r) => h('tr', null,
-        h('td', null, opts[r.target] || r.target),
-        h('td', null, isISODate(r.from) && isISODate(r.to) ? `${fmtDate(r.from, { year: true })} – ${fmtDate(r.to, { year: true })}` : '–'),
-        h('td', { class: 'num' }, money(num(r.price_per_night), cur())),
-        h('td', { class: 'num strong' }, money(newPrice(r.price_per_night, p), cur())))))));
+      h('tbody', null, list.map((it) => h('tr', null,
+        h('td', null, it.who),
+        h('td', null, it.when),
+        h('td', { class: 'num' }, money(num(it.price), cur())),
+        h('td', { class: 'num strong' }, money(newPrice(it.price, p), cur())))))));
   };
   [pct, scope, roundBox].forEach((el) => el?.addEventListener(el === pct ? 'input' : 'change', draw));
   const dlg = openDialog({
-    title: 'Adjust rates',
+    title,
     body: h('div', { class: 'form' },
       h('div', { class: 'row2' },
         h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Change (%)'), pct),
         scope ? h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Rows'), scope) : h('div')),
-      h('p', { id: 'adj-help', class: 'hint' }, 'Positive raises the prices, negative lowers them. Rows without a price are left as they are.'),
+      h('p', { id: 'adj-help', class: 'hint' }, `Positive raises the prices, negative lowers them. ${help}`),
       h('div', { class: 'switch-row' }, h('label', { for: 'adj-round' }, 'Round to whole euros'), roundBox),
       preview),
     foot: [backBtn, applyBtn],
@@ -373,18 +722,16 @@ function adjustDialog() {
   applyBtn.addEventListener('click', () => {
     const p = parse();
     if (p == null) return;
-    const list = rowsInScope();
-    for (const r of list) r.price_per_night = String(newPrice(r.price_per_night, p));
-    markDirty('rates');
+    const list = inScope();
+    for (const it of list) it.set(String(newPrice(it.price, p)));
     dlg.close();
-    rebuild();
-    toast(`${plural(list.length, 'rate')} changed by ${p > 0 ? '+' : ''}${p}%. Check them, then Save rates.`);
+    onApplied(list.length, p);
   });
   draw();
   pct.focus();
 }
 
-// ---------- Card 2: cleaning fees ----------
+// ---------- Card 4: cleaning fees ----------
 function feesCard() {
   const err = errors.fees;
   const inp = (val, field, label, onInput, placeholder = '') => {
@@ -419,7 +766,7 @@ function feesCard() {
     h('div', { class: 'card-foot' }, statusLine('fees'), saveBtn));
 }
 
-// ---------- Card 3: discount rules ----------
+// ---------- Card 5: discount rules ----------
 const unitNameOf = (id) => units().find((u) => u.id === id)?.name || id;
 function rulePreview(d) {
   const p = num(d.percent);
@@ -589,7 +936,7 @@ function lastMinuteDialog() {
   pct.focus();
 }
 
-// ---------- Card 4: extras ----------
+// ---------- Card 6: extras ----------
 const LANG_LABEL = { en: 'EN', el: 'EL', fr: 'FR', es: 'ES', de: 'DE' };
 /** Options text → {list:[{label, price}], error} with the backend's strict rules (saveExtras). */
 function parseOptionsStrict(text) {
