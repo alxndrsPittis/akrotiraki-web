@@ -14,6 +14,13 @@
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
+      houseName: 'The whole house', houseMeta: '4 apartments · 2 maisonettes and 2 studios · sleeps up to 12',
+      houseRequest: 'Request the whole house', houseFind: 'Find dates',
+      houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' night)' : ' nights)'); },
+      houseNoWindow: 'No free dates for the whole house in the next twelve months for this length of stay.',
+      houseTaken: 'One of the apartments is no longer free for these dates. Please choose again.',
+      houseDiscount: function (m) { return 'Includes discounts of ' + m + '.'; },
+      okHouse: 'Your request is for the whole house, all four apartments.',
       exPaid: 'Extras', exRequest: 'Requests', exQuote: 'On request', exOnRequest: 'price on request',
       exNote: 'Anything else?', exOptional: '(optional)', exQty: 'Quantity', exOption: 'Choice',
       exIncl: function (m) { return 'incl. extras ' + m; },
@@ -81,6 +88,13 @@
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
+      houseName: 'Όλο το σπίτι', houseMeta: '4 διαμερίσματα · 2 μεζονέτες και 2 στούντιο · έως 12 άτομα',
+      houseRequest: 'Αίτημα για όλο το σπίτι', houseFind: 'Βρείτε ημερομηνίες',
+      houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' νύχτα)' : ' νύχτες)'); },
+      houseNoWindow: 'Δεν υπάρχουν ελεύθερες ημερομηνίες για όλο το σπίτι τους επόμενους δώδεκα μήνες για αυτή τη διάρκεια.',
+      houseTaken: 'Ένα από τα διαμερίσματα δεν είναι πια ελεύθερο αυτές τις ημερομηνίες. Διαλέξτε ξανά.',
+      houseDiscount: function (m) { return 'Περιλαμβάνει εκπτώσεις ' + m + '.'; },
+      okHouse: 'Το αίτημά σας αφορά όλο το σπίτι, και τα τέσσερα διαμερίσματα.',
       exPaid: 'Επιπλέον', exRequest: 'Αιτήματα', exQuote: 'Κατόπιν συνεννόησης', exOnRequest: 'τιμή κατόπιν συνεννόησης',
       exNote: 'Κάτι άλλο;', exOptional: '(προαιρετικό)', exQty: 'Ποσότητα', exOption: 'Επιλογή',
       exIncl: function (m) { return 'μαζί με τα επιπλέον ' + m; },
@@ -150,6 +164,8 @@
   var T = Object.assign({}, STR.en, BASE, EXTRA);
   T.err = Object.assign({}, STR.en.err, BASE.err || {}, EXTRA.err || {});
   window.AKRO_LANG = LANG; window.AKRO_T = T; // used by booking.js
+  // The ops API (public, tokenless actions). The one place this URL lives.
+  window.AKRO_API = 'https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec';
 
   var y = document.getElementById('year');
   if (y) y.textContent = String(new Date().getFullYear());
@@ -181,12 +197,12 @@
     });
   }
 
-  // Lightbox (native <dialog>; Esc closes natively)
+  // Lightbox (native <dialog>; Esc closes natively). Links are read at click time, so a gallery
+  // rebuilt from the Drive photos (below) works without re-binding.
   var dlg = document.getElementById('lightbox');
-  var links = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox]'));
-  if (dlg && typeof dlg.showModal === 'function' && links.length) {
+  if (dlg && typeof dlg.showModal === 'function') {
     var img = document.getElementById('lightbox-img');
-    var idx = 0, opener = null;
+    var idx = 0, opener = null, links = [];
     var show = function (i) {
       idx = (i + links.length) % links.length;
       var thumb = links[idx].querySelector('img');
@@ -194,16 +210,15 @@
       img.alt = links[idx].getAttribute('data-alt') || (thumb ? thumb.alt : '');
       dlg.setAttribute('aria-label', T.photo(idx + 1, links.length));
     };
-    if (links.length < 2) {
-      Array.prototype.forEach.call(dlg.querySelectorAll('[data-lb=prev],[data-lb=next]'), function (b) { b.hidden = true; });
-    }
-    links.forEach(function (a, i) {
-      a.addEventListener('click', function (e) {
-        e.preventDefault();
-        opener = a;
-        show(i);
-        dlg.showModal();
-      });
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('[data-lightbox]');
+      if (!a) return;
+      e.preventDefault();
+      links = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox]'));
+      Array.prototype.forEach.call(dlg.querySelectorAll('[data-lb=prev],[data-lb=next]'), function (b) { b.hidden = links.length < 2; });
+      opener = a;
+      show(links.indexOf(a));
+      dlg.showModal();
     });
     dlg.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-lb]');
@@ -221,5 +236,68 @@
     });
     dlg.addEventListener('close', function () { if (opener) opener.focus(); });
   }
+
+  // Photos managed in Google Drive (public `sitePhotos`): where a section has items, they replace the
+  // page's own photos. Cached for 10 minutes per tab; on any failure nothing changes.
+  (function drivePhotos() {
+    var API = window.AKRO_API;
+    var page = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '') || 'index';
+    var KEYS = { index: ['hero', 'gallery', 'apartments'], sifnos: ['sifnos'], archaeology: ['archaeology'],
+      beaches: ['beaches'], outdoors: ['outdoors'], food: ['food'], culture: ['culture'] }[page];
+    if (!API || !KEYS || !window.fetch) return;
+    var CK = 'akro-site-photos', TTL = 10 * 60 * 1000;
+    function cached() {
+      try { var c = JSON.parse(sessionStorage.getItem(CK) || 'null'); return c && Date.now() - c.at < TTL ? c.data : null; } catch (e) { return null; }
+    }
+    function load() {
+      var c = cached();
+      if (c) return Promise.resolve(c);
+      return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'sitePhotos', payload: {} }) })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r || !r.ok || !r.data || !r.data.sections) throw new Error('sitePhotos');
+          try { sessionStorage.setItem(CK, JSON.stringify({ at: Date.now(), data: r.data })); } catch (e) {}
+          return r.data;
+        });
+    }
+    function items(d, k) {
+      return (d.sections[k] || []).filter(function (x) { return x && x.url; })
+        .sort(function (a, b) { return (Number(a.order) || 0) - (Number(b.order) || 0); });
+    }
+    function put(im, it, lazy) {
+      if (!im) return;
+      im.removeAttribute('width'); im.removeAttribute('height'); im.removeAttribute('srcset');
+      if (lazy) im.loading = 'lazy';
+      im.src = it.url; im.alt = it.alt || '';
+    }
+    function figures(list) {   // guide pages: page photos in order; their Commons credit lines go
+      var figs = document.querySelectorAll('main figure.photo, main figure.essay-figure');
+      Array.prototype.forEach.call(figs, function (f, i) {
+        var it = list[i]; if (!it) return;
+        put(f.querySelector('img'), it, true);
+        var cr = f.querySelector('.photo-credit'); if (cr) cr.remove();
+      });
+    }
+    function gallery(list) {
+      var ul = document.querySelector('#gallery .grid'); if (!ul) return;
+      ul.innerHTML = list.slice(0, 12).map(function (it, i) {
+        var e = function (t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+        return '<li class="gi gi-' + (i + 1) + '"><a href="' + e(it.url) + '" data-lightbox><img src="' + e(it.thumb || it.url) +
+          '" loading="lazy" decoding="async" alt="' + e(it.alt) + '"></a></li>';
+      }).join('');
+    }
+    function apply(d) {
+      KEYS.forEach(function (k) {
+        var list = items(d, k);
+        if (!list.length) return;
+        if (k === 'hero') put(document.querySelector('.hero-img'), list[0], false);
+        else if (k === 'gallery') gallery(list);
+        else if (k === 'apartments') put(document.querySelector('.bath-figure img'), list[0], true);
+        else figures(list);
+      });
+    }
+    load().then(apply).catch(function () {});
+  })();
 
 })();

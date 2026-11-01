@@ -2,6 +2,13 @@
 // Loaded before ../site.js, which merges window.AKRO_STRINGS.es over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.es = {
+  houseName: 'Toda la casa', houseMeta: '4 apartamentos · 2 dúplex y 2 estudios · hasta 12 personas',
+  houseRequest: 'Solicitar toda la casa', houseFind: 'Buscar fechas',
+  houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' noche)' : ' noches)'); },
+  houseNoWindow: 'No hay fechas libres para toda la casa en los próximos doce meses para esta duración.',
+  houseTaken: 'Uno de los apartamentos ya no está libre en estas fechas. Elija de nuevo, por favor.',
+  houseDiscount: function (m) { return 'Incluye descuentos de ' + m + '.'; },
+  okHouse: 'Su solicitud es para toda la casa, los cuatro apartamentos.',
   exPaid: 'Extras', exRequest: 'Peticiones', exQuote: 'Bajo consulta', exOnRequest: 'precio a consultar',
   exNote: '¿Algo más?', exOptional: '(opcional)', exQty: 'Cantidad', exOption: 'Opción',
   exIncl: function (m) { return 'extras incluidos: ' + m; },

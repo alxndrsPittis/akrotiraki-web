@@ -1,6 +1,6 @@
 // Write operations: call the API, then update local state from the returned object.
 import { call } from './api.js';
-import { state, upsert, removeById, normRes, normExp, persist, emit } from './state.js';
+import { state, upsert, upsertMany, removeById, normRes, normExp, persist, emit } from './state.js';
 import { toast } from './ui.js';
 
 const RES_FIELDS = ['id', 'unit_id', 'check_in', 'check_out', 'guest_name', 'guests', 'source', 'status',
@@ -45,13 +45,17 @@ export async function saveReservation(reservation, force = false, opts = {}) {
   return { reservation: d.reservation, conflicts: d.conflicts || [], quote: d.quote || null };
 }
 
-export async function setReservationStatus(id, status, { force = false, notify } = {}) {
+/** applyToGroup: the status goes to every reservation with this one's group_id (all or nothing, ONE guest email);
+ *  the reply's `reservations` (the whole group) replace the local copies. */
+export async function setReservationStatus(id, status, { force = false, notify, applyToGroup = false } = {}) {
   const payload = { id, status };
   if (force) payload.force = true;
   if (typeof notify === 'boolean') payload.notify = notify;
+  if (applyToGroup) payload.apply_to_group = true;
   const d = await call('setReservationStatus', payload);
-  upsert('reservations', normRes(d.reservation));
-  return { reservation: d.reservation, conflicts: d.conflicts || [] };
+  const list = Array.isArray(d.reservations) && d.reservations.length ? d.reservations : [d.reservation];
+  upsertMany('reservations', list.map(normRes));
+  return { reservation: d.reservation, reservations: list, conflicts: d.conflicts || [] };
 }
 
 /** Price-list quote: { nights, nightly:[{date,price}], accommodation, cleaning_fee, rule_discount, rule_name, rule_percent,

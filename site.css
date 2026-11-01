@@ -876,3 +876,7 @@ p { max-width: 66ch; }
 .ex-item .ex-qty { width: 4.2rem; }
 .ex-item select { padding-right: 2rem; }
 .ex-price { font-size: .84rem; color: var(--muted-text); white-space: nowrap; }
+/* Whole house card */
+@media (min-width: 760px) { .apt-card.is-house { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; } .apt-card.is-house img { height: 100%; aspect-ratio: auto; } }
+.house-windows[hidden] { display: none; }
+.win-list { list-style: none; margin: .2rem 0 0; padding: 0; display: grid; gap: .3rem; font-size: .92rem; }

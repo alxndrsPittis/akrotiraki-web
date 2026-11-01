@@ -280,8 +280,8 @@
           </div>
         </div>
 
-        <!-- Backend URL: one place, data-api. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
-        <div class="booking" id="booking" data-photo-base="photos/" data-api="https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
+        <!-- Backend URL: window.AKRO_API in site.js. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
+        <div class="booking" id="booking" data-photo-base="photos/" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
           <form class="form flow" id="stay-form" novalidate>
             <ol class="steps" aria-label="Request in three steps">
               <li aria-current="step"><span class="step-n">1</span> Dates and guests</li>
@@ -321,7 +321,7 @@
                 </div>
                 <div class="field field-narrow">
                   <label for="f-guests">Guests</label>
-                  <input id="f-guests" name="guests" type="number" min="1" max="4" value="2" inputmode="numeric" aria-describedby="err-guests">
+                  <input id="f-guests" name="guests" type="number" min="1" max="12" value="2" inputmode="numeric" aria-describedby="err-guests">
                   <p class="field-error" id="err-guests" hidden></p>
                 </div>
                   <button class="btn btn-solid" type="button" id="s1-go">See availability</button>

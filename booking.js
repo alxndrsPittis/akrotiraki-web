@@ -1,21 +1,21 @@
 // Akrotiraki — request to stay in three steps (dates and guests → apartment with prices → details).
 // Public, tokenless actions of the ops API: availability (once per page), quote (one per bookable
 // apartment per search, in parallel, cached), requestStay. Contract: akrotiraki-ops/docs/API.md.
-// The backend URL lives in one place: data-api on #booking.
+// The backend URL lives in one place: window.AKRO_API in site.js.
 (function () {
   'use strict';
   var root = document.getElementById('booking');
   var form = document.getElementById('stay-form');
   if (!root || !form) return;
 
-  var API = root.getAttribute('data-api');
+  var API = window.AKRO_API || root.getAttribute('data-api');
   var PHOTOS = root.getAttribute('data-photo-base') || 'photos/';
   var T = window.AKRO_T || {};
   var LANG = (document.documentElement.lang || 'en').slice(0, 2);
   var LOCALE = { en: 'en-GB', el: 'el-GR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE' }[LANG] || 'en-GB';
   var OPENED = Date.now();                     // `t`: when the form was opened
   var MIN_FILL_MS = 4000;                       // backend rejects faster submissions
-  var MAX_GUESTS = 4;
+  var MAX_GUESTS = 12;   // the whole house; single apartments are marked "sleeps up to N"
 
   // Fallback units if `availability` is unreachable (ids as seeded by the backend's setup).
   var FALLBACK = (root.getAttribute('data-fallback-units') || '').split(',').filter(Boolean).map(function (s) {
@@ -24,8 +24,10 @@
   // Card photo and size by apartment type
   var TYPE = {
     maisonette: { photo: 'terrace-view.webp', w: 765, h: 1020, sqm: 55 },
-    studio: { photo: 'houses-above.webp', w: 1360, h: 906, sqm: 21 }
+    studio: { photo: 'houses-above.webp', w: 1360, h: 906, sqm: 21 },
+    house: { photo: 'house-bay-above.webp', w: 1360, h: 1020 }
   };
+  var HOUSE = { id: 'ALL', type: 'house', capacity: 12 };
 
   /* ---------------------------------------------------------------- dates */
   function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -274,6 +276,13 @@
         }
         return { u: u, st: st, q: st === 'taken' ? Promise.resolve(null) : quotes[key] };
       });
+      var houseFree = list.length > 0 && list.every(function (x) { return x.st !== 'taken'; });
+      var hk = 'ALL|' + s.a + '|' + s.b + '|' + s.guests;
+      if (houseFree && !quotes[hk]) {
+        quotes[hk] = call('quote', { unit_id: 'ALL', check_in: s.a, check_out: s.b, guests: s.guests, lang: LANG })
+          .then(function (r) { return r && r.ok && r.data ? r.data : null; }, function () { return null; });
+      }
+      list.push({ u: HOUSE, st: houseFree ? 'free' : 'taken', house: true, q: houseFree ? quotes[hk] : Promise.resolve(null) });
       return Promise.all(list.map(function (x) { return x.q; })).then(function (qs) {
         if (sel !== s) return;          // a newer search started
         list.forEach(function (x, i) { x.quote = qs[i]; });
@@ -287,7 +296,8 @@
     var same = units().filter(function (x) { return x.type === u.type; }).map(function (x) { return x.id; }).sort();
     return same.indexOf(u.id) + 1;
   }
-  function unitName(u) { return (T[u.type] || u.type) + ' ' + typeIndex(u); }
+  function unitName(u) { return u.id === 'ALL' ? T.houseName : (T[u.type] || u.type) + ' ' + typeIndex(u); }
+  function unitById(id) { return units().filter(function (u) { return u.id === id; })[0]; }
 
   function priceBlock(q) {
     if (!q || q.incomplete) return '<p class="apt-total">' + esc(T.cardOnRequest) + '</p>';
@@ -308,18 +318,40 @@
     return html;
   }
 
+  function housePrice(q) {
+    if (!q || q.incomplete) return '<p class="apt-total">' + esc(T.cardOnRequest) + '</p>';
+    var cur = q.currency;
+    var bd = (q.units || []).map(function (x) {
+      var u = unitById(x.unit_id);
+      return (u ? unitName(u) : (x.name || x.unit_id)) + ' ' + (x.incomplete ? T.cardOnRequest : money(x.total, cur));
+    }).join(', ');
+    var html = '<p class="apt-total">' + esc(T.cardTotal(money(q.total, cur), T.nightsN(q.nights))) + '</p>' +
+      (bd ? '<p class="apt-breakdown">' + esc(bd) + '</p>' : '');
+    var disc = Number(q.rule_discount) || 0;
+    if (disc > 0) html += '<p class="apt-discount">' + esc(T.houseDiscount(money(disc, cur))) + '</p>';
+    return html;
+  }
+  // Next whole-house windows of at least `n` nights (from availability.all_free_windows, `to` exclusive).
+  function houseWindows(n) {
+    return ((avail && avail.all_free_windows) || []).filter(function (w) {
+      return w.to > TODAY && nights(w.from < TODAY ? TODAY : w.from, w.to) >= n;
+    }).slice(0, 6).map(function (w) { return { from: w.from < TODAY ? TODAY : w.from, to: w.to }; });
+  }
+
   function renderCards(list, s) {
     list.forEach(function (x) {
       var cap = Number(x.u.capacity) || 2;
-      x.small = cap < s.guests;
+      x.small = !x.house && cap < s.guests;
       x.min = x.quote && x.quote.below_min ? x.quote.min_nights : 0;
       x.ok = x.st !== 'taken' && !x.small && !x.min;
       x.price = x.quote && !x.quote.incomplete ? Number(x.quote.total) : Infinity;
     });
-    list.sort(function (p, q) { return (q.ok - p.ok) || (p.price - q.price) || (p.u.id < q.u.id ? -1 : 1); });
+    // apartments: bookable first, then by price; the whole house always last
+    list.sort(function (p, q) { return (!!p.house - !!q.house) || (q.ok - p.ok) || (p.price - q.price) || (p.u.id < q.u.id ? -1 : 1); });
     var html = '';
     if (!list.some(function (x) { return x.ok; })) html += '<p class="cards-none">' + esc(T.cardNone) + '</p>';
     list.forEach(function (x) {
+      if (x.house) { html += houseCard(x, s); return; }
       var u = x.u, t = TYPE[u.type] || TYPE.studio, cap = Number(u.capacity) || 2, notes = '';
       if (x.st === 'taken') {
         notes += '<p class="apt-note">' + esc(T.cardTaken) + '</p>';
@@ -341,6 +373,44 @@
     cards.removeAttribute('aria-busy');
     cards.__list = list;
   }
+  function houseCard(x, s) {
+    var t = TYPE.house, notes = '';
+    if (x.st === 'taken') {
+      notes += '<p class="apt-note">' + esc(T.cardTaken) + '</p>' +
+        '<p><button type="button" class="link-btn" data-find aria-expanded="false" aria-controls="house-windows">' + esc(T.houseFind) + '</button></p>' +
+        '<div class="house-windows" id="house-windows" hidden></div>';
+    }
+    if (x.min) notes += '<p class="apt-note is-strong">' + esc(T.minStay(x.min)) + '</p>';
+    return '<article class="apt-card is-house is-' + x.st + (x.ok ? '' : ' is-off') + '" aria-labelledby="apt-ALL">' +
+      '<img src="' + PHOTOS + t.photo + '" width="' + t.w + '" height="' + t.h + '" loading="lazy" decoding="async" alt="">' +
+      '<div class="apt-body"><h4 id="apt-ALL">' + esc(T.houseName) + '</h4>' +
+      '<p class="apt-meta">' + esc(T.houseMeta) + '</p>' +
+      (x.st === 'taken' ? '' : '<div class="apt-price">' + housePrice(x.quote) + '</div>') + notes +
+      (x.ok ? '<button type="button" class="btn btn-solid" data-unit="ALL">' + esc(T.houseRequest) + '</button>' : '') +
+      '</div></article>';
+  }
+  // "Find dates" for the whole house: list the next free windows; picking one sets the dates and searches again.
+  cards.addEventListener('click', function (e) {
+    var f = e.target.closest('[data-find]');
+    if (f) {
+      var box = document.getElementById('house-windows'), n = nights(sel.a, sel.b), ws = houseWindows(n);
+      box.innerHTML = ws.length ? '<ul class="win-list">' + ws.map(function (w) {
+        var to = addDays(w.from, n);
+        return '<li><button type="button" class="link-btn" data-win="' + w.from + '|' + to + '">' +
+          esc(T.houseWindow(range(w.from, w.to), nights(w.from, w.to))) + '</button></li>';
+      }).join('') + '</ul>' : '<p class="apt-note">' + esc(T.houseNoWindow) + '</p>';
+      box.hidden = !box.hidden;
+      f.setAttribute('aria-expanded', String(!box.hidden));
+      return;
+    }
+    var w = e.target.closest('[data-win]');
+    if (w) {
+      var p = w.getAttribute('data-win').split('|');
+      fIn.value = p[0]; fOut.value = p[1]; syncMin();
+      var d = parse(p[0]); first = new Date(d.getFullYear(), d.getMonth(), 1); render();
+      search();
+    }
+  });
 
   /* ---------------------------------------------------------------- extras */
   // Loaded once per page (public `extras`); shown in step 3 for the chosen apartment. The summary line
@@ -348,6 +418,7 @@
   var EXTRAS = null, exState = {}, exBox = document.getElementById('extras'), exTimer = null, exSeq = 0, chosenX = null;
   function exName(e) { return (e.names && e.names[LANG]) || e.name || e.id; }
   function exFits(e, u) {
+    if (u.id === 'ALL') return !e.unit_id && !e.unit_type;
     if (e.unit_id && String(e.unit_id).toLowerCase() !== String(u.id).toLowerCase()) return false;
     if (e.unit_type && String(e.unit_type).toLowerCase() !== String(u.type).toLowerCase()) return false;
     return true;
@@ -468,6 +539,7 @@
   // Server messages are English; show the page-language string for known cases.
   function serverError(res) {
     var f = res && res.data && res.data.field, m = (res && res.message) || '';
+    if (res && res.data && res.data.unit_ids && res.data.unit_ids.length) { show(2, false); fieldError('unit_id', T.houseTaken); return; }
     if (res && res.error === 'forbidden') return general(T.closed);
     if (f) {
       var text = T.err[f];
@@ -528,6 +600,8 @@
   function done(email) {
     var ok = document.getElementById('request-ok');
     ok.querySelector('[data-email]').textContent = email;
+    var ps = ok.querySelectorAll('p');
+    if (chosen === 'ALL' && ps[1]) ps[1].textContent = T.okHouse;
     form.hidden = true;
     ok.hidden = false;
     ok.focus();

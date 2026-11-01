@@ -45,13 +45,29 @@ let DISCOUNTS = [
   { id: 'd1', name: 'Long stay 7+ nights', kind: 'long_stay', percent: 10, min_nights: 7, days_before: '', from: '', to: '', unit_type: '', unit_id: '', active: true, notes: '' },
   { id: 'd2', name: 'Early booking', kind: 'early_booking', percent: 5, min_nights: '', days_before: 120, from: '', to: '', unit_type: '', unit_id: '', active: false, notes: 'Try next season' },
   { id: 'd3', name: 'Late October', kind: 'period', percent: 15, min_nights: '', days_before: '', from: `${+todayISO().slice(0, 4) + 1}-10-15`, to: `${+todayISO().slice(0, 4) + 1}-10-31`, unit_type: 'studio', unit_id: '', active: false, notes: '' },
-];
-const KINDS = ['long_stay', 'early_booking', 'last_minute', 'period'];
+  { id: 'd4', name: 'Gap filler', kind: 'gap', percent: 10, min_nights: '', days_before: '', max_gap_nights: 3, from: '', to: '', unit_type: '', unit_id: '', active: false, notes: '' },
+].map((d) => ({ max_gap_nights: '', ...d }));
+// gap: announced backend kind (field max_gap_nights); mirrored here so the app can be tried before the backend has it.
+const KINDS = ['long_stay', 'early_booking', 'last_minute', 'period', 'gap'];
 const isWhole = (v) => v === '' || v == null || (Number.isInteger(Number(v)) && Number(v) >= 0);
 const usable = (d) => KINDS.includes(d.kind) && Number(d.percent) > 0 && Number(d.percent) <= 100 &&
   (!d.from === !d.to) && (!d.from || (isISODate(d.from) && isISODate(d.to) && d.from <= d.to)) &&
   !(d.kind === 'period' && !d.from) && !(d.kind === 'long_stay' && !(Number(d.min_nights) >= 1)) &&
-  !((d.kind === 'early_booking' || d.kind === 'last_minute') && (d.days_before === '' || d.days_before == null));
+  !((d.kind === 'early_booking' || d.kind === 'last_minute') && (d.days_before === '' || d.days_before == null)) &&
+  !(d.kind === 'gap' && !(Number(d.max_gap_nights) >= 1));
+/** Gap rule (mock reading, to be confirmed by the backend): the stay lies between two confirmed stays of the same unit
+ *  (the previous one leaves on or before check-in, the next arrives on or after check-out) that are at most
+ *  max_gap_nights apart. Stays overlapping the requested dates are ignored (e.g. the reservation being re-quoted). */
+function fillsGap(unit_id, check_in, check_out, maxGap) {
+  let prevOut = null, nextIn = null;
+  for (const r of db?.reservations || []) {
+    if (r.unit_id !== unit_id || r.status !== 'confirmed') continue;
+    if (r.check_in < check_out && check_in < r.check_out) continue;
+    if (r.check_out <= check_in && (!prevOut || r.check_out > prevOut)) prevOut = r.check_out;
+    if (r.check_in >= check_out && (!nextIn || r.check_in < nextIn)) nextIn = r.check_in;
+  }
+  return !!(prevOut && nextIn && diffDays(prevOut, nextIn) <= maxGap);
+}
 const typeFee = (u) => {
   const own = SETTINGS[`cleaning_fee_${u.id}`];
   return own !== undefined && own !== '' ? Number(own) || 0 : Number(SETTINGS[`cleaning_fee_${u.type}`]) || 0;
@@ -68,6 +84,7 @@ function bestRule(u, nightly, check_in) {
     if (d.kind === 'long_stay' && nightly.length < Number(d.min_nights)) continue;
     if (d.kind === 'early_booking' && lead < Number(d.days_before)) continue;
     if (d.kind === 'last_minute' && !(lead >= 0 && lead <= Number(d.days_before))) continue;
+    if (d.kind === 'gap' && !fillsGap(u.id, check_in, addDays(check_in, nightly.length), Number(d.max_gap_nights))) continue;
     const base = nightly.filter((n) => n.price != null && (!d.from || (n.date >= d.from && n.date <= d.to))).reduce((s, n) => s + n.price, 0);
     const amount = round2(base * Number(d.percent) / 100);
     if (amount > 0 && (!best || amount > best.amount)) best = { amount, name: d.name, percent: Number(d.percent) };
@@ -261,7 +278,7 @@ function seed() {
     price = round2(price - discount);
     const g = ri(1, u.capacity);
     const guestsN = o.source === 'block' ? 0 : o.guests ?? g;
-    const ex = priceExtras(o.extras || [], nights, guestsN);
+    const ex = priceExtras(o.extras || [], nights, o.exGuests ?? guestsN);
     if (price > 0) price = round2(price + ex.total); // price = accommodation + cleaning − discount + extras
     const past = o.check_in <= T;
     const created = addDays(o.check_in, -ri(15, 90));
@@ -272,13 +289,14 @@ function seed() {
       source: o.source,
       price,
       paid: o.status === 'confirmed' ? (past ? price : Math.round(price * 0.3)) : 0,
-      checked: (o.source === 'airbnb' || o.source === 'booking') && o.status !== 'pending' && (past || R() < 0.5),
+      checked: (o.source === 'airbnb' || o.source === 'booking' || o.source === 'vrbo') && o.status !== 'pending' && (past || R() < 0.5),
       notes: o.notes || '',
-      external_uid: o.source === 'airbnb' || o.source === 'booking' ? `${o.source}-${id}@mock` : '',
+      external_uid: o.source === 'airbnb' || o.source === 'booking' || o.source === 'vrbo' ? `${o.source}-${id}@mock` : '',
       created_at: stamp(created),
       updated_at: o.status === 'cancelled' ? stamp(addDays(T, -ri(2, 20))) : stamp(created),
       created_by: 'owner@example.com',
       cleaning_fee, discount, discount_label, email: '', phone: '', lang: '', extras: extrasJson(ex.lines), extras_total: ex.total,
+      group_id: '',
       ...o.extra,
     };
     if (o.hoursAgo != null) r.created_at = r.updated_at = new Date(Date.now() - o.hoursAgo * 3600e3).toISOString();
@@ -296,7 +314,7 @@ function seed() {
       const d = addDays(`${Y}-05-12`, n * 30 + ri(0, 14));
       const co = addDays(d, ri(4, 9));
       const x = R();
-      mk({ unit_id: u.id, check_in: d, check_out: co, source: x < 0.45 ? 'airbnb' : x < 0.8 ? 'booking' : 'direct', status: 'confirmed', ...special[`${u.id}:${n}`] });
+      mk({ unit_id: u.id, check_in: d, check_out: co, source: x < 0.4 ? 'airbnb' : x < 0.7 ? 'booking' : x < 0.8 ? 'vrbo' : 'direct', status: 'confirmed', ...special[`${u.id}:${n}`] });
     }
   }
   // Around today, so the current month has something to show.
@@ -323,6 +341,39 @@ function seed() {
     extra: { email: 'laura.bennett@example.com', lang: 'en' }, notes: 'Ten nights, long-stay discount applied.' });
   mk({ unit_id: 'u3', check_in: addDays(T, 2), check_out: addDays(T, 4), source: 'airbnb', status: 'cancelled' });
   mk({ unit_id: 'u3', check_in: addDays(T, 15), check_out: addDays(T, 18), source: 'family', status: 'confirmed', guest_name: 'Family: Kostas' });
+  mk({ unit_id: 'u4', check_in: addDays(T, 22), check_out: addDays(T, 27), source: 'vrbo', status: 'confirmed' });
+
+  // Whole-house request (requestStay unit_id "ALL"): one pending reservation per unit, same group_id, maisonettes
+  // first; 10 guests spread by capacity (5, 4, 1, 0 here); extras and the message on the first, the others point to it.
+  {
+    const gid = 'k3x9p2', ci = `${Y + 1}-07-04`, co = `${Y + 1}-07-11`;
+    const order = [...UNITS].sort((a, b) => (a.type === 'maisonette' ? 0 : 1) - (b.type === 'maisonette' ? 0 : 1));
+    let left = 10;
+    const g = web('familie.hoffmann@example.de', '+49 151 2345 6789', 'en');
+    order.forEach((u, i) => {
+      const n = Math.min(u.capacity, left); left -= n;
+      mk({ unit_id: u.id, check_in: ci, check_out: co, source: 'direct', status: 'pending', priced: 'quote', hoursAgo: 6,
+        guest_name: 'Felix Hoffmann', guests: n, exGuests: 10, extras: i === 0 ? [{ id: 'breakfast' }, { id: 'port_transfer' }, { id: 'baby_cot' }] : [],
+        extra: { ...g, group_id: gid },
+        notes: i === 0 ? 'Hello, we are three families travelling together (6 adults, 4 children) and would like the whole house for a week in July.'
+          : `Part of group ${gid} (whole house request; message and extras on ${order[0].id}).` });
+    });
+    // A Vrbo hold on one studio overlaps the request, so the card shows a conflict.
+    mk({ unit_id: order[2].id, check_in: `${Y + 1}-07-09`, check_out: `${Y + 1}-07-13`, source: 'vrbo', status: 'pending', guest_name: 'Vrbo hold' });
+  }
+
+  // Dev knob ?mock=1&many=1: ~300 extra stays over last, this and next year (calendar performance checks).
+  if (/[?&]many=1\b/.test(globalThis.location?.search || '')) {
+    for (const u of UNITS) {
+      for (let d = `${Y - 1}-03-01`; d < `${Y + 1}-11-30`;) {
+        const co = addDays(d, ri(2, 9));
+        const x = R();
+        mk({ unit_id: u.id, check_in: d, check_out: co, source: x < 0.35 ? 'airbnb' : x < 0.6 ? 'booking' : x < 0.7 ? 'vrbo' : x < 0.95 ? 'direct' : 'family',
+          status: R() < 0.06 ? 'cancelled' : 'confirmed' });
+        d = addDays(co, ri(d.slice(5, 7) >= '05' && d.slice(5, 7) <= '09' ? 0 : 6, d.slice(5, 7) >= '05' && d.slice(5, 7) <= '09' ? 6 : 30));
+      }
+    }
+  }
 
   // ~30 expenses from January up to today.
   const RANGES = { cleaning: [40, 90], laundry: [25, 70], supplies: [15, 80], linen: [60, 240], electricity: [80, 260],
@@ -502,6 +553,7 @@ const actions = {
       created_at: prev?.created_at || now, created_by: prev?.created_by || user.email, updated_at: now,
     };
     if (!discountSent) next.discount = prev ? prev.discount : 0;
+    next.group_id = prev?.group_id || ''; // server-owned: ignored in input, kept on update, '' on create
     next.extras = prev ? prev.extras : '';
     next.extras_total = prev ? prev.extras_total : 0;
     validateReservation(next);
@@ -564,10 +616,33 @@ const actions = {
     simulateNotify(prevStatus, next, notify);
     return { reservation: next, conflicts, quote: q };
   },
-  setReservationStatus(user, { id, status, force, notify } = {}) {
+  setReservationStatus(user, { id, status, force, notify, apply_to_group } = {}) {
     const prev = db.reservations.find((r) => r.id === id);
     if (!prev) throw new E('not_found', 'Reservation not found.');
     if (!STATUSES[status]) throw new E('bad_request', 'Unknown status.');
+    if (apply_to_group !== undefined && typeof apply_to_group !== 'boolean') throw new E('bad_request', 'apply_to_group must be true or false.', { field: 'apply_to_group' });
+    if (apply_to_group === true) {
+      // All members checked first (role, conflicts), then all written: an error leaves the group unchanged.
+      const isM = (r) => (UNITS.find((u) => u.id === r.unit_id)?.type === 'maisonette' ? 0 : 1);
+      const members = (prev.group_id ? db.reservations.filter((r) => r.group_id === prev.group_id) : [prev])
+        .sort((a, b) => isM(a) - isM(b) || UNITS.findIndex((u) => u.id === a.unit_id) - UNITS.findIndex((u) => u.id === b.unit_id));
+      const now = new Date().toISOString();
+      const nexts = members.map((m) => ({ ...m, status, updated_at: now }));
+      const all = [];
+      const conflictErr = [];
+      nexts.forEach((n, i) => {
+        try { all.push(...applyStatusRules(user, members[i], n, force)); } catch (e) {
+          if (e.code !== 'conflict') throw e;
+          conflictErr.push(...e.data.conflicts);
+        }
+      });
+      if (conflictErr.length) throw new E('conflict', `Overlaps with ${conflictErr.length} other reservation${conflictErr.length > 1 ? 's' : ''}.`, { conflicts: conflictErr });
+      const prevStatus = members.map((m) => m.status);
+      nexts.forEach((n, i) => Object.assign(members[i], n));
+      const mailTo = nexts.find((n, i) => prevStatus[i] === 'pending' && n.email);
+      if (mailTo) simulateNotify('pending', mailTo, notify);
+      return { reservation: nexts.find((n) => n.id === id), reservations: nexts, conflicts: all };
+    }
     const next = { ...prev, status, updated_at: new Date().toISOString() };
     const conflicts = applyStatusRules(user, prev, next, force);
     const prevStatus = prev.status;
@@ -644,6 +719,8 @@ const actions = {
       if (!isWhole(r.days_before)) bad(i, 'days_before', 'Days before must be a whole number ≥ 0.');
       const needsDays = r.kind === 'early_booking' || r.kind === 'last_minute';
       if (needsDays && (r.days_before === '' || r.days_before == null)) bad(i, 'days_before', 'Days before is required for this kind.');
+      if (!isWhole(r.max_gap_nights)) bad(i, 'max_gap_nights', 'Max gap nights must be a whole number ≥ 0.');
+      if (r.kind === 'gap' && !(Number(r.max_gap_nights) >= 1)) bad(i, 'max_gap_nights', 'A gap rule needs max gap nights of at least 1.');
       const from = String(r.from || ''), to = String(r.to || '');
       if (from && !isISODate(from)) bad(i, 'from', 'From must be a date.');
       if (to && !isISODate(to)) bad(i, 'to', 'To must be a date.');
@@ -659,7 +736,8 @@ const actions = {
       const notes = String(r.notes ?? '');
       if (notes.length > 500) bad(i, 'notes', 'Notes are limited to 500 characters.');
       return { id, name, kind: r.kind, percent, min_nights: r.min_nights === '' || r.min_nights == null ? '' : Number(r.min_nights),
-        days_before: r.days_before === '' || r.days_before == null ? '' : Number(r.days_before), from, to, unit_type, unit_id,
+        days_before: r.days_before === '' || r.days_before == null ? '' : Number(r.days_before),
+        max_gap_nights: r.max_gap_nights === '' || r.max_gap_nights == null ? '' : Number(r.max_gap_nights), from, to, unit_type, unit_id,
         active: a === true || /^true$/i.test(String(a)), notes };
     });
     DISCOUNTS = out;

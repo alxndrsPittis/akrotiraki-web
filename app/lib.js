@@ -85,6 +85,7 @@ export const SOURCES = {
   direct: { label: 'Direct', mark: 'DI' },
   airbnb: { label: 'Airbnb', mark: 'AB' },
   booking: { label: 'Booking.com', mark: 'BK' },
+  vrbo: { label: 'Vrbo', mark: 'VR' },
   family: { label: 'Family', mark: 'FA' },
   block: { label: 'Blocked', mark: 'BL' },
 };

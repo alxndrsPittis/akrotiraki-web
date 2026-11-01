@@ -59,7 +59,8 @@ export const normRes = (r) => ({ ...r, id: String(r.id ?? ''), unit_id: String(r
   discount_label: Number(r.discount) > 0 ? String(r.discount_label || '').trim() : '',
   email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '',
   // extras: the stored JSON text parsed to [{id, qty, option, unit_price, amount}]; extras_total kept as sent.
-  extras: parseExtrasLines(r.extras), extras_total: round2(Number(r.extras_total) || 0) });
+  extras: parseExtrasLines(r.extras), extras_total: round2(Number(r.extras_total) || 0),
+  group_id: String(r.group_id ?? '').trim() });
 export const normExp = (e) => ({ ...e, id: String(e.id ?? ''), date: s10(e.date), category: String(e.category || ''), amount: Number(e.amount) || 0, unit_id: e.unit_id ? String(e.unit_id) : '' });
 
 export function applyBootstrap(data, persistIt = true) {
@@ -103,6 +104,16 @@ export function upsert(listName, obj) {
   persist();
   emit();
 }
+/** Replace-or-insert several objects by id, then persist and notify once. */
+export function upsertMany(listName, objs) {
+  const list = state[listName];
+  for (const obj of objs) {
+    const i = list.findIndex((x) => x.id === obj.id);
+    if (i >= 0) list[i] = obj; else list.push(obj);
+  }
+  persist();
+  emit();
+}
 export function removeById(listName, id) {
   state[listName] = state[listName].filter((x) => x.id !== id);
   persist();
@@ -121,6 +132,12 @@ export const activeUnits = () => {
   const act = state.units.filter((u) => u.active === undefined || u.active === '' || truthy(u.active));
   return act.length ? act : state.units;
 };
+/** Reservations sharing r's group_id (whole-house request), maisonettes first, then Units order; [] when none. */
+export function groupMembers(r) {
+  if (!r?.group_id) return [];
+  const order = (id) => { const i = state.units.findIndex((u) => u.id === id); const u = state.units[i]; return (u?.type === 'maisonette' ? 0 : 1000) + (i < 0 ? 999 : i); };
+  return state.reservations.filter((x) => x.group_id === r.group_id).sort((a, b) => order(a.unit_id) - order(b.unit_id) || a.id.localeCompare(b.id));
+}
 export const unitName = (id) => (id ? unitById(id)?.name || id : 'Shared');
 
 /** Extras rows normalized (lib normExtra), in sheet order; cached per state version. */

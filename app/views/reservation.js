@@ -389,7 +389,7 @@ export function openReservation(input = {}, opts = {}) {
     h('div', { class: 'row2' }, field('Paid', paid), h('div')),
     balance,
     h('div', { class: 'switch-row' },
-      h('label', { for: `${uid}-chk` }, 'Verified on Airbnb/Booking',
+      h('label', { for: `${uid}-chk` }, 'Verified on Airbnb/Booking/Vrbo',
         h('span', { class: 'hint block' }, 'Ticked after checking the platform calendar.')),
       checked),
     field('Notes', notes),

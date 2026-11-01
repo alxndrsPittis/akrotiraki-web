@@ -2,6 +2,13 @@
 //   = no-break space,   = narrow no-break space (French typography).
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.fr = {
+  houseName: 'Toute la maison', houseMeta: '4 appartements · 2 duplex et 2 studios · jusqu’à 12 personnes',
+  houseRequest: 'Demander toute la maison', houseFind: 'Trouver des dates',
+  houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' nuit)' : ' nuits)'); },
+  houseNoWindow: 'Aucune date libre pour toute la maison dans les douze prochains mois pour cette durée de séjour.',
+  houseTaken: 'L’un des appartements n’est plus libre à ces dates. Veuillez choisir à nouveau.',
+  houseDiscount: function (m) { return 'Remises incluses : ' + m + '.'; },
+  okHouse: 'Votre demande porte sur toute la maison, les quatre appartements.',
   exPaid: 'Suppléments', exRequest: 'Demandes', exQuote: 'Sur devis', exOnRequest: 'prix sur demande',
   exNote: 'Autre chose ?', exOptional: '(facultatif)', exQty: 'Quantité', exOption: 'Choix',
   exIncl: function (m) { return 'dont suppléments ' + m; },
