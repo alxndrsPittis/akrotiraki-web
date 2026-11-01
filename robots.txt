@@ -1,0 +1,6 @@
+# The staff app is internal. Note: crawlers only read robots.txt at the domain root, so this file
+# takes effect once the site has its own domain; then change the Disallow line to /app/.
+User-agent: *
+Disallow: /akrotiraki-web/app/
+
+Sitemap: https://alxndrspittis.github.io/akrotiraki-web/sitemap.xml

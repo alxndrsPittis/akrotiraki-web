@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- github.io URLs for now; change to the custom domain when it is set. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/archaeology.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/archaeology.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/archaeology.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/archaeology.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/archaeology.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/archaeology.html"/>
+  </url>
+  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/sifnos.html</loc></url>
+  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/beaches.html</loc></url>
+  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/outdoors.html</loc></url>
+  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/food.html</loc></url>
+  <url><loc>https://alxndrspittis.github.io/akrotiraki-web/faq.html</loc></url>
+</urlset>

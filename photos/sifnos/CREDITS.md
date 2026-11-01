@@ -1,0 +1,21 @@
+# Photo credits — photos/sifnos/
+
+All images are from Wikimedia Commons, downloaded on 2026-11-01, resized to 1600 px wide and saved as JPEG (quality 80). No other changes.
+Licences: CC BY-SA requires attribution and that adapted versions (crops, overlays) are shared under the same licence. Each page shows the credit under the photo.
+
+| File | Used on | Author | Licence | Commons page |
+|---|---|---|---|---|
+| `platys-gialos-beach.jpg` | beaches.html | Kondephy | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Platis_Gialos,_Sifnos.jpg](https://commons.wikimedia.org/wiki/File:Platis_Gialos,_Sifnos.jpg) |
+| `vathi-bay.jpg` | sifnos.html | Kondephy | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Vathi,_Sifnos.jpg](https://commons.wikimedia.org/wiki/File:Vathi,_Sifnos.jpg) |
+| `chrysopigi-monastery.jpg` | beaches.html | KASPAR | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Sifnos_-_Chrisopigi_Church.jpg](https://commons.wikimedia.org/wiki/File:Sifnos_-_Chrisopigi_Church.jpg) |
+| `fasolou-from-timios-stavros.jpg` | beaches.html | Catlemur | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Fassolou_from_the_Timios_Stavros_Monastery.jpg](https://commons.wikimedia.org/wiki/File:Fassolou_from_the_Timios_Stavros_Monastery.jpg) |
+| `footpath-to-vathi.jpg` | sifnos.html, outdoors.html | Kkanak | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Μονοπάτι_προς_Βαθύ.jpg](https://commons.wikimedia.org/wiki/File:%CE%9C%CE%BF%CE%BD%CE%BF%CF%80%CE%AC%CF%84%CE%B9_%CF%80%CF%81%CE%BF%CF%82_%CE%92%CE%B1%CE%B8%CF%8D.jpg) |
+| `profitis-ilias-ridge.jpg` | outdoors.html | Kkanak | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Κορυφογραμμή_του_Προφήτη_Ηλία,_στο_βάθος_διακρίνεται_η_Σέριφος.jpg](https://commons.wikimedia.org/wiki/File:%CE%9A%CE%BF%CF%81%CF%85%CF%86%CE%BF%CE%B3%CF%81%CE%B1%CE%BC%CE%BC%CE%AE_%CF%84%CE%BF%CF%85_%CE%A0%CF%81%CE%BF%CF%86%CE%AE%CF%84%CE%B7_%CE%97%CE%BB%CE%AF%CE%B1,_%CF%83%CF%84%CE%BF_%CE%B2%CE%AC%CE%B8%CE%BF%CF%82_%CE%B4%CE%B9%CE%B1%CE%BA%CF%81%CE%AF%CE%BD%CE%B5%CF%84%CE%B1%CE%B9_%CE%B7_%CE%A3%CE%AD%CF%81%CE%B9%CF%86%CE%BF%CF%82.jpg) |
+| `kastro-from-poulati-path.jpg` | sifnos.html | Zde | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Kastro_of_Sifnos_of_the_walk_from_Panagia_Poulati,_153507.jpg](https://commons.wikimedia.org/wiki/File:Kastro_of_Sifnos_of_the_walk_from_Panagia_Poulati,_153507.jpg) |
+| `pottery-lemonis-workshop.jpg` | sifnos.html, food.html | Catlemur | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Lemonis_Sifniot_Pottery_Troullos.jpg](https://commons.wikimedia.org/wiki/File:Lemonis_Sifniot_Pottery_Troullos.jpg) |
+| `pottery-kopela-style.jpg` | outdoors.html | Catlemur | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Kopela_Style_Sifniot_Pottery_1.jpg](https://commons.wikimedia.org/wiki/File:Kopela_Style_Sifniot_Pottery_1.jpg) |
+| `apollonia-village.jpg` | food.html | Kondephy | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Apollonia,_Sifnos.jpg](https://commons.wikimedia.org/wiki/File:Apollonia,_Sifnos.jpg) |
+| `agios-andreas-acropolis.jpg` | sifnos.html, archaeology.html | Zde | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Archaeological_site_Ag._Andreas,_Sifnos,_153568.jpg](https://commons.wikimedia.org/wiki/File:Archaeological_site_Ag._Andreas,_Sifnos,_153568.jpg) |
+| `siphnian-treasury-delphi.jpg` | archaeology.html | George E. Koronaios | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [The_Siphnian_Treasury_on_the_Sacred_Way_at_the_Sanctuary_of_Apollo_(Delphi)_on_October_4,_2020.jpg](https://commons.wikimedia.org/wiki/File:The_Siphnian_Treasury_on_the_Sacred_Way_at_the_Sanctuary_of_Apollo_(Delphi)_on_October_4,_2020.jpg) |
+
+Credit line format used on the pages: “Photo: <author>, <licence>, via Wikimedia Commons”, with the author linked to the Commons file page and the licence linked to its deed.
