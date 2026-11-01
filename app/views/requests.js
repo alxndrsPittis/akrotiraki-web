@@ -2,7 +2,7 @@
 import { state, unitById, isOwner } from '../state.js';
 import { h, icon, toast, copyText } from '../ui.js';
 import { todayISO, diffDays, fmtRange, fmtDateTime, conflictsFor, plural, fromWebsite, SOURCES, LANGS } from '../lib.js';
-import { openReservation, conflictList, priceBreakdown, mailtoFor, approveRequest, declineRequest } from './reservation.js';
+import { openReservation, conflictList, priceBreakdown, mailtoFor, approveRequest, declineRequest, extrasSummary, unpricedExtras } from './reservation.js';
 
 const byCreated = (a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''));
 const byArrival = (a, b) => a.check_in.localeCompare(b.check_in) || a.unit_id.localeCompare(b.unit_id);
@@ -56,10 +56,12 @@ function card(r, owner, today) {
   const via = web ? ' via the website' : r.created_by ? ` · added by ${r.created_by}` : '';
   const langNote = r.email && LANGS[r.lang] && r.lang !== 'en' ? ` · emails in ${LANGS[r.lang]}` : '';
 
+  const tbd = unpricedExtras(r);
+  const ready = r.price > 0 && !tbd.length;
   const approveBtn = h('button', {
-    class: `btn ${conf.length && r.price > 0 ? 'danger-solid' : 'approve'}`, type: 'button', disabled: !owner,
+    class: `btn ${conf.length && ready ? 'danger-solid' : 'approve'}`, type: 'button', disabled: !owner,
     title: owner ? null : 'Only owners can approve',
-  }, r.price > 0 ? (conf.length ? 'Approve anyway' : 'Approve') : 'Set price & approve');
+  }, ready ? (conf.length ? 'Approve anyway' : 'Approve') : 'Set price & approve');
   approveBtn.addEventListener('click', () => busy(approveBtn, () => approveRequest(r)));
   const declineBtn = h('button', { class: 'btn danger-solid', type: 'button' }, 'Decline');
   declineBtn.addEventListener('click', () => busy(declineBtn, () => declineRequest(r)));
@@ -83,6 +85,9 @@ function card(r, owner, today) {
     r.price > 0
       ? priceBreakdown(r)
       : h('p', { class: 'hint req-noprice' }, 'No price yet.', owner ? ' Approving asks for it first.' : ''),
+    extrasSummary(r),
+    tbd.length ? h('p', { class: 'tbd-note' }, icon('warn', 'ic tiny'),
+      ` ${tbd.map((x) => x.name).join(', ')}: agree the price with the guest and set it before approving.`) : null,
     conf.length ? h('div', { class: `warn${hardConf ? ' strong' : ''}` },
       h('p', { class: 'warn-title' }, icon('warn'), hardConf ? 'Overlaps a confirmed stay:' : 'Overlaps other requests:'),
       conflictList(conf)) : null,

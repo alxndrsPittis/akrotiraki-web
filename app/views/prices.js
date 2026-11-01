@@ -1,9 +1,9 @@
-// Prices (owners): seasonal rates, cleaning fees and discount rules (getPricing / savePrices /
-// saveCleaningFees / saveDiscounts, API.md "Owner pricing actions"). Edits live in module drafts, so a
+// Prices (owners): seasonal rates, cleaning fees, discount rules and extras (getPricing / savePrices /
+// saveCleaningFees / saveDiscounts / saveExtras, API.md "Owner pricing actions"). Edits live in module drafts, so a
 // background refresh never wipes them; each card saves on its own and is reloaded from the reply.
 import { state, isOwner } from '../state.js';
 import { h, icon, toast, confirmDialog } from '../ui.js';
-import { fmtDate, isISODate, money, num, todayISO, plural, capitalize } from '../lib.js';
+import { fmtDate, isISODate, money, num, todayISO, plural, capitalize, EXTRA_CATEGORIES, EXTRA_KINDS, EXTRA_LANGS } from '../lib.js';
 import * as actions from '../actions.js';
 
 const KINDS = {
@@ -24,8 +24,10 @@ const key = () => `k${++keySeq}`;
 let rates = [];         // {_k, target:'type:maisonette'|'unit:u1', from, to, price_per_night, min_nights, notes}
 let rules = [];         // {_k, id, name, kind, percent, min_nights, days_before, from, to, unit_type, unit_id, active, notes}
 let fees = { maisonette: '', studio: '', per_unit: {} };
-const dirty = { rates: false, fees: false, rules: false };
-const errors = { rates: null, fees: null, rules: null }; // {row, field, message}
+let extras = [];        // {_k, id, locked, name_en…name_de, category, kind, price, options, unit_type, unit_id, max_qty, active, sort, notes}
+const dirty = { rates: false, fees: false, rules: false, extras: false };
+const errors = { rates: null, fees: null, rules: null, extras: null }; // {row, field, message}
+const CARDS = ['rates', 'fees', 'rules', 'extras'];
 let yearFilter = null;  // 'all' | '2027'
 let rootEl = null;
 
@@ -50,8 +52,15 @@ function fromPayload(p) {
   const cf = p.cleaning_fees || {};
   fees = { maisonette: str(cf.maisonette ?? ''), studio: str(cf.studio ?? ''),
     per_unit: Object.fromEntries(Object.entries(cf.per_unit || {}).map(([k, v]) => [k, str(v)])) };
-  dirty.rates = dirty.fees = dirty.rules = false;
-  errors.rates = errors.fees = errors.rules = null;
+  extras = (p.extras || []).map((x) => ({
+    _k: key(), id: str(x.id), locked: !!str(x.id),
+    ...Object.fromEntries(EXTRA_LANGS.map((l) => [`name_${l}`, str(x[`name_${l}`])])),
+    category: EXTRA_CATEGORIES[str(x.category).toLowerCase()] ? str(x.category).toLowerCase() : 'paid',
+    kind: EXTRA_KINDS[str(x.kind).toLowerCase()] ? str(x.kind).toLowerCase() : 'per_stay',
+    price: str(x.price), options: str(x.options), unit_type: str(x.unit_type).toLowerCase(), unit_id: str(x.unit_id),
+    max_qty: str(x.max_qty), active: x.active === true || /^true$/i.test(str(x.active)), sort: str(x.sort), notes: str(x.notes),
+  }));
+  for (const c of CARDS) { dirty[c] = false; errors[c] = null; }
 }
 
 function load(force = false) {
@@ -59,7 +68,7 @@ function load(force = false) {
   if (!force && data && Date.now() - fetchedAt < 60000) return Promise.resolve();
   loading = actions.getPricing().then((p) => {
     // Unsaved drafts win over a background reload.
-    if (!dirty.rates && !dirty.fees && !dirty.rules) fromPayload(p); else data = p;
+    if (!CARDS.some((c) => dirty[c])) fromPayload(p); else data = p;
     fetchedAt = Date.now();
     loadError = '';
   }).catch((e) => {
@@ -96,7 +105,7 @@ function build(root) {
     return;
   }
   wrap.classList.add('ready');
-  wrap.append(ratesCard(), feesCard(), rulesCard());
+  wrap.append(ratesCard(), feesCard(), rulesCard(), extrasCard());
 }
 
 const rebuild = () => rootEl && build(rootEl);
@@ -129,7 +138,8 @@ const statusLine = (card) => h('span', { class: `save-status${dirty[card] ? ' un
 const errorLine = (card) => (errors[card] ? h('p', { class: 'form-error', role: 'alert' }, errors[card].message) : null);
 const fieldLabel = (text) => h('span', { class: 'cell-label' }, text);
 
-function handleSaveError(card, e, count) {
+function handleSaveError(card, e) {
+  const count = card === 'rates' ? rates.length : card === 'rules' ? rules.length : extras.length;
   if (e.code === 'bad_request' && e.data && (Number.isInteger(e.data.row) || e.data.field)) {
     errors[card] = { row: Number.isInteger(e.data.row) ? e.data.row : -1, field: e.data.field || '', message: e.message || 'Check the highlighted field.' };
     if (card === 'rates' && errors.rates.row >= 0 && errors.rates.row < count) {
@@ -155,15 +165,19 @@ async function runSave(card, btn, fn, okMsg) {
   try {
     const p = await fn();
     // Keep the other cards' unsaved drafts; reload this card from the reply.
-    const keep = { rates: dirty.rates && card !== 'rates' ? rates : null, rules: dirty.rules && card !== 'rules' ? rules : null, fees: dirty.fees && card !== 'fees' ? fees : null };
+    const drafts = { rates, rules, fees, extras };
     const keepDirty = { ...dirty };
     fromPayload(p);
     fetchedAt = Date.now();
-    for (const k of ['rates', 'rules', 'fees']) if (keep[k]) { if (k === 'rates') rates = keep[k]; else if (k === 'rules') rules = keep[k]; else fees = keep[k]; dirty[k] = keepDirty[k]; }
+    for (const k of CARDS) {
+      if (k === card || !keepDirty[k]) continue;
+      if (k === 'rates') rates = drafts.rates; else if (k === 'rules') rules = drafts.rules; else if (k === 'fees') fees = drafts.fees; else extras = drafts.extras;
+      dirty[k] = true;
+    }
     rebuild();
     toast(okMsg(p));
   } catch (e) {
-    handleSaveError(card, e, card === 'rates' ? rates.length : rules.length);
+    handleSaveError(card, e);
   } finally {
     if (btn.isConnected) { btn.disabled = false; btn.textContent = label; }
   }
@@ -407,4 +421,151 @@ function rulesCard() {
     h('div', { class: 'card-foot' },
       h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Discounts tab in the Sheet.'),
       statusLine('rules'), saveBtn));
+}
+
+// ---------- Card 4: extras ----------
+const LANG_LABEL = { en: 'EN', el: 'EL', fr: 'FR', es: 'ES', de: 'DE' };
+/** Options text → {list:[{label, price}], error} with the backend's strict rules (saveExtras). */
+function parseOptionsStrict(text) {
+  const list = [];
+  for (const part of str(text).split(';')) {
+    if (!part.trim()) continue;
+    const eq = part.lastIndexOf('=');
+    const label = (eq >= 0 ? part.slice(0, eq) : part).trim();
+    const raw = eq >= 0 ? part.slice(eq + 1).trim() : '';
+    if (!label) return { list, error: 'Every option needs a label.' };
+    const p = raw === '' ? null : Number(raw.replace(',', '.'));
+    if (p != null && !(isFinite(p) && p >= 0 && p <= 100000)) return { list, error: `Option "${label}" has an invalid price.` };
+    if (list.some((o) => o.label.toLowerCase() === label.toLowerCase())) return { list, error: `Duplicate option: ${label}.` };
+    list.push({ label, price: p });
+  }
+  return { list, error: '' };
+}
+function optionsPreview(x) {
+  if (!str(x.options).trim()) return '';
+  if (x.category !== 'paid') return 'Only paid extras can have options.';
+  const { list, error } = parseOptionsStrict(x.options);
+  if (error) return error;
+  const base = str(x.price).trim() === '' ? null : num(x.price);
+  return `Guest chooses one: ${list.map((o) => `${o.label} ${o.price != null ? money(o.price, cur()) : base != null ? `${money(base, cur())} (price)` : '(price)'}`).join(' · ')}`;
+}
+const KIND_TEXT = { per_stay: 'per stay', per_night: 'per night', per_person_night: 'per person per night' };
+function extraPreview(x) {
+  let s;
+  if (x.category === 'request') s = 'Free request (no price)';
+  else if (x.category === 'quote') s = 'On request: listed without a price, you set the amount per stay';
+  else if (str(x.price).trim() === '' || !(num(x.price) >= 0)) s = 'Paid: set a price';
+  else s = `${money(num(x.price), cur())} ${KIND_TEXT[x.kind] || ''}${str(x.options).trim() ? ', or the option price' : ''}`;
+  const mq = Number(str(x.max_qty).trim() || 1);
+  if (mq > 1) s += `, up to ${mq}`;
+  if (x.unit_id) s += `, ${unitNameOf(x.unit_id)} only`;
+  else if (x.unit_type) s += `, ${x.unit_type}s only`;
+  return `${s}.${x.active ? '' : ' Off: hidden from guests.'}`;
+}
+
+function extrasCard() {
+  extras.forEach((x, i) => { x.__i = i; });
+  const typeOpts = [['', 'Any type'], ...[...new Set(units().map((u) => String(u.type || '').toLowerCase()).filter(Boolean))].map((t) => [t, `${capitalize(t)}s`])];
+  const unitOpts = [['', 'Any apartment'], ...units().map((u) => [u.id, u.name || u.id])];
+  const used = new Set(state.reservations.flatMap((r) => (r.extras || []).map((l) => l.id)));
+  const addBtn = h('button', { class: 'btn sm', type: 'button' }, icon('plus'), 'Add extra');
+  addBtn.addEventListener('click', () => {
+    const maxSort = extras.reduce((m, x) => Math.max(m, num(x.sort)), 0);
+    extras.push({ _k: key(), id: '', locked: false, name_en: '', name_el: '', name_fr: '', name_es: '', name_de: '', category: 'paid', kind: 'per_stay',
+      price: '', options: '', unit_type: '', unit_id: '', max_qty: '1', active: true, sort: String(maxSort + 10), notes: '' });
+    markDirty('extras');
+    rebuild();
+    rootEl.querySelector('[data-card="extras"] .extra-item:last-of-type [data-field="name_en"]')?.focus();
+  });
+
+  const list = extras.map((x) => {
+    const label = x.name_en ? `Extra ${x.name_en}` : `Extra ${x.__i + 1}`;
+    const err = errors.extras?.row === x.__i ? errors.extras : null;
+    const preview = h('p', { class: 'rule-preview', 'aria-live': 'polite' }, extraPreview(x));
+    const optPrev = h('p', { class: 'hint opt-preview' });
+    const box = h('article', { class: `rule extra-item cat-${x.category}${x.active ? '' : ' off'}${err ? ' has-error' : ''}`, 'aria-label': label });
+    const refresh = () => {
+      preview.textContent = extraPreview(x);
+      box.querySelector('.ex-head-name').textContent = x.name_en || x.id || 'New extra';
+      const op = optionsPreview(x);
+      optPrev.textContent = op;
+      optPrev.classList.toggle('bad', !!op && !op.startsWith('Guest'));
+      box.classList.toggle('off', !x.active);
+      box.querySelectorAll('[data-cats]').forEach((el) => { el.hidden = !el.dataset.cats.split(' ').includes(x.category); });
+      const pl = box.querySelector('.price-label');
+      if (pl) pl.textContent = x.category === 'paid' ? `Price (${cur()})` : `Price (${cur()}, ignored)`;
+    };
+    box.addEventListener('input', refresh);
+    box.addEventListener('change', refresh);
+    const act = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: x.active, 'aria-label': `${label}: active`, 'data-field': 'active' });
+    act.addEventListener('change', () => { x.active = act.checked; markDirty('extras'); });
+    const dup = h('button', { class: 'btn ghost icon-btn sm', type: 'button', 'aria-label': `Duplicate ${label}`, title: 'Duplicate' }, icon('copy'));
+    dup.addEventListener('click', () => {
+      extras.splice(x.__i + 1, 0, { ...x, _k: key(), id: '', locked: false, name_en: x.name_en ? `${x.name_en} (copy)` : '', sort: str(num(x.sort) + 1) });
+      markDirty('extras'); rebuild();
+    });
+    const del = h('button', { class: 'btn ghost icon-btn sm danger', type: 'button', 'aria-label': `Delete ${label}`, title: 'Delete' }, icon('trash'));
+    del.addEventListener('click', async () => {
+      if (x.locked && used.has(x.id) && !(await confirmDialog(`Reservations on this device use "${x.id}". They keep their booked lines, but the app and emails will show the id instead of the name. Delete anyway? Setting it inactive hides it from guests instead.`,
+        { title: 'Extra in use', ok: 'Delete', danger: true }))) return;
+      extras.splice(x.__i, 1); markDirty('extras'); errors.extras = null; rebuild();
+    });
+    const f = (lbl, el, cls = '', cats = null) => h('label', { class: `cell ${cls}`, 'data-cats': cats, hidden: cats && !cats.split(' ').includes(x.category) }, typeof lbl === 'string' ? fieldLabel(lbl) : lbl, el);
+    const idCell = x.locked
+      ? h('div', { class: 'cell' }, fieldLabel('Id'), h('code', { class: 'ex-id', title: 'Ids are referenced by reservations and cannot be changed.' }, x.id))
+      : f('Id (optional)', cellInput(x, 'id', { type: 'text', maxlength: 40, placeholder: 'auto', pattern: '[A-Za-z0-9_-]*', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': `${label}: id` }, 'extras'));
+    const names = h('fieldset', { class: 'names' },
+      h('legend', { class: 'cell-label' }, 'Names (EN required; others fall back to English)'),
+      h('div', { class: 'names-grid' }, EXTRA_LANGS.map((l) => h('label', { class: `name-in${l === 'en' ? ' en' : ''}` },
+        h('span', { class: 'lang' }, LANG_LABEL[l]),
+        cellInput(x, `name_${l}`, { type: 'text', maxlength: 100, autocomplete: 'off', required: l === 'en', lang: l, 'aria-label': `${label}: name (${LANG_LABEL[l]})` }, 'extras')))));
+    box.append(
+      h('div', { class: 'rule-head' },
+        h('span', { class: `cat-tag ${x.category}` }, EXTRA_CATEGORIES[x.category]),
+        h('strong', { class: 'ex-head-name' }, x.name_en || (x.id ? x.id : 'New extra')),
+        h('label', { class: 'toggle' }, act, 'Active'), dup, del),
+      preview,
+      names,
+      h('div', { class: 'rule-grid ex-grid' },
+        f('Category', cellSelect(x, 'category', Object.entries(EXTRA_CATEGORIES), { 'aria-label': `${label}: category` }, 'extras', () => {
+          box.querySelector('.cat-tag').className = `cat-tag ${x.category}`; box.querySelector('.cat-tag').textContent = EXTRA_CATEGORIES[x.category];
+        })),
+        f('Kind', cellSelect(x, 'kind', Object.entries(EXTRA_KINDS), { 'aria-label': `${label}: kind` }, 'extras'), '', 'paid'),
+        f(h('span', { class: 'cell-label price-label' }, x.category === 'paid' ? `Price (${cur()})` : `Price (${cur()}, ignored)`),
+          cellInput(x, 'price', { type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: x.category === 'paid' ? '' : '–', 'aria-label': `${label}: price` }, 'extras'), '', 'paid'),
+        f('Max qty', cellInput(x, 'max_qty', { type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: '1', 'aria-label': `${label}: maximum quantity` }, 'extras')),
+        f('Unit type', cellSelect(x, 'unit_type', typeOpts, { 'aria-label': `${label}: unit type` }, 'extras')),
+        f('Apartment', cellSelect(x, 'unit_id', unitOpts, { 'aria-label': `${label}: apartment` }, 'extras')),
+        f('Sort', cellInput(x, 'sort', { type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0', 'aria-label': `${label}: sort` }, 'extras')),
+        idCell),
+      h('label', { class: 'cell', 'data-cats': 'paid', hidden: x.category !== 'paid' }, fieldLabel('Options (label=price;label=price, optional)'),
+        cellInput(x, 'options', { type: 'text', maxlength: 1000, autocomplete: 'off', placeholder: 'Sifnos white=18;Sifnos red=18', 'aria-label': `${label}: options` }, 'extras'), optPrev),
+      h('label', { class: 'cell' }, fieldLabel('Notes (never shown to guests)'), cellInput(x, 'notes', { type: 'text', maxlength: 500, autocomplete: 'off', 'aria-label': `${label}: notes` }, 'extras')));
+    refresh();
+    return box;
+  });
+
+  const saveBtn = h('button', { class: 'btn primary', type: 'button' }, 'Save extras');
+  saveBtn.addEventListener('click', () => runSave('extras', saveBtn, () => actions.saveExtras(extras.map((x) => {
+    const n = (v) => (str(v).trim() === '' ? '' : num(v));
+    return {
+      ...(x.id.trim() ? { id: x.id.trim() } : {}),
+      ...Object.fromEntries(EXTRA_LANGS.map((l) => [`name_${l}`, str(x[`name_${l}`]).trim()])),
+      category: x.category, kind: x.kind, price: n(x.price), options: x.category === 'paid' ? str(x.options).trim() : '',
+      unit_type: x.unit_type || '', unit_id: x.unit_id || '', max_qty: str(x.max_qty).trim() === '' ? '' : Number(str(x.max_qty).trim()),
+      active: !!x.active, sort: n(x.sort), notes: str(x.notes).trim(),
+    };
+  })), (p) => `Extras saved (${plural((p.extras || []).filter((x) => x.active === true || /^true$/i.test(String(x.active))).length, 'active extra')}).`));
+
+  const counts = Object.keys(EXTRA_CATEGORIES).map((c) => [c, extras.filter((x) => x.category === c).length]).filter(([, n]) => n);
+  return h('section', { class: 'card', 'data-card': 'extras', 'aria-labelledby': 'pr-extras' },
+    h('div', { class: 'card-head' }, h('h2', { id: 'pr-extras' }, 'Extras'),
+      counts.length ? h('span', { class: 'hint' }, counts.map(([c, n]) => `${n} ${EXTRA_CATEGORIES[c].toLowerCase()}`).join(' · ')) : null),
+    h('p', { class: 'hint' }, 'Offered on the website and in the reservation form. Paid extras are priced from here; requests are free wishes; extras on request are listed without a price and you set the amount on the reservation. Discount rules never apply to extras.'),
+    h('div', { class: 'card-tools' }, addBtn),
+    list.length ? h('div', { class: 'rule-list extra-list' }, list) : h('p', { class: 'empty' }, 'No extras yet.'),
+    errorLine('extras'),
+    h('div', { class: 'card-foot' },
+      h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Extras tab in the Sheet. Do not reuse an id for a different extra.'),
+      statusLine('extras'), saveBtn));
 }

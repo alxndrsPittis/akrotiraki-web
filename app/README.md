@@ -58,12 +58,18 @@ Edit `config.js`:
   backend applies the best Discounts rule; an empty Discount field in the form means "the quote's rule" (shown as a
   placeholder with its label), a typed amount (0 included) overrides it. `discount_label` is shown next to the
   discount line in the form, the request cards and the approve dialog.
+- **Extras** (API.md "Extras"): bootstrap `extras` (all rows; the app shows `name_en`). The reservation form has an
+  Extras block (paid / requests / on request) with quantity, option and, for on-request items, the agreed amount;
+  price = accommodation + cleaning − discount + extras. A price from the list is re-quoted with `quoteFor`
+  (`extras`, `guests`) and saved with `autoprice`; otherwise the lines are sent with `unit_price`/`amount` (only when
+  changed) and the price moves by the difference in the extras total. Request cards list the extras; Approve is
+  blocked until every on-request item has an amount. Prices has a fourth card for the Extras tab (`saveExtras`).
 - **Totals** are computed on the device from loaded data; when the `totals` action answers, its numbers are used.
 - **Statistics** (tab): KPI row and SVG charts (occupancy per apartment, revenue vs `plan`, sources, stay length and
   lead time, expenses by category), computed on the device like Totals; each chart has a data table. Bootstrap's
   optional `plan` rows and `settings.sheet_url` are used when present.
 - **Prices** (owners; side rail on desktop, Account menu or the Totals header on phones): seasonal rates, cleaning
-  fees and discount rules via `getPricing` / `savePrices` / `saveCleaningFees` / `saveDiscounts`. Each card saves on
+  fees, discount rules and extras via `getPricing` / `savePrices` / `saveCleaningFees` / `saveDiscounts` / `saveExtras`. Each card saves on
   its own and replaces the whole tab; server `data.row` / `data.field` errors are marked on the cell.
 
 ## Files

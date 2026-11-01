@@ -99,6 +99,12 @@ export function renderTotals(root) {
       h('strong', null, money(Math.round(local.year.cleaning), cur)), ` in ${year}`,
       Math.round(local.season.cleaning) ? [', ', h('strong', null, money(Math.round(local.season.cleaning), cur)), ' in the season'] : null, '.'));
   }
+  // Extras (breakfast, transfers…) are part of the price, so of revenue: shown as a secondary figure only (local data).
+  if (Math.round(local.year.extras)) {
+    root.append(h('p', { class: 'summary foot-note' }, 'Of which extras: ',
+      h('strong', null, money(Math.round(local.year.extras), cur)), ` in ${year}`,
+      Math.round(local.season.extras) ? [', ', h('strong', null, money(Math.round(local.season.extras), cur)), ' in the season'] : null, '.'));
+  }
   // Discounts are already deducted from the price, so from revenue: shown for reference only (local data).
   if (Math.round(local.year.discount)) {
     root.append(h('p', { class: 'summary foot-note' }, 'Discounts given: ',
@@ -110,6 +116,6 @@ export function renderTotals(root) {
   const units = activeUnitCount(state.units);
   root.append(h('p', { class: 'hint foot-note' },
     `Nights and occupancy count confirmed stays across ${units} active unit${units === 1 ? '' : 's'} (blocked dates excluded). ` +
-    'Revenue is the price of confirmed stays by check-in month, cleaning fees included and discounts deducted. ' +
+    'Revenue is the price of confirmed stays by check-in month, cleaning fees and extras included, discounts deducted. ' +
     (t.source === 'server' ? 'Figures from the server.' : 'Computed on this device from loaded data (last ~13 months).')));
 }

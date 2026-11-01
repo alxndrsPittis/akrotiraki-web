@@ -8,6 +8,7 @@
   --sea-soft: #d8e8f0;
   --sand: #c9a46b;
   --sand-soft: #f1e7d3;
+  --sand-ink: #85652a; /* sand text on light backgrounds */
   --grey-soft: #ececea;
   --radius: 10px;
 
@@ -46,6 +47,7 @@
     --sea-soft: #1b3141;
     --sand: #c9a46b;
     --sand-soft: #3a3122;
+    --sand-ink: #d8b77e;
     --grey-soft: #2a2e32;
     --surface: #1a2026;
     --weekend: #1d242b;
@@ -682,3 +684,70 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--da
 .table.compact th, .table.compact td { padding: 6px 10px; font-size: 13px; }
 @media (max-width: 520px) { .table.compact th, .table.compact td { padding: 6px 4px; font-size: 12px; } .table.compact th:first-child { padding-left: 8px; } }
 .chart .val.small { font-size: 10px; }
+
+/* ---------- Extras ---------- */
+/* Reservation form: extras block */
+.extras-box { margin: 0 0 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.extras-box > summary { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 14px; cursor: pointer; list-style: none; }
+.extras-box > summary::-webkit-details-marker { display: none; }
+.extras-box > summary::before { content: ""; width: 8px; height: 8px; border-right: 1.7px solid var(--muted); border-bottom: 1.7px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; }
+.extras-box[open] > summary::before { transform: rotate(45deg); }
+.ex-title { font-weight: 600; }
+.ex-count { margin-left: auto; font-size: 13px; color: var(--muted); text-align: right; }
+.ex-groups { padding: 0 14px; }
+.ex-group { border: 0; margin: 0; padding: 4px 0 8px; min-width: 0; }
+.ex-group + .ex-group { border-top: 1px solid var(--line); padding-top: 10px; }
+.ex-group legend { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 0; margin-bottom: 4px; float: left; width: 100%; }
+.ex-line { clear: both; padding: 4px 0; }
+.ex-line + .ex-line { border-top: 1px dashed var(--line); }
+.ex-check { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; min-height: 36px; cursor: pointer; }
+.ex-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--sea); }
+.ex-name { font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.ex-line.on .ex-name { font-weight: 500; }
+.ex-unit { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+.cat-quote .ex-unit { color: var(--sand-ink); }
+.ex-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 0 6px 28px; }
+.ex-ctrl select, .ex-ctrl input.ex-amt-in { width: auto; flex: 1 1 140px; min-height: 36px; padding-top: 5px; padding-bottom: 5px; font-size: 15px; }
+.ex-ctrl input.ex-amt-in { flex: 0 1 130px; background: var(--sand-soft); border-color: var(--sand); }
+.ex-ctrl input.ex-amt-in:not(:placeholder-shown) { background: var(--surface); border-color: var(--line); }
+.ex-amt { margin-left: auto; font-size: 14px; font-weight: 500; min-width: 56px; }
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.qty .qty-btn { width: 34px; min-height: 34px; border: 0; background: transparent; font-size: 18px; line-height: 1; }
+.qty-val { min-width: 24px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ex-foot { display: flex; justify-content: space-between; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+.ex-foot .ex-total { color: var(--ink); font-weight: 600; }
+.extras-box .hint { margin: 4px 0 8px; }
+[aria-invalid="true"] { border-color: var(--danger) !important; }
+
+/* Requests and approve dialog: extras summary */
+.ex-sum { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; font-size: 14px; }
+.ex-sum-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ex-sum-list li { display: flex; justify-content: space-between; gap: 12px; }
+.ex-sum-list li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.ex-tbd > span:first-child { color: var(--ink); }
+.tag-tbd { flex: none; align-self: center; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--sand-soft); border: 1px dashed var(--sand); color: var(--ink); white-space: nowrap; }
+.ex-sum-req { color: var(--ink); }
+.tbd-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 4px; padding: 8px 10px; border-radius: var(--radius); background: var(--sand-soft); border: 1px solid var(--sand); font-size: 13px; }
+.tbd-note .ic { width: 16px; height: 16px; margin-top: 1px; }
+.ic.tiny { width: 14px; height: 14px; }
+
+/* Prices: extras card */
+.extra-item .rule-head { flex-wrap: wrap; }
+.ex-head-name { flex: 1; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--sea-soft); color: var(--ink); white-space: nowrap; }
+.cat-tag.request { background: var(--grey-soft); }
+.cat-tag.quote { background: var(--sand-soft); border: 1px dashed var(--sand); }
+.names { border: 0; padding: 0; margin: 0; min-width: 0; }
+.names legend { padding: 0; margin-bottom: 4px; }
+.names-grid { display: grid; grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.name-in { display: grid; grid-template-columns: 34px 1fr; align-items: center; }
+.name-in + .name-in { border-top: 1px solid var(--line); }
+.name-in .lang { font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; letter-spacing: .03em; }
+.name-in.en .lang { color: var(--sea); }
+.rule .name-in input:not([type=checkbox]) { border: 0; border-left: 1px solid var(--line); border-radius: 0; min-height: 36px; padding: 5px 10px; font-size: 14px; }
+.rule .name-in.en input { font-weight: 500; }
+.ex-grid { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 560px) { .ex-grid { grid-template-columns: repeat(4, 1fr); } }
+.extra-item .cell[hidden] { display: none; }
+.ex-id { display: flex; align-items: center; min-height: 40px; padding: 0 10px; border: 1px dashed var(--line); border-radius: var(--radius); font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt-preview { margin-top: 2px; }

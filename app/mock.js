@@ -1,6 +1,7 @@
 // In-memory fake backend implementing the API.md actions with sample data.
 // Used when config.API_URL is empty, config.MOCK is true, or the URL has ?mock=1.
-import { addDays, diffDays, todayISO, isISODate, conflictsFor, isEmail, round2, SOURCES, STATUSES, CATEGORIES, LANGS, pad } from './lib.js';
+import { addDays, diffDays, todayISO, isISODate, conflictsFor, isEmail, round2, SOURCES, STATUSES, CATEGORIES, LANGS, pad,
+  normExtra, extraAmount, parseExtrasLines, EXTRA_LANGS } from './lib.js';
 import { computeTotals } from './calc.js';
 import { decodeJwt } from './auth.js';
 
@@ -74,9 +75,121 @@ function bestRule(u, nightly, check_in) {
   return best;
 }
 
+// Extras tab: the backend's seed list (Setup.js SEED_EXTRAS), all active, sort 10, 20, …
+const SEED_EXTRAS = [
+  // paid
+  { id: 'breakfast', kind: 'per_person_night', price: 10, name_en: 'Breakfast basket', name_el: 'Καλάθι πρωινού',
+    name_fr: 'Panier petit-déjeuner', name_es: 'Cesta de desayuno', name_de: 'Frühstückskorb' },
+  { id: 'daily_cleaning', kind: 'per_night', price: 25, name_en: 'Daily cleaning', name_el: 'Καθημερινός καθαρισμός',
+    name_fr: 'Ménage quotidien', name_es: 'Limpieza diaria', name_de: 'Tägliche Reinigung' },
+  { id: 'linen_change', kind: 'per_stay', price: 15, name_en: 'Extra linen and towel change',
+    name_el: 'Επιπλέον αλλαγή σεντονιών και πετσετών', name_fr: 'Changement supplémentaire du linge et des serviettes',
+    name_es: 'Cambio adicional de sábanas y toallas', name_de: 'Zusätzlicher Wechsel von Bettwäsche und Handtüchern' },
+  { id: 'port_transfer', kind: 'per_stay', price: 35, name_en: 'Port transfer Kamares ↔ Platys Gialos',
+    name_el: 'Μεταφορά λιμάνι Καμάρες ↔ Πλατύς Γιαλός', name_fr: 'Transfert port Kamares ↔ Platys Gialos',
+    name_es: 'Traslado puerto Kamares ↔ Platys Gialos', name_de: 'Hafentransfer Kamares ↔ Platys Gialos' },
+  { id: 'wine', kind: 'per_stay', price: 18, options: 'Sifnos white=18;Sifnos red=18;Assyrtiko Santorini=28',
+    name_en: 'Bottle of wine on arrival', name_el: 'Μπουκάλι κρασί κατά την άφιξη',
+    name_fr: 'Bouteille de vin à l\'arrivée', name_es: 'Botella de vino a la llegada', name_de: 'Flasche Wein bei Ankunft' },
+  { id: 'starter_groceries', kind: 'per_stay', price: 25,
+    name_en: 'Starter groceries on arrival (milk, cereals, bread, eggs, butter, juice)',
+    name_el: 'Βασικά τρόφιμα κατά την άφιξη (γάλα, δημητριακά, ψωμί, αυγά, βούτυρο, χυμός)',
+    name_fr: 'Courses de base à l\'arrivée (lait, céréales, pain, œufs, beurre, jus)',
+    name_es: 'Compra básica a la llegada (leche, cereales, pan, huevos, mantequilla, zumo)',
+    name_de: 'Grundeinkauf bei Ankunft (Milch, Müsli, Brot, Eier, Butter, Saft)' },
+  // request: free wishes (price 0)
+  { id: 'baby_cot', category: 'request', price: 0, max_qty: 2, name_en: 'Baby cot', name_el: 'Βρεφικό κρεβάτι',
+    name_fr: 'Lit bébé', name_es: 'Cuna', name_de: 'Babybett' },
+  { id: 'high_chair', category: 'request', price: 0, name_en: 'High chair', name_el: 'Παιδικό καρεκλάκι φαγητού',
+    name_fr: 'Chaise haute', name_es: 'Trona', name_de: 'Hochstuhl' },
+  { id: 'extra_pillows', category: 'request', price: 0, max_qty: 4, name_en: 'Extra pillows',
+    name_el: 'Επιπλέον μαξιλάρια', name_fr: 'Oreillers supplémentaires', name_es: 'Almohadas adicionales',
+    name_de: 'Zusätzliche Kissen' },
+  { id: 'hypoallergenic_bedding', category: 'request', price: 0, name_en: 'Hypoallergenic bedding',
+    name_el: 'Υποαλλεργικά κλινοσκεπάσματα', name_fr: 'Literie hypoallergénique', name_es: 'Ropa de cama hipoalergénica',
+    name_de: 'Allergikerbettwäsche' },
+  { id: 'early_arrival', category: 'request', price: 0, name_en: 'Early arrival if possible',
+    name_el: 'Νωρίτερη άφιξη αν είναι δυνατόν', name_fr: 'Arrivée anticipée si possible',
+    name_es: 'Llegada anticipada si es posible', name_de: 'Frühe Anreise, falls möglich' },
+  { id: 'late_departure', category: 'request', price: 0, name_en: 'Late departure if possible',
+    name_el: 'Αργότερη αναχώρηση αν είναι δυνατόν', name_fr: 'Départ tardif si possible',
+    name_es: 'Salida tardía si es posible', name_de: 'Späte Abreise, falls möglich' },
+  { id: 'dinner_reservation', category: 'request', price: 0, name_en: 'Dinner reservation at a taverna',
+    name_el: 'Κράτηση για δείπνο σε ταβέρνα', name_fr: 'Réservation pour dîner dans une taverne',
+    name_es: 'Reserva para cenar en una taberna', name_de: 'Tischreservierung in einer Taverne' },
+  // quote: paid, price agreed later (price cell empty)
+  { id: 'local_products', category: 'quote', name_en: 'Local products on arrival (cheese, honey, koulouria)',
+    name_el: 'Τοπικά προϊόντα κατά την άφιξη (τυρί, μέλι, κουλούρια)',
+    name_fr: 'Produits locaux à l\'arrivée (fromage, miel, koulouria)',
+    name_es: 'Productos locales a la llegada (queso, miel, koulouria)',
+    name_de: 'Lokale Produkte bei Ankunft (Käse, Honig, Koulouria)' },
+  { id: 'boat_or_car', category: 'quote', name_en: 'Boat day or car rental arranged',
+    name_el: 'Οργάνωση ημέρας με σκάφος ή ενοικίασης αυτοκινήτου',
+    name_fr: 'Journée en bateau ou location de voiture organisée',
+    name_es: 'Día en barco o alquiler de coche organizado', name_de: 'Bootstag oder Mietwagen organisiert' },
+  { id: 'celebration', category: 'quote', name_en: 'Celebration setup (birthday, anniversary)',
+    name_el: 'Προετοιμασία για γιορτή (γενέθλια, επέτειος)',
+    name_fr: 'Décoration pour une fête (anniversaire, anniversaire de mariage)',
+    name_es: 'Preparación para una celebración (cumpleaños, aniversario)',
+    name_de: 'Dekoration für einen Anlass (Geburtstag, Jahrestag)' },
+  { id: 'pottery_workshop', category: 'quote', name_en: 'Pottery workshop visit arranged',
+    name_el: 'Οργάνωση επίσκεψης σε εργαστήριο κεραμικής', name_fr: 'Visite d\'un atelier de poterie organisée',
+    name_es: 'Visita a un taller de cerámica organizada', name_de: 'Besuch einer Töpferwerkstatt organisiert' }
+];
+
+let EXTRAS = SEED_EXTRAS.map((e, i) => ({
+  id: e.id, name_en: e.name_en, name_el: e.name_el, name_fr: e.name_fr, name_es: e.name_es, name_de: e.name_de,
+  category: e.category || 'paid', kind: e.kind || 'per_stay', price: e.price == null ? '' : e.price, options: e.options || '',
+  unit_type: e.unit_type || '', unit_id: e.unit_id || '', max_qty: e.max_qty || 1, active: true, sort: (i + 1) * 10,
+  notes: 'seed — to confirm',
+}));
+const xErr = (message, index, field = 'extras') => new E('bad_request', message, index == null ? { field } : { field, index });
+/**
+ * Owner-side pricing of extras (backend priceExtras with opts.owner): inactive extras and other units allowed,
+ * qty 1..99, option required when the extra has options; a quote extra takes `amount` when sent, else 0.
+ * selection [{id, qty, option, amount?}] → {lines: [{id, name, category, kind, option, qty, unit_price, amount}], total}.
+ */
+function priceExtras(selection, nights, guests) {
+  if (selection == null || selection === '') return { lines: [], total: 0 };
+  if (!Array.isArray(selection)) throw xErr('extras must be a list.');
+  if (selection.length > 20) throw xErr('At most 20 extras.');
+  const seen = new Set();
+  let cents = 0;
+  const lines = selection.map((s, i) => {
+    if (!s || typeof s !== 'object') throw xErr('Each extra must be {id, qty}.', i);
+    if (seen.has(s.id)) throw xErr(`This extra is listed twice: ${s.id}.`, i);
+    seen.add(s.id);
+    const row = EXTRAS.find((r) => r.id === s.id);
+    const x = row && normExtra(row);
+    if (!x) throw xErr(`This extra is not available: ${s.id}.`, i);
+    const qty = s.qty == null || s.qty === '' ? 1 : Number(s.qty);
+    if (!(Number.isInteger(qty) && qty >= 1 && qty <= 99)) throw xErr(`Please choose 1 to 99 for ${x.name}.`, i);
+    let option = '', unit_price = x.price, amount = 0;
+    if (x.options.length) {
+      const o = x.options.find((op) => op.label.toLowerCase() === String(s.option || '').toLowerCase());
+      if (!o) throw xErr(`Please choose one of: ${x.options.map((op) => op.label).join(', ')} (${x.name}).`, i);
+      option = o.label;
+      if (o.price != null) unit_price = o.price;
+    } else if (s.option) throw xErr(`${x.name} has no options.`, i);
+    if (x.category === 'paid') {
+      if (x.kind === 'per_person_night' && !(Number.isInteger(guests) && guests >= 1)) throw xErr(`Please enter the number of guests (needed for ${x.name}).`, i, 'guests');
+      amount = extraAmount(x.kind, unit_price, qty, nights, guests);
+    } else if (x.category === 'quote' && s.amount != null && s.amount !== '') {
+      const a = Number(s.amount);
+      if (!(isFinite(a) && a >= 0)) throw xErr('amount must be a number ≥ 0.', i);
+      amount = round2(a); unit_price = round2(amount / qty);
+    } else unit_price = 0;
+    cents += Math.round(amount * 100);
+    return { id: x.id, name: x.name, category: x.category, kind: x.kind, option, qty, unit_price, amount };
+  });
+  return { lines, total: round2(cents / 100) };
+}
+/** Stored form (reservation column): JSON text of [{id, qty, option?, unit_price, amount}], '' when none. */
+const extrasJson = (lines) => (lines.length ? JSON.stringify(lines.map((l) => ({ id: l.id, qty: l.qty, ...(l.option ? { option: l.option } : {}), unit_price: l.unit_price, amount: l.amount }))) : '');
+
 /** Same shape as the backend quoteFor. Missing nights count 0 and mark the quote incomplete.
  *  A row with unit_id applies to that unit only and wins over the unit_type rows. */
-function quote(unit_id, check_in, check_out) {
+function quote(unit_id, check_in, check_out, ex = { lines: [], total: 0 }) {
   const u = UNITS.find((x) => x.id === unit_id);
   const nightly = [];
   let min = 0;
@@ -94,7 +207,8 @@ function quote(unit_id, check_in, check_out) {
   return {
     nights: nightly.length, nightly, accommodation, cleaning_fee,
     rule_discount, rule_name: rule ? rule.name : null, rule_percent: rule ? rule.percent : 0,
-    total: round2(accommodation + cleaning_fee - rule_discount),
+    extras: ex.lines, extras_total: ex.total,
+    total: round2(accommodation + cleaning_fee - rule_discount + ex.total),
     currency: SETTINGS.currency, incomplete: nightly.some((n) => n.price == null), min_nights: min, below_min: nightly.length < min,
   };
 }
@@ -144,12 +258,16 @@ function seed() {
     }
     if (o.discount && price > 0) discount = Math.min(o.discount, price); // price = accommodation + cleaning − discount
     price = round2(price - discount);
+    const g = ri(1, u.capacity);
+    const guestsN = o.source === 'block' ? 0 : o.guests ?? g;
+    const ex = priceExtras(o.extras || [], nights, guestsN);
+    if (price > 0) price = round2(price + ex.total); // price = accommodation + cleaning − discount + extras
     const past = o.check_in <= T;
     const created = addDays(o.check_in, -ri(15, 90));
     const r = {
       ...r0,
       guest_name: o.guest_name ?? GUESTS[gi++ % GUESTS.length],
-      guests: o.source === 'block' ? 0 : ri(1, u.capacity),
+      guests: guestsN,
       source: o.source,
       price,
       paid: o.status === 'confirmed' ? (past ? price : Math.round(price * 0.3)) : 0,
@@ -159,7 +277,7 @@ function seed() {
       created_at: stamp(created),
       updated_at: o.status === 'cancelled' ? stamp(addDays(T, -ri(2, 20))) : stamp(created),
       created_by: 'owner@example.com',
-      cleaning_fee, discount, discount_label, email: '', phone: '', lang: '',
+      cleaning_fee, discount, discount_label, email: '', phone: '', lang: '', extras: extrasJson(ex.lines), extras_total: ex.total,
       ...o.extra,
     };
     if (o.hoursAgo != null) r.created_at = r.updated_at = new Date(Date.now() - o.hoursAgo * 3600e3).toISOString();
@@ -186,8 +304,9 @@ function seed() {
   mk({ unit_id: 'u1', check_in: addDays(T, 9), check_out: addDays(T, 14), source: 'direct', status: 'confirmed', discount: 50, notes: 'Arriving with the evening ferry. Returning guests: €50 off.' });
   // Website requests (requestStay): pending, direct, created_by "website", notes = the guest's message, price 0.
   const web = (email, phone, lang) => ({ email, phone, lang, created_by: 'website' });
-  mk({ unit_id: 'u1', check_in: addDays(T, 12), check_out: addDays(T, 16), source: 'direct', status: 'pending', priced: false, hoursAgo: 3,
-    guest_name: 'Sarah Cohen', extra: web('sarah.cohen@example.com', '+44 7700 900123', 'en'),
+  mk({ unit_id: 'u1', check_in: addDays(T, 12), check_out: addDays(T, 16), source: 'direct', status: 'pending', priced: 'quote', hoursAgo: 3,
+    guest_name: 'Sarah Cohen', guests: 3,
+    extras: [{ id: 'breakfast' }, { id: 'port_transfer' }, { id: 'baby_cot' }, { id: 'early_arrival' }, { id: 'local_products' }], extra: web('sarah.cohen@example.com', '+44 7700 900123', 'en'),
     notes: 'Hello! We are two adults and a seven-year-old, arriving on the morning ferry from Piraeus. Would an early check-in be possible? Many thanks.' });
   mk({ unit_id: 'u3', check_in: addDays(T, 5), check_out: addDays(T, 8), source: 'direct', status: 'pending', priced: false, hoursAgo: 27,
     guest_name: 'Amélie Roux', extra: web('amelie.roux@example.fr', '', 'fr'),
@@ -199,6 +318,7 @@ function seed() {
     guest_name: 'Ingrid Olsen', extra: { email: 'ingrid.olsen@example.com', lang: 'en' }, notes: 'Asked by email, waiting for the deposit.' });
   mk({ unit_id: 'u2', check_in: addDays(T, 19), check_out: addDays(T, 24), source: 'booking', status: 'pending' });
   mk({ unit_id: 'u2', check_in: addDays(T, 75), check_out: addDays(T, 85), source: 'direct', status: 'confirmed', priced: 'quote', guest_name: 'Laura Bennett',
+    guests: 2, extras: [{ id: 'wine', option: 'Assyrtiko Santorini' }, { id: 'daily_cleaning' }, { id: 'celebration', amount: 60 }, { id: 'late_departure' }],
     extra: { email: 'laura.bennett@example.com', lang: 'en' }, notes: 'Ten nights, long-stay discount applied.' });
   mk({ unit_id: 'u3', check_in: addDays(T, 2), check_out: addDays(T, 4), source: 'airbnb', status: 'cancelled' });
   mk({ unit_id: 'u3', check_in: addDays(T, 15), check_out: addDays(T, 18), source: 'family', status: 'confirmed', guest_name: 'Family: Kostas' });
@@ -286,7 +406,7 @@ function pricing() {
   const per_unit = {};
   for (const u of UNITS) { const v = SETTINGS[`cleaning_fee_${u.id}`]; if (v !== undefined && v !== '') per_unit[u.id] = Number(v) || 0; }
   return {
-    prices: PRICES, discounts: DISCOUNTS,
+    prices: PRICES, discounts: DISCOUNTS, extras: EXTRAS,
     cleaning_fees: { maisonette: Number(SETTINGS.cleaning_fee_maisonette) || 0, studio: Number(SETTINGS.cleaning_fee_studio) || 0, per_unit },
     currency: SETTINGS.currency, units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
   };
@@ -308,6 +428,7 @@ const actions = {
       settings: { ...SETTINGS },
       prices: PRICES,
       plan: makePlan(),
+      extras: EXTRAS,
       reservations: db.reservations,
       expenses: db.expenses,
     };
@@ -315,10 +436,15 @@ const actions = {
   listReservations(user, { from, to } = {}) {
     return db.reservations.filter((r) => (!to || r.check_in < to) && (!from || r.check_out > from));
   },
-  quoteFor(user, { unit_id, check_in, check_out } = {}) {
+  quoteFor(user, { unit_id, check_in, check_out, extras, guests } = {}) {
     if (!UNITS.some((u) => u.id === unit_id)) throw new E('bad_request', 'Unknown unit.');
     if (!isISODate(check_in) || !isISODate(check_out) || check_out <= check_in) throw new E('bad_request', 'Check-out must be after check-in.');
-    return quote(unit_id, check_in, check_out);
+    let g = null;
+    if (guests != null && guests !== '') {
+      g = Number(guests);
+      if (!(Number.isInteger(g) && g >= 0 && g <= 50)) throw new E('bad_request', 'Please enter the number of guests (0 to 50).', { field: 'guests' });
+    }
+    return quote(unit_id, check_in, check_out, priceExtras(extras, diffDays(check_in, check_out), g));
   },
   saveReservation(user, { reservation, force, notify, autoprice } = {}) {
     if (!reservation) throw new E('bad_request', 'Missing reservation.');
@@ -326,14 +452,19 @@ const actions = {
     if (reservation.id && !prev) throw new E('not_found', 'Reservation not found.');
     const now = new Date().toISOString();
     const discountSent = reservation.discount !== undefined && reservation.discount !== '' && reservation.discount !== null;
+    const extrasSent = reservation.extras !== undefined;
     const next = {
       external_uid: '', notes: '', guests: 0, price: 0, paid: 0, checked: false, cleaning_fee: 0, discount: 0, discount_label: '', email: '', phone: '', lang: '',
+      extras: '', extras_total: 0,
       ...prev, ...reservation,
       id: prev?.id || `r${++seq}`,
       created_at: prev?.created_at || now, created_by: prev?.created_by || user.email, updated_at: now,
     };
     if (!discountSent) next.discount = prev ? prev.discount : 0;
+    next.extras = prev ? prev.extras : '';
+    next.extras_total = prev ? prev.extras_total : 0;
     validateReservation(next);
+    next.guests = Number(next.guests) || 0;
     // discount_label: cleared when the discount changes without one, and whenever the discount is 0.
     if (reservation.discount_label === undefined && prev && Number(prev.discount) !== next.discount) next.discount_label = '';
     if (!prev && reservation.discount_label === undefined) next.discount_label = '';
@@ -342,8 +473,20 @@ const actions = {
     const datesChanged = !prev || prev.unit_id !== next.unit_id || prev.check_in !== next.check_in || prev.check_out !== next.check_out;
     const auto = autoprice === undefined ? !prev && next.source === 'direct' && !next.price : autoprice === true;
     let q = null;
+    const nightsN = diffDays(next.check_in, next.check_out);
+    // Extras (API.md saveReservation → extras). Quote extras keep their stored amount when none is sent.
+    const storedLines = parseExtrasLines(prev?.extras);
+    const selection = (list) => (typeof list === 'string' ? parseExtrasLines(list) : list || []).map((l) => {
+      const st = storedLines.find((x) => x.id === l.id);
+      const isQuote = EXTRAS.find((r) => r.id === l.id)?.category === 'quote';
+      const amount = l.amount != null && l.amount !== '' ? l.amount : isQuote && st && st.amount > 0 ? st.amount : undefined;
+      return { id: l.id, qty: l.qty, option: l.option || '', ...(isQuote && amount !== undefined ? { amount } : {}) };
+    });
     if (auto && datesChanged) {
-      q = quote(next.unit_id, next.check_in, next.check_out);
+      const ex = priceExtras(selection(extrasSent ? reservation.extras : storedLines), nightsN, next.guests);
+      q = quote(next.unit_id, next.check_in, next.check_out, ex);
+      next.extras = extrasJson(ex.lines);
+      next.extras_total = ex.total;
       const gross = round2(q.accommodation + q.cleaning_fee);
       if (discountSent) {
         if (!q.incomplete && next.discount > gross) throw new E('bad_request', 'The discount is more than the price-list total.', { field: 'discount', quote: q });
@@ -352,8 +495,26 @@ const actions = {
         next.discount = q.rule_discount;
         next.discount_label = q.rule_discount > 0 ? `${q.rule_name}, ${q.rule_percent}%` : '';
       }
-      next.price = q.incomplete ? 0 : Math.max(0, round2(gross - next.discount)); // price = accommodation + cleaning − discount
+      next.price = q.incomplete ? 0 : Math.max(0, round2(gross - next.discount + ex.total)); // price = accommodation + cleaning − discount + extras
       next.cleaning_fee = q.incomplete ? 0 : q.cleaning_fee;
+    } else if (autoprice === true && extrasSent) {
+      // Only the extras repriced: the price moves by the difference in extras_total (unless price is sent or 0).
+      const ex = priceExtras(selection(reservation.extras), nightsN, next.guests);
+      if (reservation.price === undefined && next.price > 0) next.price = Math.max(0, round2(next.price - (Number(prev?.extras_total) || 0) + ex.total));
+      next.extras = extrasJson(ex.lines);
+      next.extras_total = ex.total;
+    } else if (extrasSent) {
+      // Stored as given: unit_price and amount required; the price is not changed.
+      const lines = typeof reservation.extras === 'string' ? JSON.parse(reservation.extras || '[]') : reservation.extras;
+      if (!Array.isArray(lines)) throw xErr('extras must be a list.');
+      lines.forEach((l, i) => {
+        if (!l || !l.id) throw xErr('Each extra needs an id.', i);
+        if (l.unit_price == null || l.amount == null || l.unit_price === '' || l.amount === '') throw xErr(`Extra ${l.id}: unit_price and amount are required (or send autoprice: true).`, i);
+        if (!(Number(l.amount) >= 0)) throw xErr('amount must be a number ≥ 0.', i);
+      });
+      const clean = lines.map((l) => ({ id: String(l.id), qty: Number(l.qty) || 1, option: String(l.option || ''), unit_price: round2(Number(l.unit_price)), amount: round2(Number(l.amount)) }));
+      next.extras = extrasJson(clean);
+      next.extras_total = round2(clean.reduce((a, l) => a + l.amount, 0));
     }
     if (!(next.discount > 0)) next.discount_label = '';
     const conflicts = applyStatusRules(user, prev, next, force);
@@ -482,6 +643,67 @@ const actions = {
     }
     Object.assign(SETTINGS, next);
     del.forEach((k) => delete SETTINGS[k]);
+    return pricing();
+  },
+  saveExtras(user, { rows } = {}) {
+    owner(user);
+    rowsOk(rows, 50);
+    const ids = new Set();
+    rows.forEach((r, i) => {
+      if (!r || typeof r !== 'object' || Array.isArray(r)) bad(i, '', 'Row is not an object.');
+      const id = String(r.id ?? '').trim();
+      if (!id) return;
+      if (id.length > 40 || !/^[A-Za-z0-9_-]+$/.test(id)) bad(i, 'id', 'id may only contain letters, digits, - and _ (up to 40).');
+      if (ids.has(id)) bad(i, 'id', `Duplicate id: ${id}`);
+      ids.add(id);
+    });
+    const money = (v, i, field, required) => {
+      if (v === '' || v == null) { if (required) bad(i, field, `${field} is required for paid extras`); return ''; }
+      const n = Number(v);
+      if (!(isFinite(n) && n >= 0 && n <= 100000)) bad(i, field, `${field} must be a number from 0 to 100000`);
+      return n;
+    };
+    EXTRAS = rows.map((r, i) => {
+      const out = {};
+      for (const l of EXTRA_LANGS) {
+        out[`name_${l}`] = String(r[`name_${l}`] ?? '').trim();
+        if (out[`name_${l}`].length > 100) bad(i, `name_${l}`, `name_${l} is limited to 100 characters`);
+      }
+      if (!out.name_en) bad(i, 'name_en', 'name_en is required');
+      const category = String(r.category || '').trim().toLowerCase() || 'paid';
+      if (!['paid', 'request', 'quote'].includes(category)) bad(i, 'category', 'category must be one of paid, request, quote');
+      const kind = String(r.kind || '').trim().toLowerCase();
+      if (!['per_stay', 'per_night', 'per_person_night'].includes(kind)) bad(i, 'kind', 'kind must be one of per_stay, per_night, per_person_night');
+      const price = money(r.price, i, 'price', category === 'paid');
+      const opts = [];
+      for (const part of String(r.options ?? '').split(';')) {
+        if (!part.trim()) continue;
+        const eq = part.lastIndexOf('=');
+        const label = (eq >= 0 ? part.slice(0, eq) : part).trim();
+        const raw = eq >= 0 ? part.slice(eq + 1).trim() : '';
+        if (!label) bad(i, 'options', 'every option needs a label');
+        if (raw !== '' && !(Number(raw) >= 0 && Number(raw) <= 100000)) bad(i, 'options', `option "${label}" has an invalid price`);
+        if (opts.some((o) => o.label.toLowerCase() === label.toLowerCase())) bad(i, 'options', `duplicate option: ${label}`);
+        opts.push({ label, price: raw === '' ? null : Number(raw) });
+      }
+      if (opts.length && category !== 'paid') bad(i, 'options', 'only paid extras can have options');
+      const unit_type = String(r.unit_type || '').trim().toLowerCase();
+      if (unit_type && !UNITS.some((u) => u.type === unit_type)) bad(i, 'unit_type', 'Unknown unit type.');
+      const unit_id = String(r.unit_id || '').trim();
+      if (unit_id && !UNITS.some((u) => u.id === unit_id)) bad(i, 'unit_id', 'Unknown unit.');
+      const mq = r.max_qty === '' || r.max_qty == null ? 1 : Number(r.max_qty);
+      if (!(Number.isInteger(mq) && mq >= 1 && mq <= 99)) bad(i, 'max_qty', 'max_qty must be a whole number from 1 to 99');
+      const a = r.active;
+      if (!(a === true || a === false || a === '' || a == null || /^(true|false)$/i.test(String(a)))) bad(i, 'active', 'active must be true or false');
+      const sort = r.sort === '' || r.sort == null ? 0 : Number(r.sort);
+      if (!isFinite(sort)) bad(i, 'sort', 'sort must be a number');
+      const notes = String(r.notes ?? '');
+      if (notes.length > 500) bad(i, 'notes', 'Notes are limited to 500 characters.');
+      let id = String(r.id ?? '').trim();
+      if (!id) { do id = Math.random().toString(36).slice(2, 10); while (ids.has(id)); ids.add(id); }
+      return { id, ...out, category, kind, price, options: opts.map((o) => o.label + (o.price == null ? '' : `=${o.price}`)).join(';'),
+        unit_type, unit_id, max_qty: mq, active: a === true || /^true$/i.test(String(a)), sort, notes };
+    });
     return pricing();
   },
   importIcal(user) {

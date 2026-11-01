@@ -191,7 +191,6 @@ function extrasEditor(initial, ctx, onChange, uid) {
     plus.addEventListener('click', () => step(1));
     optSel?.addEventListener('change', () => { sel.get(x.id).option = optSel.value; refresh(); onChange(); });
     amt?.addEventListener('input', () => { sel.get(x.id).amountText = amt.value; refresh(); onChange(); });
-    // Keep form-level input/change listeners from re-running for every keystroke in here twice.
     return row;
   }
 
@@ -217,7 +216,15 @@ function extrasEditor(initial, ctx, onChange, uid) {
   }
   build();
   return { el: box, lines, total: () => totalOf(lines()), build, refresh, open: () => { box.open = true; },
-    focus: (id) => { box.open = true; list.querySelector(`#${CSS.escape(`${uid}-x-${id}`)}`)?.closest('.ex-line')?.querySelector('.ex-amt-in, select, input')?.focus(); } };
+    /** Open the box and return the extra's first control (amount, option, else its checkbox) for focusing. */
+    focus: (id) => {
+      box.open = true;
+      const line = list.querySelector(`#${CSS.escape(`${uid}-x-${id}`)}`)?.closest('.ex-line');
+      const el = line?.querySelector('.ex-amt-in') || line?.querySelector('select') || line?.querySelector('input');
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus({ preventScroll: true });
+      return el;
+    } };
 }
 
 /** mailto: link that opens the owner's own mail app, addressed to the guest. */
