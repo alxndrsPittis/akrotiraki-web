@@ -3,6 +3,24 @@
   'use strict';
   document.documentElement.classList.add('js');
 
+  // Interface strings by page language (<html lang="en|el">). English is the fallback.
+  var LANG = (document.documentElement.getAttribute('data-lang') || document.documentElement.lang || 'en').slice(0, 2);
+  var STR = {
+    en: {
+      photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
+      check: 'Please check: ', order: 'Departure must be after arrival',
+      subject: function (a, d) { return 'Request to stay: ' + a + ' to ' + d; },
+      name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'House', guests: 'Guests'
+    },
+    el: {
+      photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
+      check: 'Ελέγξτε: ', order: 'Η αναχώρηση πρέπει να είναι μετά την άφιξη',
+      subject: function (a, d) { return 'Αίτημα διαμονής: ' + a + ' έως ' + d; },
+      name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Σπίτι', guests: 'Άτομα'
+    }
+  };
+  var T = STR[LANG] || STR.en;
+
   var y = document.getElementById('year');
   if (y) y.textContent = String(new Date().getFullYear());
 
@@ -35,7 +53,7 @@
       var thumb = links[idx].querySelector('img');
       img.src = links[idx].getAttribute('href');
       img.alt = thumb ? thumb.alt : '';
-      dlg.setAttribute('aria-label', 'Photograph ' + (idx + 1) + ' of ' + links.length);
+      dlg.setAttribute('aria-label', T.photo(idx + 1, links.length));
     };
     links.forEach(function (a, i) {
       a.addEventListener('click', function (e) {
@@ -84,23 +102,23 @@
       });
       if (!problems.length && to.value <= from.value) {
         to.setAttribute('aria-invalid', 'true');
-        problems.push('Departure must be after arrival');
+        problems.push(T.order);
       }
       if (problems.length) {
-        err.textContent = 'Please check: ' + problems.join(', ') + '.';
+        err.textContent = T.check + problems.join(', ') + '.';
         err.hidden = false;
         return;
       }
       err.hidden = true;
       var f = form.elements;
-      var subject = 'Request to stay: ' + f.arrival.value + ' to ' + f.departure.value;
+      var subject = T.subject(f.arrival.value, f.departure.value);
       var body = [
-        'Name: ' + f.name.value.trim(),
-        'Email: ' + f.email.value.trim(),
-        'Arrival: ' + f.arrival.value,
-        'Departure: ' + f.departure.value,
-        'House: ' + f.house.value,
-        'Guests: ' + f.guests.value,
+        T.name + ': ' + f.name.value.trim(),
+        T.email + ': ' + f.email.value.trim(),
+        T.arrival + ': ' + f.arrival.value,
+        T.departure + ': ' + f.departure.value,
+        T.house + ': ' + f.house.options[f.house.selectedIndex].text,
+        T.guests + ': ' + f.guests.value,
         '',
         f.message.value.trim()
       ].join('\n');
