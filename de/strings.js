@@ -1,0 +1,46 @@
+// Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
+window.AKRO_STRINGS = window.AKRO_STRINGS || {};
+window.AKRO_STRINGS.de = {
+  photo: function (i, n) { return 'Foto ' + i + ' von ' + n; },
+  // booking.js (Anfrage)
+  name: 'Name', email: 'E-Mail', arrival: 'Anreise', departure: 'Abreise', house: 'Wohnung', guests: 'Personen',
+  any: 'Beliebige Wohnung', maisonette: 'Maisonette', studio: 'Studio',
+  prevMonth: 'Vorheriger Monat', nextMonth: 'Nächster Monat',
+  free: 'frei', onRequest: 'auf Anfrage', taken: 'belegt', past: 'nicht verfügbar',
+  selArrival: 'Ihre Anreise', selDeparture: 'Ihre Abreise', selStay: 'während Ihres Aufenthalts',
+  hint: 'Wählen Sie einen Anreisetag und dann einen Abreisetag.',
+  pickedArrival: function (d) { return 'Anreise ' + d + '. Wählen Sie jetzt einen Abreisetag.'; },
+  pickedRange: function (n, a, d) { return n + (n === 1 ? ' Nacht' : ' Nächte') + ', ' + a + ' bis ' + d + '.'; },
+  calError: 'Der Kalender konnte nicht geladen werden. Sie können Ihre Anfrage trotzdem unten senden.',
+  err: {
+    unit_id: 'Bitte wählen Sie eine Wohnung.',
+    check_in: 'Bitte wählen Sie ein Anreisedatum.',
+    check_in_past: 'Das Anreisedatum liegt in der Vergangenheit.',
+    check_out: 'Bitte wählen Sie ein Abreisedatum nach der Anreise.',
+    check_out_long: 'Für Aufenthalte von mehr als 60 Nächten rufen Sie uns bitte an.',
+    guests: function (n) { return 'Bitte geben Sie für diese Wohnung 1 bis ' + n + ' Personen an.'; },
+    email: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
+    guest_name: 'Bitte geben Sie Ihren Namen ein.',
+    guest_name_long: 'Ihr Name ist zu lang.',
+    phone: 'Die Telefonnummer ist zu lang (höchstens 40 Zeichen).',
+    message: 'Ihre Nachricht ist zu lang (höchstens 2.000 Zeichen).'
+  },
+  checkFields: 'Bitte prüfen Sie die unten markierten Felder.',
+  sending: 'Wird gesendet …', send: 'Anfrage senden',
+  network: 'Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es gleich noch einmal oder rufen Sie uns an.',
+  quick: 'Das ging sehr schnell. Bitte prüfen Sie Ihre Angaben und senden Sie die Anfrage noch einmal.',
+  duplicate: 'Diese Anfrage liegt uns bereits vor, wir antworten bald. Sie müssen sie nicht noch einmal senden.',
+  cap: 'Im Moment können wir keine weiteren Anfragen annehmen. Bitte versuchen Sie es später noch einmal oder rufen Sie uns an.',
+  reload: 'Ihre Anfrage konnte nicht gesendet werden. Bitte laden Sie die Seite neu und versuchen Sie es noch einmal.',
+  blocked: 'Ihre Anfrage konnte nicht gesendet werden. Bitte rufen Sie uns stattdessen an.',
+  closed: 'Anfragen über die Website sind im Moment nicht möglich. Bitte rufen Sie uns an.',
+  // Richtpreis
+  nightsN: function (n) { return n + (n === 1 ? ' Nacht' : ' Nächte'); },
+  quote: function (total, n) { return 'Richtpreis: ' + total + ' für ' + n + ', einschließlich Endreinigung. Wir bestätigen ihn in unserer Antwort.'; },
+  quoteNoFee: function (total, n) { return 'Richtpreis: ' + total + ' für ' + n + '. Wir bestätigen ihn in unserer Antwort.'; },
+  quoteIncomplete: 'Den Preis schicken wir Ihnen per E-Mail.',
+  quoteHow: 'So setzt er sich zusammen',
+  quoteRate: function (n, price) { return n + ' × ' + price; },
+  quoteCleaning: function (fee) { return 'Endreinigung ' + fee; },
+  minStay: function (n) { return 'Mindestaufenthalt für diese Daten: ' + n + ' Nächte.'; }
+};
