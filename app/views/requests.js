@@ -57,11 +57,11 @@ function card(r, owner, today) {
   const langNote = r.email && LANGS[r.lang] && r.lang !== 'en' ? ` · emails in ${LANGS[r.lang]}` : '';
 
   const approveBtn = h('button', {
-    class: `btn ${conf.length && r.price > 0 ? 'danger-solid' : 'primary'}`, type: 'button', disabled: !owner,
+    class: `btn ${conf.length && r.price > 0 ? 'danger-solid' : 'approve'}`, type: 'button', disabled: !owner,
     title: owner ? null : 'Only owners can approve',
   }, r.price > 0 ? (conf.length ? 'Approve anyway' : 'Approve') : 'Set price & approve');
   approveBtn.addEventListener('click', () => busy(approveBtn, () => approveRequest(r)));
-  const declineBtn = h('button', { class: 'btn danger', type: 'button' }, 'Decline');
+  const declineBtn = h('button', { class: 'btn danger-solid', type: 'button' }, 'Decline');
   declineBtn.addEventListener('click', () => busy(declineBtn, () => declineRequest(r)));
   const editBtn = h('button', { class: 'btn ghost', type: 'button' }, 'Edit');
   editBtn.addEventListener('click', () => openReservation(r));
@@ -87,7 +87,7 @@ function card(r, owner, today) {
       h('p', { class: 'warn-title' }, icon('warn'), hardConf ? 'Overlaps a confirmed stay:' : 'Overlaps other requests:'),
       conflictList(conf)) : null,
     h('div', { class: 'pitem-actions req-actions' },
-      r.email ? h('a', { class: 'btn ghost push-left', href: mailtoFor(r) }, icon('mail'), 'Email guest') : null,
+      r.email ? h('a', { class: 'btn ghost push-left', href: mailtoFor(r) }, icon('mail'), 'Contact') : null,
       editBtn, declineBtn, approveBtn));
 }
 
