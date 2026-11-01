@@ -4,7 +4,7 @@
 const config = {
   // URL of the deployed Apps Script web app (ends in /exec).
   // Leave empty to run the app in MOCK mode with sample data.
-  API_URL: "",
+  API_URL: "https://script.google.com/macros/s/AKfycbya0xmtUKCYUBxw6hX43RCsHHNM6JcaWnbfHtKt0VIMqH0BppJ6Cuo-deDG_3qE2BwO/exec",
 
   // OAuth 2.0 Web client ID from Google Cloud Console
   // (must equal the `client_id` value in the Settings tab of the Sheet).
