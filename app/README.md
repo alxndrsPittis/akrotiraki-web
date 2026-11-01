@@ -54,7 +54,17 @@ Edit `config.js`:
   until you type a price; "Recalculate price" any time). `saveReservation` always sends `autoprice` explicitly.
   `price` is what the guest pays (accommodation + cleaning − `discount`). Typing a discount while a quote is loaded
   sets price = quote total − discount; a price typed by hand is kept and the discount stays as entered.
+- **Discount rules**: when the server autoprices a new stay and no discount was typed, `discount` is omitted so the
+  backend applies the best Discounts rule; an empty Discount field in the form means "the quote's rule" (shown as a
+  placeholder with its label), a typed amount (0 included) overrides it. `discount_label` is shown next to the
+  discount line in the form, the request cards and the approve dialog.
 - **Totals** are computed on the device from loaded data; when the `totals` action answers, its numbers are used.
+- **Statistics** (tab): KPI row and SVG charts (occupancy per apartment, revenue vs `plan`, sources, stay length and
+  lead time, expenses by category), computed on the device like Totals; each chart has a data table. Bootstrap's
+  optional `plan` rows and `settings.sheet_url` are used when present.
+- **Prices** (owners; side rail on desktop, Account menu or the Totals header on phones): seasonal rates, cleaning
+  fees and discount rules via `getPricing` / `savePrices` / `saveCleaningFees` / `saveDiscounts`. Each card saves on
+  its own and replaces the whole tab; server `data.row` / `data.field` errors are marked on the cell.
 
 ## Files
 
@@ -65,7 +75,7 @@ api.js, auth.js, state.js       API client, Google sign-in, state + cache
 actions.js                      writes (save/cancel/confirm, expenses, receipts)
 lib.js, calc.js, ui.js          dates/formatting/overlap, totals maths, DOM helpers
 mock.js                         in-memory fake backend for demo mode
-views/                          calendar, requests, reservation form, expenses, totals
+views/                          calendar, requests, reservation form, expenses, totals, stats, prices
 sw.js, manifest.webmanifest     PWA
 icons/                          icon.svg + PNGs (regenerate: node tools/make-icons.js)
 ```

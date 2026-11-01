@@ -294,9 +294,9 @@ function pricing() {
 /** Business plan (optional in bootstrap): this year's months May–October. */
 function makePlan() {
   const Y = +todayISO().slice(0, 4);
-  const nights = [0, 0, 0, 0, 40, 70, 100, 110, 70, 35, 0, 0];
-  const rev = [0, 0, 0, 0, 5200, 9800, 17500, 19800, 9600, 4300, 0, 0];
-  const exp = [300, 250, 300, 600, 900, 800, 950, 1000, 800, 600, 250, 250];
+  const nights = [0, 0, 0, 0, 25, 35, 45, 50, 35, 15, 0, 0];
+  const rev = [0, 0, 0, 0, 3200, 4500, 7500, 8800, 4800, 1600, 0, 0];
+  const exp = [150, 120, 150, 300, 350, 300, 350, 400, 300, 250, 120, 120];
   return nights.map((n, i) => ({ month: `${Y}-${pad(i + 1)}`, unit_nights: n, room_revenue: rev[i], expenses: exp[i] }));
 }
 

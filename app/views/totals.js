@@ -1,6 +1,6 @@
 // Totals: monthly table for a year, computed locally; server `totals` preferred when available.
-import { state, currency } from '../state.js';
-import { h } from '../ui.js';
+import { state, currency, isOwner } from '../state.js';
+import { h, icon } from '../ui.js';
 import { computeTotals, activeUnitCount } from '../calc.js';
 import { call } from '../api.js';
 import { MON, money, fmtDate } from '../lib.js';
@@ -74,7 +74,10 @@ export function renderTotals(root) {
   root.append(h('div', { class: 'totals-head' },
     h('label', { class: 'field compact' }, h('span', { class: 'field-label' }, 'Year'),
       h('select', { value: String(year), onchange: (e) => { year = +e.target.value; renderTotals(root); } },
-        yearList.map((y) => h('option', { value: String(y) }, String(y)))))));
+        yearList.map((y) => h('option', { value: String(y) }, String(y))))),
+    h('div', { class: 'head-links' },
+      h('a', { class: 'btn sm ghost', href: '#stats' }, icon('stats'), 'Charts'),
+      isOwner() ? h('a', { class: 'btn sm', href: '#prices' }, icon('tag'), 'Prices') : null)));
 
   const sLabel = ['Season', h('small', null, `${fmtDate(`${year}-${t.season.start}`, { year: false })} – ${fmtDate(`${year}-${t.season.end}`, { year: false })}`)];
   root.append(h('div', { class: 'table-wrap' }, h('table', { class: 'table' },

@@ -9,6 +9,8 @@ import { renderCalendar } from './views/calendar.js';
 import { renderRequests } from './views/requests.js';
 import { renderExpenses } from './views/expenses.js';
 import { renderTotals } from './views/totals.js';
+import { renderStats } from './views/stats.js';
+import { renderPrices } from './views/prices.js';
 
 const params = new URLSearchParams(location.search);
 const MOCK = !!config.MOCK || !config.API_URL || params.get('mock') === '1';
@@ -19,6 +21,8 @@ const ROUTES = {
   requests: { title: 'Requests', render: renderRequests },
   expenses: { title: 'Expenses', render: renderExpenses },
   totals: { title: 'Totals', render: renderTotals },
+  stats: { title: 'Statistics', render: renderStats },
+  prices: { title: 'Prices', render: renderPrices },
 };
 let route = 'calendar';
 let lastRefresh = 0;
@@ -166,6 +170,7 @@ $('#account-btn').addEventListener('click', () => {
   const a = auth.getAuth();
   const user = state.user || { name: a?.name, email: a?.email };
   const refreshBtn = h('button', { class: 'btn', type: 'button' }, icon('refresh'), 'Refresh');
+  const pricesLink = h('a', { class: 'btn ghost wide prices-link', href: '#prices' }, icon('tag'), 'Prices and discounts');
   const outBtn = h('button', { class: 'btn danger', type: 'button' }, 'Sign out');
   const dlg = openDialog({
     title: 'Account',
@@ -176,7 +181,8 @@ $('#account-btn').addEventListener('click', () => {
       h('dl', { class: 'kv' },
         h('dt', null, 'Role'), h('dd', null, capitalize(state.user?.role || '–')),
         h('dt', null, 'Data'), h('dd', null, MOCK ? 'Demo (in memory)' : state.offline ? 'Offline copy' : 'Live'),
-        h('dt', null, 'Last updated'), h('dd', null, state.updatedAt ? fmtDateTime(state.updatedAt) : '–'))),
+        h('dt', null, 'Last updated'), h('dd', null, state.updatedAt ? fmtDateTime(state.updatedAt) : '–')),
+      pricesLink),
     foot: [outBtn, refreshBtn],
   });
   refreshBtn.addEventListener('click', async () => {
@@ -185,6 +191,7 @@ $('#account-btn').addEventListener('click', () => {
     dlg.close();
   });
   outBtn.addEventListener('click', () => { dlg.close(); signOut(); });
+  pricesLink.addEventListener('click', () => dlg.close());
 });
 
 function signOut() {
