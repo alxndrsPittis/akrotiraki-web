@@ -3,9 +3,9 @@
   'use strict';
   document.documentElement.classList.add('js');
 
-  // Theme previews (English home page only, where themes.css is loaded): ?theme=dusk|aegean|terracotta
+  // Theme previews (English home page only, where themes.css is loaded): ?theme=dusk|aegean|terracotta|olive|schist|teal|noir
   if (document.querySelector('link[href^="themes.css"]')) {
-    var theme = (location.search.match(/[?&]theme=(dusk|aegean|terracotta)\b/) || [])[1];
+    var theme = (location.search.match(/[?&]theme=(dusk|aegean|terracotta|olive|schist|teal|noir)\b/) || [])[1];
     if (theme) document.documentElement.setAttribute('data-theme', theme);
   }
 

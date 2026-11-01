@@ -1,4 +1,4 @@
-/* Theme previews for discussion. Loaded only on the English home page; activated by ?theme=dusk|aegean|terracotta
+/* Theme previews for discussion. Loaded only on the English home page; activated by ?theme=dusk|aegean|terracotta|olive|schist|teal|noir
    (site.js sets data-theme on <html>). Token overrides only; without ?theme= nothing here applies.
    All text colours below are ≥ 4.5:1 on their backgrounds. */
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap");
@@ -41,3 +41,55 @@ html[data-theme="terracotta"] .card-meta, html[data-theme="terracotta"] .site-na
 html[data-theme="terracotta"] .site-nav .nav-accent { letter-spacing: .24em; }
 html[data-theme="terracotta"] .btn-solid { background: var(--sand-text); border-color: var(--sand-text); color: #fff; }
 html[data-theme="terracotta"] .card { border-top-color: var(--sand); }
+
+/* --- olive: warm stone, sage-olive accent, calm Mediterranean garden --- */
+html[data-theme="olive"] {
+  --paper: #f3efe6; --ink: #1f2a33; --muted: #6b7068; --muted-text: #5a6058; --line: #e0dacb;
+  --sea: #1f5f8b; --sand: #6f7a55; --sand-text: #55613f; --sand-soft: #e6e5d6;
+  --grey-soft: #e8e4da; --field: #fbf9f4; --staff: #4b6072;
+  color-scheme: light;
+}
+html[data-theme="olive"] .btn-solid { background: var(--sand-text); border-color: var(--sand-text); color: #fff; }
+html[data-theme="olive"] .btn-quiet { border-color: var(--sand-text); color: var(--sand-text); }
+html[data-theme="olive"] .btn-quiet:hover { background: var(--sand-text); color: #fff; }
+html[data-theme="olive"] .card { border-top-color: var(--sand-text); }
+
+/* --- schist: cool slate grey, charcoal text, ochre retained, a faint ruled texture in the header --- */
+html[data-theme="schist"] {
+  --paper: #eef0f1; --ink: #1c2126; --muted: #69727a; --muted-text: #535b63; --line: #d7dbde;
+  --sea: #1f5582; --sand: #b08a4e; --sand-text: #7f5c22; --sand-soft: #f1e7d3;
+  --grey-soft: #e1e4e6; --field: #fafbfb; --staff: #4f6576;
+  color-scheme: light;
+}
+html[data-theme="schist"] .site-header {
+  background-color: color-mix(in srgb, var(--paper) 96%, transparent);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 5px, rgba(28, 33, 38, .045) 5px 6px);
+}
+html[data-theme="schist"] .section-head h2 { letter-spacing: 0; }
+html[data-theme="schist"] .card { border-top: 2px solid var(--ink); }
+
+/* --- teal: off-white, deep teal-green accent, sand tints for soft panels, display weight 500 --- */
+html[data-theme="teal"] {
+  --paper: #faf8f4; --ink: #1c2a2e; --muted: #6a767c; --muted-text: #56636a; --line: #e5e1d8;
+  --sea: #0f5f63; --sea-soft: #dcecec; --sand: #c9a46b; --sand-text: #0f5f63; --sand-soft: #f1e7d3;
+  --grey-soft: #ecebe6; --field: #ffffff; --staff: #4f6576;
+  color-scheme: light;
+}
+html[data-theme="teal"] h1, html[data-theme="teal"] h2, html[data-theme="teal"] h3 { font-weight: 500; }
+html[data-theme="teal"] .btn-solid { background: var(--sea); border-color: var(--sea); color: #fff; }
+html[data-theme="teal"] .btn-quiet { border-color: var(--sea); color: var(--sea); }
+html[data-theme="teal"] .btn-quiet:hover { background: var(--sea); color: #fff; }
+
+/* --- noir: near-black, pure white, one thin coral line under Sifnos, large italic display --- */
+html[data-theme="noir"] {
+  --paper: #0e0e10; --ink: #ffffff; --muted: #9a9aa0; --muted-text: #b9b9be; --line: #2a2a2f;
+  --sea: #ffffff; --sea-soft: #1a1a1e; --sand: #ffffff; --sand-text: #ffffff; --sand-soft: #1a1a1e;
+  --grey-soft: #1a1a1e; --field: #151518; --staff: #b9b9be;
+  color-scheme: dark;
+}
+html[data-theme="noir"] h1 { font-style: italic; font-weight: 400; font-size: clamp(3rem, 7vw, 5.6rem); letter-spacing: -0.02em; }
+html[data-theme="noir"] h2 { font-style: italic; font-weight: 400; font-size: clamp(2.2rem, 4.2vw, 3.3rem); }
+html[data-theme="noir"] .site-nav .nav-accent { color: #ffffff; border-bottom: 1px solid #ff7a66; }
+html[data-theme="noir"] .eyebrow::before { background: #ffffff; }
+html[data-theme="noir"] .form { background: #151518; border: 1px solid var(--line); }
+html[data-theme="noir"] .btn-solid:hover { background: #ffffff; border-color: #ffffff; color: #0e0e10; }
