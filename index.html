@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101h. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Four apartments above Platys Gialos, Sifnos</title>
@@ -27,10 +27,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="site.css?v=20261101g">
+  <link rel="stylesheet" href="site.css?v=20261101h">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="site.js?v=20261101g" defer></script>
-  <script src="booking.js?v=20261101g" defer></script>
+  <script src="site.js?v=20261101h" defer></script>
+  <script src="booking.js?v=20261101h" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -48,6 +48,7 @@
       <nav id="site-nav" class="site-nav" aria-label="Main">
         <ul>
           <li><a href="#houses">Apartments</a></li>
+          <li><a href="#rates">Rates</a></li>
           <li><a href="#gallery">Gallery</a></li>
           <li><a href="#practical">Practical</a></li>
           <li><a href="#location">Location</a></li>
@@ -133,13 +134,26 @@
             <figcaption>Bathroom</figcaption>
           </figure>
         </div>
-        <p class="rates-note">Seasonal rates; the <a href="#contact">request form</a> shows the price for your dates.</p>
 
 
         <figure class="wide wide-after">
           <img src="photos/houses-above.webp" width="1360" height="906" loading="lazy" decoding="async"
                alt="The house seen from above: pergola and flagstone terraces, the sea behind.">
         </figure>
+      </div>
+    </section>
+
+    <!-- Rates: table filled by booking.js from the backend's public `rates` action -->
+    <section class="section rates" id="rates" aria-labelledby="rates-title">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow">Rates</p>
+          <h2 id="rates-title">Seasonal rates</h2>
+        </header>
+        <div class="rates-box" id="rates-box" aria-live="polite" aria-busy="true">
+          <div class="rates-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <p class="rates-foot">Prices include VAT. The <a href="#contact">request form</a> shows the exact total for your dates.</p>
       </div>
     </section>
 

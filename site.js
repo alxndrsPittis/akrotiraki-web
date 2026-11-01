@@ -8,6 +8,16 @@
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
+      // rates table (booking.js)
+      rDates: 'Dates',
+      rCaption: function (y) { return 'Nightly rates for ' + y; },
+      rPerNight: function (m) { return m + ' / night'; },
+      rMin: function (n) { return 'minimum ' + n + ' nights'; },
+      rCleaning: function (m, s) { return 'Cleaning fee per stay: ' + m + ' maisonette, ' + s + ' studio.'; },
+      rDiscStay: function (p, n) { return p + '% off for stays of ' + n + ' nights or more'; },
+      rDiscEarly: function (p, d) { return p + '% off for bookings made ' + d + ' days ahead'; },
+      rDiscDates: function (p, a, b) { return p + '% off for stays between ' + a + ' and ' + b; },
+      rForType: { maisonette: ' (maisonettes)', studio: ' (studios)' },
       // booking.js (request to stay)
       name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'Apartment', guests: 'Guests',
       any: 'Any apartment', maisonette: 'Maisonette', studio: 'Studio',
@@ -52,6 +62,15 @@
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
+      rDates: 'Ημερομηνίες',
+      rCaption: function (y) { return 'Τιμές ανά νύχτα για το ' + y; },
+      rPerNight: function (m) { return m + ' / νύχτα'; },
+      rMin: function (n) { return 'ελάχιστο ' + n + ' νύχτες'; },
+      rCleaning: function (m, s) { return 'Κόστος καθαριότητας ανά διαμονή: ' + m + ' η μεζονέτα, ' + s + ' το στούντιο.'; },
+      rDiscStay: function (p, n) { return 'Έκπτωση ' + p + '% για διαμονές ' + n + ' νυχτών και άνω'; },
+      rDiscEarly: function (p, d) { return 'Έκπτωση ' + p + '% για κρατήσεις ' + d + ' ημέρες νωρίτερα'; },
+      rDiscDates: function (p, a, b) { return 'Έκπτωση ' + p + '% για διαμονές από ' + a + ' έως ' + b; },
+      rForType: { maisonette: ' (μεζονέτες)', studio: ' (στούντιο)' },
       name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Διαμέρισμα', guests: 'Άτομα',
       any: 'Οποιοδήποτε', maisonette: 'Μεζονέτα', studio: 'Στούντιο',
       prevMonth: 'Προηγούμενος μήνας', nextMonth: 'Επόμενος μήνας',

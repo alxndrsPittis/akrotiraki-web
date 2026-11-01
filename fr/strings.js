@@ -2,6 +2,16 @@
 //   = no-break space,   = narrow no-break space (French typography).
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.fr = {
+  // tableau des tarifs (booking.js)
+  rDates: 'Dates',
+  rCaption: function (y) { return 'Prix par nuit pour ' + y; },
+  rPerNight: function (m) { return m + ' / nuit'; },
+  rMin: function (n) { return 'minimum ' + n + ' nuits'; },
+  rCleaning: function (m, s) { return 'Frais de ménage par séjour\u202f: ' + m + ' pour le duplex, ' + s + ' pour le studio.'; },
+  rDiscStay: function (p, n) { return p + '\u202f% de réduction pour les séjours de ' + n + ' nuits ou plus'; },
+  rDiscEarly: function (p, d) { return p + '\u202f% de réduction pour les réservations faites ' + d + ' jours à l’avance'; },
+  rDiscDates: function (p, a, b) { return p + '\u202f% de réduction pour les séjours du ' + a + ' au ' + b; },
+  rForType: { maisonette: ' (duplex)', studio: ' (studios)' },
   photo: function (i, n) { return 'Photo ' + i + ' sur ' + n; },
   // booking.js (demande de séjour)
   name: 'Nom', email: 'E-mail', arrival: 'Arrivée', departure: 'Départ', house: 'Appartement', guests: 'Personnes',

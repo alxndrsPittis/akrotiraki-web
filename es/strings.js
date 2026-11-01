@@ -2,6 +2,16 @@
 // Loaded before ../site.js, which merges window.AKRO_STRINGS.es over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.es = {
+  // tabla de precios (booking.js)
+  rDates: 'Fechas',
+  rCaption: function (y) { return 'Precios por noche para ' + y; },
+  rPerNight: function (m) { return m + ' / noche'; },
+  rMin: function (n) { return 'mínimo ' + n + ' noches'; },
+  rCleaning: function (m, s) { return 'Limpieza por estancia: ' + m + ' el dúplex, ' + s + ' el estudio.'; },
+  rDiscStay: function (p, n) { return p + ' % de descuento para estancias de ' + n + ' noches o más'; },
+  rDiscEarly: function (p, d) { return p + ' % de descuento para reservas hechas con ' + d + ' días de antelación'; },
+  rDiscDates: function (p, a, b) { return p + ' % de descuento para estancias del ' + a + ' al ' + b; },
+  rForType: { maisonette: ' (dúplex)', studio: ' (estudios)' },
   photo: function (i, n) { return 'Fotografía ' + i + ' de ' + n; },
   // booking.js (request to stay)
   name: 'Nombre', email: 'Correo electrónico', arrival: 'Llegada', departure: 'Salida', house: 'Apartamento', guests: 'Personas',

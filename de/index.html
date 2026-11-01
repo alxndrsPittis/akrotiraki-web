@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101h. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Vier Ferienwohnungen über Platys Gialos, Sifnos</title>
@@ -28,11 +28,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101g">
+  <link rel="stylesheet" href="../site.css?v=20261101h">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101g"></script>
-  <script src="../site.js?v=20261101g" defer></script>
-  <script src="../booking.js?v=20261101g" defer></script>
+  <script src="./strings.js?v=20261101h"></script>
+  <script src="../site.js?v=20261101h" defer></script>
+  <script src="../booking.js?v=20261101h" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Zum Inhalt springen</a>
@@ -50,6 +50,7 @@
       <nav id="site-nav" class="site-nav" aria-label="Hauptmenü">
         <ul>
           <li><a href="#houses">Wohnungen</a></li>
+          <li><a href="#rates">Preise</a></li>
           <li><a href="#gallery">Galerie</a></li>
           <li><a href="#practical">Praktisches</a></li>
           <li><a href="#location">Lage</a></li>
@@ -135,13 +136,26 @@
             <figcaption>Badezimmer</figcaption>
           </figure>
         </div>
-        <p class="rates-note">Die Preise richten sich nach der Saison; das <a href="#contact">Anfrageformular</a> zeigt Ihnen den Preis für Ihre Daten.</p>
 
 
         <figure class="wide wide-after">
           <img src="../photos/houses-above.webp" width="1360" height="906" loading="lazy" decoding="async"
                alt="Das Haus von oben: Pergola und Terrassen mit Steinplatten, dahinter das Meer.">
         </figure>
+      </div>
+    </section>
+
+    <!-- Rates: table filled by booking.js from the backend's public `rates` action -->
+    <section class="section rates" id="rates" aria-labelledby="rates-title">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow">Preise</p>
+          <h2 id="rates-title">Saisonpreise</h2>
+        </header>
+        <div class="rates-box" id="rates-box" aria-live="polite" aria-busy="true">
+          <div class="rates-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <p class="rates-foot">Die Preise verstehen sich inklusive Mehrwertsteuer. Das <a href="#contact">Anfrageformular</a> zeigt den genauen Gesamtpreis für Ihre Daten.</p>
       </div>
     </section>
 

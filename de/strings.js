@@ -1,6 +1,16 @@
 // Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.de = {
+  // Preistabelle (booking.js)
+  rDates: 'Zeitraum',
+  rCaption: function (y) { return 'Preise pro Nacht für ' + y; },
+  rPerNight: function (m) { return m + ' / Nacht'; },
+  rMin: function (n) { return 'mindestens ' + n + ' Nächte'; },
+  rCleaning: function (m, s) { return 'Endreinigung pro Aufenthalt: ' + m + ' Maisonette, ' + s + ' Studio.'; },
+  rDiscStay: function (p, n) { return p + ' % Rabatt bei Aufenthalten ab ' + n + ' Nächten'; },
+  rDiscEarly: function (p, d) { return p + ' % Rabatt bei Buchung ' + d + ' Tage im Voraus'; },
+  rDiscDates: function (p, a, b) { return p + ' % Rabatt für Aufenthalte vom ' + a + ' bis ' + b; },
+  rForType: { maisonette: ' (Maisonetten)', studio: ' (Studios)' },
   photo: function (i, n) { return 'Foto ' + i + ' von ' + n; },
   // booking.js (Anfrage)
   name: 'Name', email: 'E-Mail', arrival: 'Anreise', departure: 'Abreise', house: 'Wohnung', guests: 'Personen',

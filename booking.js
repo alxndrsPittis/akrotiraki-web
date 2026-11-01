@@ -40,6 +40,63 @@
     }).then(function (r) { return r.json(); });
   }
 
+  /* ----------------------------------------------------------------- rates */
+  // Seasonal rates table (#rates) from the public `rates` action. While loading the box shows a
+  // skeleton; on any failure the box is removed and only the footnote under it stays.
+  (function loadRates() {
+    var box = document.getElementById('rates-box');
+    if (!box || !API) return;
+    var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var fmtDay = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'long' });
+    var day = function (s) { return fmtDay.format(parse(s)); };
+    var range = function (a, b) { return a === b ? day(a) : day(a) + ' – ' + day(b); };
+    function fail() { box.remove(); }
+    function discountLine(d, cur) {
+      var p = Number(d.percent);
+      if (!p) return d.name ? esc(d.name) : '';
+      var line;
+      if (Number(d.min_nights) > 0) line = T.rDiscStay(p, Number(d.min_nights));
+      else if (Number(d.days_before) > 0) line = T.rDiscEarly(p, Number(d.days_before));
+      else if (d.from && d.to) line = T.rDiscDates(p, day(d.from), day(d.to));
+      else return d.name ? esc(d.name) : '';
+      if (d.unit_type && T.rForType && T.rForType[d.unit_type]) line += T.rForType[d.unit_type];
+      return esc(line) + '.';
+    }
+    call('rates', {}).then(function (res) {
+      if (!res || !res.ok || !res.data || !(res.data.seasons || []).length) return fail();
+      var r = res.data, cur = r.currency || 'EUR';
+      // one row per date range; columns maisonette / studio
+      var rows = {}, keys = [];
+      r.seasons.forEach(function (s) {
+        var k = s.from + '|' + s.to;
+        if (!rows[k]) { rows[k] = { from: s.from, to: s.to }; keys.push(k); }
+        rows[k][s.unit_type] = s;
+      });
+      keys.sort();
+      var cell = function (s) {
+        if (!s) return '<td>–</td>';
+        var min = Number(s.min_nights) > 1 ? '<span class="rates-min">' + esc(T.rMin(Number(s.min_nights))) + '</span>' : '';
+        return '<td>' + esc(T.rPerNight(money(Number(s.price_per_night), cur))) + min + '</td>';
+      };
+      var html = '<table class="rates-table"><caption>' + esc(T.rCaption(r.year)) + '</caption>' +
+        '<thead><tr><th scope="col">' + esc(T.rDates) + '</th><th scope="col">' + esc(T.maisonette) + '</th><th scope="col">' + esc(T.studio) + '</th></tr></thead><tbody>';
+      keys.forEach(function (k) {
+        var row = rows[k];
+        html += '<tr><th scope="row">' + esc(range(row.from, row.to)) + '</th>' + cell(row.maisonette) + cell(row.studio) + '</tr>';
+      });
+      html += '</tbody></table>';
+      var notes = [];
+      var cf = r.cleaning_fee || {};
+      if (Number(cf.maisonette) > 0 || Number(cf.studio) > 0) {
+        notes.push(esc(T.rCleaning(money(Number(cf.maisonette) || 0, cur), money(Number(cf.studio) || 0, cur))));
+      }
+      (r.discounts || []).forEach(function (d) { var l = discountLine(d, cur); if (l) notes.push(l); });
+      if (notes.length) html += '<ul class="rates-notes">' + notes.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ul>';
+      box.innerHTML = html;
+      box.removeAttribute('aria-busy');
+    }).catch(fail);
+  })();
+
   /* ---------------------------------------------------- availability data */
   var avail = null;           // {units, taken, pending}, cached for the page
   function units(type) {
