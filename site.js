@@ -93,7 +93,11 @@
       minStay: function (n) { return 'Ελάχιστη διαμονή για αυτές τις ημερομηνίες: ' + n + ' νύχτες.'; }
     }
   };
-  var T = STR[LANG] || STR.en;
+  // Extra languages live in <lang>/strings.js (loaded before this file) as window.AKRO_STRINGS[lang].
+  var BASE = STR[LANG] || {};
+  var EXTRA = (window.AKRO_STRINGS || {})[LANG] || {};
+  var T = Object.assign({}, STR.en, BASE, EXTRA);
+  T.err = Object.assign({}, STR.en.err, BASE.err || {}, EXTRA.err || {});
   window.AKRO_LANG = LANG; window.AKRO_T = T; // used by booking.js
 
   var y = document.getElementById('year');
