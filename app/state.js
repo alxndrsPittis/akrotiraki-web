@@ -26,20 +26,41 @@ export function emit() { state.version++; for (const fn of [...subs]) fn(); }
 function normalize(data) {
   state.user = data.user || null;
   state.units = (data.units || []).map((u) => ({ ...u, capacity: Number(u.capacity) || 0 }));
-  state.settings = data.settings || {};
-  state.prices = data.prices || [];
-  state.reservations = (data.reservations || []).map(normRes);
-  state.expenses = (data.expenses || []).map(normExp);
-  state.plan = Array.isArray(data.plan) ? data.plan : [];
-  state.extras = Array.isArray(data.extras) ? data.extras : [];
+  state.settings = normSettings(data.settings);
+  state.prices = Array.isArray(data.prices) ? data.prices.filter((r) => r && typeof r === 'object') : [];
+  state.reservations = (Array.isArray(data.reservations) ? data.reservations : []).filter(Boolean).map(normRes);
+  state.expenses = (Array.isArray(data.expenses) ? data.expenses : []).filter(Boolean).map(normExp);
+  state.plan = (Array.isArray(data.plan) ? data.plan : []).map(normPlan).filter(Boolean);
+  state.extras = Array.isArray(data.extras) ? data.extras.filter((r) => r && typeof r === 'object') : [];
 }
-export const normRes = (r) => ({ ...r, checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0,
+const s10 = (v) => (v == null ? '' : String(v).slice(0, 10)); // dates arrive as text; a Date-ish value keeps its day
+/** Settings arrive as strings ("30", "05-01"); keep them as text. A season day the Sheet turned into a date
+ *  ("2026-05-01…") is reduced to MM-DD. Numeric settings are read with Number() where they are used. */
+function normSettings(raw) {
+  const s = {};
+  for (const [k, v] of Object.entries(raw && typeof raw === 'object' ? raw : {})) s[k] = v == null ? '' : String(v).trim();
+  for (const k of ['season_start', 'season_end']) {
+    const m = /^\d{4}-(\d{2}-\d{2})/.exec(s[k] || '');
+    if (m) s[k] = m[1];
+  }
+  return s;
+}
+const optNum = (v) => (v === '' || v == null || !isFinite(Number(v)) ? null : Number(v));
+/** Plan rows → {month:'YYYY-MM', unit_nights, room_revenue, expenses} (numbers or null); unreadable months dropped. */
+function normPlan(p) {
+  const m = /^(\d{4})-(\d{2})/.exec(String(p?.month ?? ''));
+  if (!m || +m[2] < 1 || +m[2] > 12) return null;
+  return { ...p, month: `${m[1]}-${m[2]}`, unit_nights: optNum(p.unit_nights), room_revenue: optNum(p.room_revenue), expenses: optNum(p.expenses) };
+}
+export const normRes = (r) => ({ ...r, id: String(r.id ?? ''), unit_id: String(r.unit_id ?? ''),
+  check_in: s10(r.check_in), check_out: s10(r.check_out), status: String(r.status || ''), source: String(r.source || ''),
+  guest_name: String(r.guest_name ?? ''), notes: String(r.notes ?? ''), created_at: r.created_at == null ? '' : String(r.created_at), checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0,
   cleaning_fee: Number(r.cleaning_fee) || 0, discount: Number(r.discount) || 0, guests: Number(r.guests) || 0,
   discount_label: Number(r.discount) > 0 ? String(r.discount_label || '').trim() : '',
   email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '',
   // extras: the stored JSON text parsed to [{id, qty, option, unit_price, amount}]; extras_total kept as sent.
   extras: parseExtrasLines(r.extras), extras_total: round2(Number(r.extras_total) || 0) });
-export const normExp = (e) => ({ ...e, amount: Number(e.amount) || 0, unit_id: e.unit_id || '' });
+export const normExp = (e) => ({ ...e, id: String(e.id ?? ''), date: s10(e.date), category: String(e.category || ''), amount: Number(e.amount) || 0, unit_id: e.unit_id ? String(e.unit_id) : '' });
 
 export function applyBootstrap(data, persistIt = true) {
   normalize(data);
@@ -89,7 +110,7 @@ export function removeById(listName, id) {
 }
 
 export const isOwner = () => state.user?.role === 'owner';
-export const currency = () => state.settings?.currency || 'EUR';
+export const currency = () => (/^[A-Z]{3}$/.test(String(state.settings?.currency || '').toUpperCase()) ? String(state.settings.currency).toUpperCase() : 'EUR');
 export const depositPercent = () => {
   const n = Number(state.settings?.deposit_percent);
   return isFinite(n) && n >= 0 && n <= 100 && state.settings?.deposit_percent !== '' && state.settings?.deposit_percent != null ? n : 30;

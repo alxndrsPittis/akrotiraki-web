@@ -15,6 +15,10 @@ python3 -m http.server 8080
 
 - Demo with sample data: <http://localhost:8080/app/?mock=1> (no backend, nothing is saved; pick "Owner (demo)" or "Manager (demo)").
 - With an empty `API_URL` in `config.js` the app always runs in demo mode.
+- Replay real-shaped data (dev only): `?mock=1&fixture=<url>` (or `?fixture=<url>` alone) loads that JSON as the
+  `bootstrap` payload (or a whole `{ok, data}` reply) into the demo backend; `getPricing` is derived from it with the
+  cleaning fees kept as Settings strings, unless the JSON has its own `getPricing` key. The URL must be same-origin or
+  serve CORS headers. Writes stay in memory.
 
 The service worker caches the app shell (stale-while-revalidate). While developing, use DevTools → Application →
 "Update on reload", or a private window, to avoid seeing an older cached copy.

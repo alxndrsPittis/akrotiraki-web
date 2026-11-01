@@ -89,6 +89,13 @@ export function renderPrices(root) {
 }
 
 function build(root) {
+  try { buildView(root); } catch (e) {
+    // Called from load()/saves outside the shell's renderView guard: show the error rather than a blank screen.
+    console.error('Prices could not render', e);
+    root.replaceChildren(h('div', { class: 'prices' }, h('p', { class: 'empty bad', role: 'alert' }, `Could not render: ${e?.message || e}`)));
+  }
+}
+function buildView(root) {
   root.replaceChildren();
   root.dataset.pricesUser = String(state.user?.email);
   const wrap = h('div', { class: 'prices' });

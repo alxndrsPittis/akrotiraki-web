@@ -5,7 +5,7 @@ import { addDays, diffDays, todayISO, isISODate, conflictsFor, isEmail, round2, 
 import { computeTotals } from './calc.js';
 import { decodeJwt } from './auth.js';
 
-const UNITS = [
+let UNITS = [
   { id: 'u1', name: 'Thalassa', type: 'maisonette', capacity: 5, color: '#1f5f8b', active: true },
   { id: 'u2', name: 'Ammos', type: 'maisonette', capacity: 4, color: '#c9a46b', active: true },
   { id: 'u3', name: 'Petra', type: 'studio', capacity: 2, color: '#7d9a78', active: true },
@@ -223,6 +223,7 @@ function rng(seed) {
 }
 
 let db = null;
+let dbReady = null;
 let seq = 1000;
 
 function seed() {
@@ -403,6 +404,7 @@ function rowsOk(rows, max) {
   if (!Array.isArray(rows) || rows.length > max) throw new E('bad_request', Array.isArray(rows) ? `At most ${max} rows.` : 'rows must be a list.', { field: 'rows' });
 }
 function pricing() {
+  if (FIX) return fixturePricing();
   const per_unit = {};
   for (const u of UNITS) { const v = SETTINGS[`cleaning_fee_${u.id}`]; if (v !== undefined && v !== '') per_unit[u.id] = Number(v) || 0; }
   return {
@@ -420,8 +422,47 @@ function makePlan() {
   return nights.map((n, i) => ({ month: `${Y}-${pad(i + 1)}`, unit_nights: n, room_revenue: rev[i], expenses: exp[i] }));
 }
 
+// ---- Fixture mode (dev only): ?fixture=<url> replays a real-shaped bootstrap payload (e.g. a Sheet export) ----
+// The JSON is a bootstrap `data` object (or a whole {ok, data} reply). It replaces units, settings, prices, discounts,
+// extras, plan, reservations and expenses; `user` comes from the demo sign-in so both roles can be tried. getPricing is
+// derived from it the way the backend builds it, except cleaning_fees keep the Settings strings ("30") to exercise the
+// string case; a `getPricing` key in the fixture is used as is instead.
+let FIX = null;
+const fixtureUrl = () => { try { return new URLSearchParams(globalThis.location?.search || '').get('fixture') || ''; } catch { return ''; } };
+async function loadFixture(url) {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Fixture ${url}: HTTP ${res.status}`);
+  const j = await res.json();
+  const d = j && j.ok === true && j.data ? j.data : j;
+  if (!d || typeof d !== 'object') throw new Error(`Fixture ${url}: not a bootstrap object`);
+  FIX = d;
+  UNITS = Array.isArray(d.units) ? d.units : [];
+  for (const k of Object.keys(SETTINGS)) delete SETTINGS[k];
+  Object.assign(SETTINGS, d.settings || {});
+  PRICES = Array.isArray(d.prices) ? d.prices : [];
+  DISCOUNTS = Array.isArray(d.discounts) ? d.discounts : [];
+  EXTRAS = Array.isArray(d.extras) ? d.extras : [];
+  console.info(`[mock] fixture ${url}: ${(d.reservations || []).length} reservations, ${(d.expenses || []).length} expenses`);
+  return { units: UNITS, reservations: Array.isArray(d.reservations) ? d.reservations : [], expenses: Array.isArray(d.expenses) ? d.expenses : [] };
+}
+function fixturePricing() {
+  if (FIX.getPricing && typeof FIX.getPricing === 'object') return FIX.getPricing;
+  const per_unit = {};
+  for (const u of UNITS) { const v = SETTINGS[`cleaning_fee_${u.id}`]; if (v !== undefined && v !== '') per_unit[u.id] = v; }
+  return {
+    prices: PRICES, discounts: DISCOUNTS, extras: EXTRAS,
+    cleaning_fees: { maisonette: SETTINGS.cleaning_fee_maisonette ?? 0, studio: SETTINGS.cleaning_fee_studio ?? 0, per_unit },
+    currency: SETTINGS.currency || 'EUR', units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
+  };
+}
+
 const actions = {
   bootstrap(user) {
+    if (FIX) {
+      const { note, getPricing, ...rest } = FIX; // eslint-disable-line no-unused-vars
+      return { ...rest, user, prices: PRICES, discounts: DISCOUNTS, extras: EXTRAS, units: UNITS, settings: { ...SETTINGS },
+        reservations: db.reservations, expenses: db.expenses };
+    }
     return {
       user,
       units: UNITS.map(({ id, name, type, capacity, color, active }) => ({ id, name, type, capacity, color, active })),
@@ -720,7 +761,11 @@ const actions = {
 
 export async function handle(token, action, payload) {
   await sleep(120 + Math.random() * 180);
-  db ||= seed();
+  if (!db) {
+    const url = fixtureUrl();
+    dbReady ||= url ? loadFixture(url) : Promise.resolve(seed());
+    db = await dbReady;
+  }
   const user = userFromToken(token);
   if (!user) return { ok: false, error: 'unauthorized', message: 'Please sign in again.' };
   const fn = actions[action];

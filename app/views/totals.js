@@ -15,12 +15,15 @@ function monthIndex(m) {
   const n = parseInt(s, 10);
   return isFinite(n) ? n - 1 : -1;
 }
-const nums = (o) => Object.fromEntries(['nights', 'revenue', 'expenses'].filter((k) => typeof o?.[k] === 'number').map((k) => [k, o[k]]));
+// Server numbers (also numeric strings); missing or unreadable fields keep the local figure.
+const nums = (o) => Object.fromEntries(['nights', 'revenue', 'expenses']
+  .filter((k) => o?.[k] !== '' && o?.[k] != null && isFinite(Number(o[k]))).map((k) => [k, Number(o[k])]));
 
 function merge(local, srv) {
   if (!srv || !Array.isArray(srv.months) || !srv.months.length) return { ...local, source: 'local' };
   const months = local.months.map((m) => ({ ...m }));
   for (const sm of srv.months) {
+    if (!sm || typeof sm !== 'object') continue;
     const i = monthIndex(sm.month);
     if (i >= 0 && i < 12) Object.assign(months[i], nums(sm));
   }

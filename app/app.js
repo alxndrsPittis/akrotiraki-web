@@ -13,7 +13,7 @@ import { renderStats } from './views/stats.js';
 import { renderPrices } from './views/prices.js';
 
 const params = new URLSearchParams(location.search);
-const MOCK = !!config.MOCK || !config.API_URL || params.get('mock') === '1';
+const MOCK = !!config.MOCK || !config.API_URL || params.get('mock') === '1' || params.has('fixture'); // fixture: dev replay, see mock.js
 state.mock = MOCK;
 
 const ROUTES = {
@@ -134,8 +134,16 @@ function navigate() {
 
 function renderView() {
   if (el.app.hidden) return;
-  ROUTES[route].render(el.view);
-  renderChrome();
+  try {
+    ROUTES[route].render(el.view);
+  } catch (e) {
+    // A view that throws must not leave a blank screen: say what failed, keep the shell usable.
+    console.error(`${ROUTES[route].title} could not render`, e);
+    el.view.replaceChildren(h('div', { class: 'render-error', role: 'alert' },
+      h('p', { class: 'empty bad' }, `Could not render: ${e?.message || e}`),
+      h('p', { class: 'hint center' }, 'Try Refresh in the Account menu. If it keeps happening, tell Alexandros what you opened.')));
+  }
+  try { renderChrome(); } catch (e) { console.error('Header could not render', e); }
 }
 subscribe(renderView);
 

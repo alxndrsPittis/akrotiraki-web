@@ -4,7 +4,7 @@
 import { state, currency, pendingCount } from '../state.js';
 import { h, icon } from '../ui.js';
 import { computeTotals, activeUnitCount } from '../calc.js';
-import { MON, MONTHS, money, addDays, diffDays, num, plural, capitalize, fmtDate, SOURCES } from '../lib.js';
+import { MON, MONTHS, money, addDays, diffDays, num, plural, capitalize, fmtDate, isISODate, SOURCES } from '../lib.js';
 
 let year = null;
 let openTables = new Set(); // data tables the user opened (kept across re-renders)
@@ -18,6 +18,24 @@ function sv(tag, attrs = {}, ...kids) {
 }
 
 // ---------- data ----------
+/** created_at → 'YYYY-MM-DD' (ISO text as the backend writes it, else anything Date can read), or '' when unreadable. */
+function bookedOn(v) {
+  const s = String(v ?? '').trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (!s) return '';
+  const t = new Date(s);
+  return isNaN(t) ? '' : `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+/** Years worth offering: this year, last year, and any year with stays, expenses or plan rows (newest first). */
+function yearOptions(thisYear, current) {
+  const ys = new Set([thisYear, thisYear - 1, current]);
+  const add = (s) => { const y = +String(s || '').slice(0, 4); if (y >= 2000 && y <= 2100) ys.add(y); };
+  state.reservations.forEach((r) => r.status !== 'cancelled' && add(r.check_in));
+  state.expenses.forEach((e) => add(e.date));
+  (Array.isArray(state.plan) ? state.plan : []).forEach((p) => add(p?.month));
+  return [...ys].sort((a, b) => b - a);
+}
+
 function compute(Y) {
   const ys = String(Y);
   const t = computeTotals({ year: Y, reservations: state.reservations, expenses: state.expenses, units: state.units, settings: state.settings });
@@ -31,7 +49,7 @@ function compute(Y) {
   const yStart = `${ys}-01-01`, yEnd = `${Y + 1}-01-01`;
 
   for (const r of state.reservations) {
-    if (!r.check_in || !r.check_out) continue;
+    if (!isISODate(r.check_in) || !isISODate(r.check_out) || r.check_out <= r.check_in) continue;
     const m = +r.check_in.slice(5, 7) - 1;
     const inY = r.check_in.startsWith(ys);
     if (r.status === 'pending' && inY) pendingRev[m] += num(r.price);
@@ -42,10 +60,10 @@ function compute(Y) {
       s.count++; s.revenue += num(r.price); s.nights += nights;
       if (r.source !== 'block') {
         stay[m].n++; stay[m].sum += nights;
-        const created = String(r.created_at || '').slice(0, 10);
-        if (/^\d{4}-\d{2}-\d{2}$/.test(created)) {
+        const created = bookedOn(r.created_at);
+        if (created) {
           const d = diffDays(created, r.check_in);
-          if (d >= 0) { lead[m].n++; lead[m].sum += d; }
+          if (d >= 0 && isFinite(d)) { lead[m].n++; lead[m].sum += d; }
         }
       }
     }
@@ -58,8 +76,8 @@ function compute(Y) {
 
   const cats = new Map();
   for (const e of state.expenses) {
-    if (!e.date || !e.date.startsWith(ys)) continue;
-    const c = (e.category || 'other').toLowerCase();
+    if (!String(e.date || '').startsWith(ys)) continue;
+    const c = String(e.category || 'other').trim().toLowerCase() || 'other';
     cats.set(c, (cats.get(c) || 0) + num(e.amount));
   }
 
@@ -114,6 +132,13 @@ function frame({ label, height, draw, tipFor, bandsOf }) {
   const render = () => {
     const w = Math.floor(box.clientWidth);
     if (!w) return;
+    try { draw0(w); } catch (e) {
+      console.error(`Chart "${label}" could not be drawn`, e);
+      geom = null;
+      box.replaceChildren(h('p', { class: 'empty bad' }, `Could not draw this chart: ${e?.message || e}`));
+    }
+  };
+  const draw0 = (w) => {
     const svg = sv('svg', { width: w, height, viewBox: `0 0 ${w} ${height}`, role: 'img', 'aria-label': label, focusable: 'false' }, sv('title', {}, label));
     geom = draw(svg, w) || null;
     hl = sv('rect', { class: 'hl', x: 0, y: 0, width: 0, height: 0, rx: 4, visibility: 'hidden' });
@@ -273,7 +298,7 @@ export function renderStats(root) {
   root.append(h('div', { class: 'totals-head stats-head' },
     h('label', { class: 'field compact' }, h('span', { class: 'field-label' }, 'Year'),
       h('select', { value: String(year), onchange: (e) => { year = +e.target.value; renderStats(root); } },
-        [thisYear, thisYear - 1].map((y) => h('option', { value: String(y) }, String(y))))),
+        yearOptions(thisYear, year).map((y) => h('option', { value: String(y) }, String(y))))),
     /^https:\/\//.test(String(sheet || '')) ? h('a', { class: 'btn sm ghost sheet-link', href: sheet, target: '_blank', rel: 'noopener' }, icon('link'), 'Open the analysis in Google Sheets') : null));
 
   // KPI row
@@ -284,7 +309,7 @@ export function renderStats(root) {
     [kpi('Nights', String(t.year.nights), `${t.season.nights} in season`),
       kpi('Occupancy', `${pct(t.season.nights, t.season.capacity)}%`, `season · ${pct(t.year.nights, t.year.capacity)}% year`),
       kpi('Revenue', m0(t.year.revenue), planRev ? `plan ${m0(planRev)}` : 'confirmed'),
-      kpi('Expenses', m0(t.year.expenses), `${plural(state.expenses.filter((e) => e.date?.startsWith(String(year))).length, 'entry', 'entries')}`),
+      kpi('Expenses', m0(t.year.expenses), `${plural(state.expenses.filter((e) => String(e.date || '').startsWith(String(year))).length, 'entry', 'entries')}`),
       kpi('Net result', m0(net), 'revenue − expenses', net < 0 ? 'neg' : 'pos'),
       kpi('Pending requests', String(pending), pending ? h('a', { href: '#requests' }, 'Open requests') : 'none waiting')]
       .map((k) => { k.setAttribute('role', 'listitem'); return k; })));

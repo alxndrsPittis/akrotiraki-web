@@ -1,9 +1,9 @@
 /* Akrotiraki management app. Tokens from akrotiraki-ops/docs/API.md. */
 :root {
-  --paper: #faf7f2;
+  --paper: #f5f5f3; /* light grey (was sandy #faf7f2) */
   --ink: #1f2a33;
-  --muted: #6b7680;
-  --line: #e6e0d6;
+  --muted: #5c6770; /* ≥ 4.5:1 on paper, surface, weekend, grey-soft, sea-soft */
+  --line: #e3e3df;
   --sea: #1f5f8b;
   --sea-soft: #d8e8f0;
   --sand: #c9a46b;
@@ -13,8 +13,8 @@
   --radius: 10px;
 
   /* derived */
-  --surface: #ffffff;
-  --weekend: #f6f2eb;
+  --surface: #fbfbfa;
+  --weekend: #efefeb;
   --today: #edf4f8;
   --on-sea: #ffffff;
   --danger: #a4412e;
