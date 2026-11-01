@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <!-- Asset version: ?v=20261101f. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Die Archäologie des Hügels · Akrotiraki, Sifnos</title>
@@ -27,39 +27,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="stylesheet" href="../site.css?v=20261101f">
-  <!-- TEMPORARY: site.css has no NAV-COLLAPSE entry for html[lang="de"] yet, so the nav would not collapse on phones.
-       Copy of the generated EL rules with a DE breakpoint of 1180px. Remove once site.css covers "de". -->
-  <style>
-    @media (max-width: 1180px) {
-      html[lang="de"].js .nav-toggle { display: inline-flex; order: 2; }
-      html[lang="de"] .lang-menu { margin-left: auto; order: 1; }
-      html[lang="de"].js .site-nav {
-        position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
-        flex-direction: column; align-items: stretch; gap: 0;
-        background: var(--paper); border-bottom: 1px solid var(--line);
-        padding: .5rem var(--gutter) 1.5rem;
-      }
-      html[lang="de"].js .site-nav:not(.open) { display: none; }
-      html[lang="de"] .site-nav ul { flex-direction: column; gap: 0; }
-      html[lang="de"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="de"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
-      html[lang="de"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
-      html[lang="de"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="de"] .site-nav ul { order: 0; }
-      html[lang="de"] .site-nav .btn { order: 1; }
-      html[lang="de"] .site-nav .nav-accent { order: 2; }
-      html[lang="de"] .nav-staff { order: 3; }
-      html[lang="de"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
-      html[lang="de"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
-      /* Without JS: nav stays visible below the wordmark */
-      html[lang="de"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-      html[lang="de"]:not(.js) .site-nav { width: 100%; }
-    }
-  </style>
+  <link rel="stylesheet" href="../site.css?v=20261101g">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101f"></script>
-  <script src="../site.js?v=20261101f" defer></script>
+  <script src="./strings.js?v=20261101g"></script>
+  <script src="../site.js?v=20261101g" defer></script>
 </head>
 <body class="page-arch page-guide">
   <a class="skip" href="#main">Zum Inhalt springen</a>
@@ -101,7 +72,7 @@
         <li><a href="beaches.html">Strände</a></li>
         <li><a href="outdoors.html">Aktiv</a></li>
         <li><a href="food.html">Essen</a></li>
-        <!-- Add guide pages here (next: <li><a href="culture.html">Culture</a></li>); the list wraps on phones. -->
+        <li><a href="culture.html">Kultur</a></li>
       </ul>
     </div>
   </nav>
@@ -205,21 +176,27 @@
         <section class="sources" aria-labelledby="a-src">
           <h2 id="a-src">Quellen</h2>
           <ol>
-            <li>Papadopoulou, Z. D. 2011. “Akrotiraki and Skali: New Evidence for EBA Lead/Silver and Copper Production from Southern Siphnos.” In P. P. Betancourt and S. C. Ferrence (eds), <cite>Metallurgy: Understanding How, Learning Why. Studies in Honor of James D. Muhly</cite> (Prehistory Monographs 29), 149–156. Philadelphia: INSTAP Academic Press.</li>
-            <li>Papadopoulou, Z. D. 2017. “Sculptures from Akrotiraki, Siphnos and its cemetery.” In M. Marthari, C. Renfrew and M. J. Boyd (eds), <cite>Early Cycladic Sculpture in Context</cite>, 107–118. Oxford: Oxbow Books.</li>
-            <li>Marks, Y. A. 2024. <cite>A re-assessment of the evidence and context of the creation and development of Aegean Perforated Furnaces</cite>. PhD thesis, University of Sheffield, Department of Archaeology.</li>
+            <li>Papadopoulou, Z. D. 2011. “Akrotiraki and Skali: New Evidence for EBA Lead/Silver and Copper Production from Southern Siphnos.” In P. P. Betancourt and S. C. Ferrence (eds), <cite>Metallurgy: Understanding How, Learning Why. Studies in Honor of James D. Muhly</cite> (Prehistory Monographs 29), 149–156. Philadelphia: INSTAP Academic Press. <a href="https://search.worldcat.org/search?q=bn:9781931534574" rel="noopener">WorldCat</a>.</li>
+            <li>Papadopoulou, Z. D. 2017. “Sculptures from Akrotiraki, Siphnos and its cemetery.” In M. Marthari, C. Renfrew and M. J. Boyd (eds), <cite>Early Cycladic Sculpture in Context</cite>, 107–118. Oxford: Oxbow Books. <a href="https://search.worldcat.org/search?q=bn:9781785701955" rel="noopener">WorldCat</a>.</li>
+            <li>Marks, Y. A. 2024. <cite>A re-assessment of the evidence and context of the creation and development of Aegean Perforated Furnaces</cite>. PhD thesis, University of Sheffield, Department of Archaeology. <a href="https://etheses.whiterose.ac.uk/id/eprint/36560/" rel="noopener">White Rose eTheses Online</a>.</li>
           </ol>
           <h3 class="sources-sub">Zu „Anderswo auf Sifnos“</h3>
           <ol>
-            <li>Ashton, N. G. 1991. <cite>Siphnos: Ancient Towers B.C.</cite> Athens: Eptalophos.</li>
+            <li>Ashton, N. G. 1991. <cite>Siphnos: Ancient Towers B.C.</cite> Athens: Eptalophos. <a href="https://search.worldcat.org/search?q=ti%3ASiphnos+Ancient+Towers+au%3AAshton" rel="noopener">WorldCat</a>.</li>
             <li>Herodotus, <cite>Histories</cite> 3.57, trans. A. D. Godley. <a href="https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0126:book=3:chapter=57" rel="noopener">Perseus Digital Library</a>.</li>
-            <li>Pausanias, <cite>Description of Greece</cite> 10.11.</li>
+            <li>Pausanias, <cite>Description of Greece</cite> 10.11, trans. W. H. S. Jones. <a href="https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0160:book=10:chapter=11" rel="noopener">Perseus Digital Library</a>.</li>
             <li>“Acropolis of Agios Andreas” and “Exhibition in the Acropolis of Agios Andreas”, <a href="https://www.aegeanislands.gr/pois/sifnos-acropolis-of-agios-andreas-en/" rel="noopener">aegeanislands.gr</a>.</li>
             <li>Hellenic Ministry of Culture, <a href="https://allofgreeceone.culture.gov.gr/en/venues/mycenaean-acropolis-of-saint-andrew-aghios-andreas-sifnos-en/" rel="noopener">“Mycenaean Acropolis of Saint Andrew (Aghios Andreas), Sifnos”</a>, All of Greece One Culture.</li>
             <li>Hellenic Heritage, <a href="https://www.hh.gr/en/?p=12499" rel="noopener">“Acropolis of Agios Andreas”</a>.</li>
             <li>“Archaeological sites”, <a href="https://www.roomsinsifnos.com/sifnos/archaeological-sites" rel="noopener">roomsinsifnos.com</a>.</li>
             <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/Siphnian_Treasury" rel="noopener">“Siphnian Treasury”</a>, <a href="https://en.wikipedia.org/wiki/Kastro_(Sifnos)" rel="noopener">“Kastro (Sifnos)”</a> and <a href="https://en.wikipedia.org/wiki/Sifnos" rel="noopener">“Sifnos”</a>.</li>
             <li>Hellenic Ministry of Culture, <a href="https://www.arxaiologikoktimatologio.gov.gr/" rel="noopener">Archaeological Cadastre</a>.</li>
+          </ol>
+          <h3 class="sources-sub" id="further-reading">Weiterführende Literatur</h3>
+          <ol>
+            <li>Gkion, K. I. 1876. <cite lang="el">Ιστορία της νήσου Σίφνου από των αρχαιοτάτων χρόνων μέχρι των καθ’ ημάς, μετά της περιγραφής των αρχαίων αυτής μεταλλείων χρυσού και αργύρου</cite>. Syros: Proodos. <a href="https://digitallibrary.academyofathens.gr/archive/item/7210" rel="noopener">Academy of Athens Digital Library</a>.</li>
+            <li>Symeonidis, S. <cite lang="el">Ιστορία της Σίφνου</cite>. <a href="https://search.worldcat.org/search?q=ti%3A%CE%99%CF%83%CF%84%CE%BF%CF%81%CE%AF%CE%B1+%CF%84%CE%B7%CF%82+%CE%A3%CE%AF%CF%86%CE%BD%CE%BF%CF%85" rel="noopener">WorldCat</a>.<!-- ASSUMED: author, volumes and year not verified online (see ASSUMPTIONS.md) --></li>
+            <li>Filippakis. <cite lang="el">Τοπωνύμια της Σίφνου</cite>. <a href="https://search.worldcat.org/search?q=ti%3A%CE%A4%CE%BF%CF%80%CF%89%CE%BD%CF%8D%CE%BC%CE%B9%CE%B1+%CE%A3%CE%AF%CF%86%CE%BD%CE%BF%CF%85" rel="noopener">WorldCat</a>.<!-- ASSUMED: author, exact title and year not verified online (see ASSUMPTIONS.md) --></li>
           </ol>
           <p class="note">Dies ist eine Zusammenfassung für Gäste, keine eigene Forschung. Wenn es darauf ankommt, ziehen Sie bitte die oben genannten Veröffentlichungen heran oder wenden Sie sich an die Ephorie für Altertümer der Kykladen.</p>
         </section>

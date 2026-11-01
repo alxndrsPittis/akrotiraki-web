@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <!-- Asset version: ?v=20261101f. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Quatre appartements au-dessus de Platys Gialos, Sifnos</title>
@@ -27,41 +27,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="preload" as="image" href="../photos/bay-panorama.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101f">
-  <!-- TEMPORARY: site.css has no NAV-COLLAPSE entry for html[lang="fr"] yet, so the nav would not collapse on phones.
-       Copy of the EL rules with an FR breakpoint of 1260px (the expanded French nav needs about 1230px). Remove once site.css covers "fr". -->
-  <style>
-    @media (max-width: 1260px) {
-      html[lang="fr"].js .nav-toggle { display: inline-flex; order: 2; }
-      html[lang="fr"] .lang-menu { margin-left: auto; order: 1; }
-      html[lang="fr"].js .site-nav {
-        position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
-        flex-direction: column; align-items: stretch; gap: 0;
-        background: var(--paper); border-bottom: 1px solid var(--line);
-        padding: .5rem var(--gutter) 1.5rem;
-      }
-      html[lang="fr"].js .site-nav:not(.open) { display: none; }
-      html[lang="fr"] .site-nav ul { flex-direction: column; gap: 0; }
-      html[lang="fr"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="fr"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
-      html[lang="fr"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
-      html[lang="fr"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="fr"] .site-nav ul { order: 0; }
-      html[lang="fr"] .site-nav .btn { order: 1; }
-      html[lang="fr"] .site-nav .nav-accent { order: 2; }
-      html[lang="fr"] .nav-staff { order: 3; }
-      html[lang="fr"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
-      html[lang="fr"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
-      /* Without JS: nav stays visible below the wordmark */
-      html[lang="fr"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-      html[lang="fr"]:not(.js) .site-nav { width: 100%; }
-    }
-  </style>
+  <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
+  <link rel="stylesheet" href="../site.css?v=20261101g">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101f"></script>
-  <script src="../site.js?v=20261101f" defer></script>
-  <script src="../booking.js?v=20261101f" defer></script>
+  <script src="./strings.js?v=20261101g"></script>
+  <script src="../site.js?v=20261101g" defer></script>
+  <script src="../booking.js?v=20261101g" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Aller au contenu</a>
@@ -99,8 +70,8 @@
   <main id="main">
     <!-- Hero -->
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <img class="hero-img" src="../photos/bay-panorama.webp" width="1360" height="766" fetchpriority="high" decoding="async"
-           alt="Une maison blanche et des terrasses de pierre au premier plan ; derrière, la baie turquoise et la longue plage de sable de Platys Gialos.">
+      <img class="hero-img" src="../photos/deckchairs-dusk.webp" width="1360" height="907" fetchpriority="high" decoding="async"
+           alt="Deux transats sur une terrasse en pierre au crépuscule, face à la baie de Platys Gialos.">
       <div class="wrap hero-text">
         <h1 id="hero-title">Quatre appartements au-dessus de la baie.</h1>
         <p class="lede">Une maison blanchie à la chaux sur le petit cap de Platys Gialos, à Sifnos, avec la mer au pied de chaque terrasse.</p>
@@ -159,6 +130,10 @@
               </ul>
             </div>
           </article>
+          <figure class="bath-figure">
+            <img src="../photos/bathroom.webp" width="680" height="1020" loading="lazy" decoding="async" alt="Une salle de bains avec douche à l’italienne, sol en galets et lavabo blanc.">
+            <figcaption>Salle de bains</figcaption>
+          </figure>
         </div>
         <p class="rates-note">Tarifs selon la saison ; le <a href="#contact">formulaire de demande</a> indique le prix pour vos dates.</p>
 
@@ -219,13 +194,16 @@
           <p class="eyebrow">Galerie</p>
           <h2 id="gallery-title">Photographies</h2>
         </header>
-        <ul class="grid" role="list">
-          <li class="g-terrace"><a href="../photos/terrace-view.webp" data-lightbox><img src="../photos/terrace-view.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Terrasse ombragée par une pergola, avec une table blanche ; la baie au-delà des murets de pierre."></a></li>
-          <li class="g-bay"><a href="../photos/bay-panorama.webp" data-lightbox><img src="../photos/bay-panorama.webp" width="1360" height="766" loading="lazy" decoding="async" alt="La baie de Platys Gialos vue des terrasses d’Akrotiraki."></a></li>
-          <li class="g-above"><a href="../photos/houses-above.webp" data-lightbox><img src="../photos/houses-above.webp" width="1360" height="906" loading="lazy" decoding="async" alt="La maison vue d’en haut, avec la pergola, les terrasses dallées et la mer."></a></li>
-          <li class="g-shore"><a href="../photos/rocky-shore.webp" data-lightbox><img src="../photos/rocky-shore.webp" width="1360" height="765" loading="lazy" decoding="async" alt="Le rivage rocheux sous la maison, eau claire et fleurs sauvages."></a></li>
-          <li class="g-hill"><a href="../photos/house-hill.webp" data-lightbox><img src="../photos/house-hill.webp" width="1360" height="906" loading="lazy" decoding="async" alt="Un des duplex dans la lumière du soir, les montagnes en arrière-plan."></a></li>
-          <li class="g-dusk"><a href="../photos/dusk-boats.webp" data-lightbox><img src="../photos/dusk-boats.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Voiliers au mouillage dans la baie au crépuscule, un tamaris au premier plan."></a></li>
+        <ul class="grid grid-9" role="list">
+          <li class="gi gi-1"><a href="../photos/bay-panorama.webp" data-lightbox><img src="../photos/bay-panorama.webp" width="1360" height="766" loading="lazy" decoding="async" alt="La baie de Platys Gialos vue des terrasses d’Akrotiraki."></a></li>
+          <li class="gi gi-2"><a href="../photos/terrace-view.webp" data-lightbox><img src="../photos/terrace-view.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Terrasse ombragée sous une pergola, avec une table blanche ; la baie au-delà des murets de pierre."></a></li>
+          <li class="gi gi-3"><a href="../photos/sunset-terrace.webp" data-lightbox><img src="../photos/sunset-terrace.webp" width="1360" height="907" loading="lazy" decoding="async" alt="Soleil bas sur la mer à côté de la maison, un arbuste et le mur blanchi à la chaux au premier plan."></a></li>
+          <li class="gi gi-4"><a href="../photos/house-bay-above.webp" data-lightbox><img src="../photos/house-bay-above.webp" width="1360" height="1020" loading="lazy" decoding="async" alt="La maison vue de la colline, avec la baie et la plage de Platys Gialos derrière."></a></li>
+          <li class="gi gi-5"><a href="../photos/headland-sunset.webp" data-lightbox><img src="../photos/headland-sunset.webp" width="1360" height="868" loading="lazy" decoding="async" alt="Le soleil bas derrière un cap, la mer calme et dorée."></a></li>
+          <li class="gi gi-6"><a href="../photos/night-bay.webp" data-lightbox><img src="../photos/night-bay.webp" width="1360" height="907" loading="lazy" decoding="async" alt="La maison éclairée la nuit, derrière elle les lumières de Platys Gialos le long de la baie."></a></li>
+          <li class="gi gi-7"><a href="../photos/deckchairs-night.webp" data-lightbox><img src="../photos/deckchairs-night.webp" width="1360" height="907" loading="lazy" decoding="async" alt="Deux transats sur une terrasse en pierre la nuit, les lumières de la baie au loin."></a></li>
+          <li class="gi gi-8"><a href="../photos/rocky-cove.webp" data-lightbox><img src="../photos/rocky-cove.webp" width="1360" height="765" loading="lazy" decoding="async" alt="Eau turquoise et limpide sur des rochers clairs, dans une petite crique sous la maison."></a></li>
+          <li class="gi gi-9"><a href="../photos/house-hill.webp" data-lightbox><img src="../photos/house-hill.webp" width="1360" height="906" loading="lazy" decoding="async" alt="Un duplex dans la lumière dorée du soir, les montagnes derrière."></a></li>
         </ul>
       </div>
     </section>
@@ -273,6 +251,13 @@
                   width="1200" height="480" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
         <p class="map-caption"><a href="https://www.google.com/maps/search/?api=1&amp;query=36.928199,24.725909" rel="noopener">Ouvrir dans Google Maps</a> · 36,9282° N, 24,7259° E</p>
+        <figure class="pano" aria-labelledby="pano-title">
+          <h3 class="pano-title" id="pano-title">Regarder autour</h3>
+          <div class="pano-frame">
+            <iframe src="https://www.google.com/maps/embed?pb=!4v1762030000000!6m8!1m7!1sleWMo3gnah5fDcMQrP03Wg!2m2!1d36.9277699!2d24.7256609!3f57.4!4f-4.09!5f0.7820865974627469" title="Vue à 360° depuis le chemin au-dessus de la maison" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <figcaption>Depuis le chemin au-dessus de la maison, 360° · <a href="https://maps.app.goo.gl/pmtXuSFABhRgeYxA6" rel="noopener">Ouvrir dans Google Maps</a></figcaption>
+        </figure>
       </div>
     </section>
 

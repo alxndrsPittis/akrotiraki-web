@@ -25,3 +25,7 @@ open TODOs; nothing on the pages says "to confirm" any more.
 | index · Prices | No prices on the site; the request form shows the quote from the backend | — |
 | sifnos · Friends | Kavos Studios, Faros, one neutral line | more friends' places |
 | all pages · og:image | Relative paths | make absolute with the custom domain |
+| index (all languages) · hero, gallery, apartments | Some of the new photos (deckchairs-dusk, deckchairs-night, sunset-terrace, house-bay-above, bay-evening, rocky-cove, headland-sunset, bathroom, night-bay) were taken by visitors and are used provisionally, pending their permission | permission from each photographer, or replace |
+| archaeology (all languages) · Further reading | Symeonidis, «Ιστορία της Σίφνου» and Filippakis, «Τοπωνύμια της Σίφνου»: listed as the owner gave them; author names, volumes, years and publishers could not be verified online. Gkion 1876 (verified) added as a history of Sifnos | full bibliographic data |
+| culture (all languages) · Reading | Pittas 2011, «Πανηγύρια στο Αιγαίο»: author, title and year verified; publisher not found online | publisher |
+| culture (all languages) · Music | Dances named as "the syrtos and the balos" (general Cycladic dances); the local dance name in one source (σιφνέικος) was left out as unverified | names to print |

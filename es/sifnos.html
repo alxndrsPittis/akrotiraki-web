@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <!-- Asset version: ?v=20261101f. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sifnos · Akrotiraki, Platys Gialos</title>
@@ -26,29 +26,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="stylesheet" href="../site.css?v=20261101f">
-  <!-- Spanish nav collapse: site.css scopes the collapsing menu to html[lang="en"|"el"]; same rules for es (move into site.css NAV-COLLAPSE block). -->
-  <style>
-    html[lang="es"] .header-inner, html[lang="es"] .site-nav, html[lang="es"] .site-nav ul { gap: clamp(.8rem, 1.4vw, 1.05rem); }
-    @media (max-width: 1220px) {
-      html[lang="es"].js .nav-toggle { display: inline-flex; order: 2; }
-      html[lang="es"] .lang-menu { margin-left: auto; order: 1; }
-      html[lang="es"].js .site-nav { position: absolute; left: 0; right: 0; top: 100%; margin-left: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--paper); border-bottom: 1px solid var(--line); padding: .5rem var(--gutter) 1.5rem; }
-      html[lang="es"].js .site-nav:not(.open) { display: none; }
-      html[lang="es"] .site-nav ul { flex-direction: column; gap: 0; order: 0; }
-      html[lang="es"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="es"] .site-nav .btn { margin-top: 1.2rem; text-align: center; order: 1; }
-      html[lang="es"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; order: 2; }
-      html[lang="es"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; order: 3; }
-      html[lang="es"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
-      html[lang="es"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
-      html[lang="es"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-      html[lang="es"]:not(.js) .site-nav { width: 100%; }
-    }
-  </style>
+  <link rel="stylesheet" href="../site.css?v=20261101g">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101f"></script>
-  <script src="../site.js?v=20261101f" defer></script>
+  <script src="./strings.js?v=20261101g"></script>
+  <script src="../site.js?v=20261101g" defer></script>
 </head>
 <body class="page-guide">
   <a class="skip" href="#main">Saltar al contenido</a>
@@ -90,7 +71,7 @@
         <li><a href="beaches.html">Playas</a></li>
         <li><a href="outdoors.html">Al aire libre</a></li>
         <li><a href="food.html">Comida</a></li>
-        <!-- Add guide pages here (next: <li><a href="culture.html">Culture</a></li>); the list wraps on phones. -->
+        <li><a href="culture.html">Cultura</a></li>
       </ul>
     </div>
   </nav>
@@ -131,7 +112,7 @@
             <a href="outdoors.html">
               <img src="../photos/sifnos/footpath-to-vathi.jpg" width="1600" height="1066" loading="lazy" decoding="async" alt="Un sendero que cruza una ladera seca camino de Vathi.">
               <h3>Al aire libre</h3>
-              <p>Senderos señalizados, bicicletas eléctricas, barcos y buceo, cómo moverse y los alfareros.</p>
+              <p>Senderos señalizados, bicicletas eléctricas, barcos y buceo y cómo moverse.</p>
             </a>
             <p class="photo-credit">Foto: <a href="https://commons.wikimedia.org/wiki/File:%CE%9C%CE%BF%CE%BD%CE%BF%CF%80%CE%AC%CF%84%CE%B9_%CF%80%CF%81%CE%BF%CF%82_%CE%92%CE%B1%CE%B8%CF%8D.jpg" rel="noopener">Kkanak</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" rel="license noopener">CC BY-SA 4.0</a>, vía Wikimedia Commons</p>
           </li>
@@ -142,6 +123,14 @@
               <p>Revithada, mastelo y manoura, y las tabernas, panaderías y bares que nos gustan.</p>
             </a>
             <p class="photo-credit">Foto: <a href="https://commons.wikimedia.org/wiki/File:Lemonis_Sifniot_Pottery_Troullos.jpg" rel="noopener">Catlemur</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" rel="license noopener">CC BY-SA 4.0</a>, vía Wikimedia Commons</p>
+          </li>
+          <li class="guide-card">
+            <a href="culture.html">
+              <img src="../photos/sifnos/feast-timios-stavros.jpg" width="1200" height="1600" loading="lazy" decoding="async" alt="La fiesta de la Santa Cruz en el monasterio de Timios Stavros, sobre Fasolou, al anochecer.">
+              <h3>Cultura</h3>
+              <p>La alfarería, el violín y el laúd, los panigyria del verano, los museos y los monasterios.</p>
+            </a>
+            <p class="photo-credit">Foto: <a href="https://commons.wikimedia.org/wiki/File:Feast_Day_Timios_Stavros_Monastery_Fassolou_2022.jpg" rel="noopener">Catlemur</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" rel="license noopener">CC BY-SA 4.0</a>, vía Wikimedia Commons</p>
           </li>
         </ul>
 

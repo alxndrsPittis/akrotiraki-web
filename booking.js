@@ -10,6 +10,7 @@
   var API = root.getAttribute('data-api');
   var T = window.AKRO_T || {};
   var LANG = (document.documentElement.lang || 'en').slice(0, 2);
+  var LOCALE = { en: 'en-GB', el: 'el-GR', fr: 'fr-FR', es: 'es-ES', de: 'de-DE' }[LANG] || 'en-GB';
   var OPENED = Date.now();                     // `t`: when the form was opened
   var MIN_FILL_MS = 4000;                       // backend rejects faster submissions
 
@@ -287,7 +288,9 @@
   var quoteEl = document.getElementById('quote'), quoteTimer = null, quoteSeq = 0, minStayShown = false;
   function money(v, cur) {
     try {
-      return new Intl.NumberFormat(LANG, { style: 'currency', currency: cur || 'EUR',
+      // Full locales so grouping follows each country ("1.240 €" in es/de/el, "1 240 €" in fr, "€1,240" in en).
+      // useGrouping 'always' (true in older engines) so Spanish also groups four-digit amounts.
+      return new Intl.NumberFormat(LOCALE, { style: 'currency', currency: cur || 'EUR', useGrouping: 'always',
         minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(v);
     } catch (e) { return v + ' ' + (cur || 'EUR'); }
   }

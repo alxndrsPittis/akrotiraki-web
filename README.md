@@ -5,6 +5,7 @@ Static files served by GitHub Pages. Contains no secrets: the backend verifies e
 
 ## Cache busting
 
-Each page links `site.css?v=…` and `site.js?v=…`, and the two home pages also `booking.js?v=…`
-(currently `?v=20261101f`). When you change `site.css`, `site.js` or `booking.js`, bump the `?v=` value
-on every page (`*.html` at the root and in `el/`); a comment at the top of each `<head>` marks the spot.
+Every page links `site.css?v=…` and `site.js?v=…`; the home pages also `booking.js?v=…`, and the fr/es/de
+pages their `strings.js?v=…` (currently `?v=20261101g`). When you change any of these files, bump the `?v=`
+value on every page (`*.html` at the root and in `el/`, `fr/`, `es/`, `de/`); a comment at the top of each
+`<head>` marks the spot.

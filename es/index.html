@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <!-- Asset version: ?v=20261101f. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Cuatro apartamentos sobre Platys Gialos, Sifnos</title>
@@ -27,31 +27,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="preload" as="image" href="../photos/bay-panorama.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101f">
-  <!-- Spanish nav collapse: site.css scopes the collapsing menu to html[lang="en"|"el"]; same rules for es (move into site.css NAV-COLLAPSE block). -->
-  <style>
-    html[lang="es"] .header-inner, html[lang="es"] .site-nav, html[lang="es"] .site-nav ul { gap: clamp(.8rem, 1.4vw, 1.05rem); }
-    @media (max-width: 1220px) {
-      html[lang="es"].js .nav-toggle { display: inline-flex; order: 2; }
-      html[lang="es"] .lang-menu { margin-left: auto; order: 1; }
-      html[lang="es"].js .site-nav { position: absolute; left: 0; right: 0; top: 100%; margin-left: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--paper); border-bottom: 1px solid var(--line); padding: .5rem var(--gutter) 1.5rem; }
-      html[lang="es"].js .site-nav:not(.open) { display: none; }
-      html[lang="es"] .site-nav ul { flex-direction: column; gap: 0; order: 0; }
-      html[lang="es"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="es"] .site-nav .btn { margin-top: 1.2rem; text-align: center; order: 1; }
-      html[lang="es"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; order: 2; }
-      html[lang="es"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; order: 3; }
-      html[lang="es"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
-      html[lang="es"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
-      html[lang="es"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-      html[lang="es"]:not(.js) .site-nav { width: 100%; }
-    }
-  </style>
+  <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
+  <link rel="stylesheet" href="../site.css?v=20261101g">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101f"></script>
-  <script src="../site.js?v=20261101f" defer></script>
-  <script src="../booking.js?v=20261101f" defer></script>
+  <script src="./strings.js?v=20261101g"></script>
+  <script src="../site.js?v=20261101g" defer></script>
+  <script src="../booking.js?v=20261101g" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Saltar al contenido</a>
@@ -89,8 +70,8 @@
   <main id="main">
     <!-- Hero -->
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <img class="hero-img" src="../photos/bay-panorama.webp" width="1360" height="766" fetchpriority="high" decoding="async"
-           alt="Una casa blanca y terrazas de piedra en primer plano; detrás, la bahía turquesa y la larga playa de arena de Platys Gialos.">
+      <img class="hero-img" src="../photos/deckchairs-dusk.webp" width="1360" height="907" fetchpriority="high" decoding="async"
+           alt="Dos tumbonas en una terraza de piedra al anochecer, frente a la bahía de Platys Gialos.">
       <div class="wrap hero-text">
         <h1 id="hero-title">Cuatro apartamentos sobre la bahía.</h1>
         <p class="lede">Una casa encalada en el pequeño cabo de Platys Gialos, en Sifnos, con el mar al pie de cada terraza.</p>
@@ -149,6 +130,10 @@
               </ul>
             </div>
           </article>
+          <figure class="bath-figure">
+            <img src="../photos/bathroom.webp" width="680" height="1020" loading="lazy" decoding="async" alt="Un baño con ducha a ras de suelo, suelo de guijarros y lavabo blanco.">
+            <figcaption>Baño</figcaption>
+          </figure>
         </div>
         <p class="rates-note">Tarifas según la temporada; el <a href="#contact">formulario de solicitud</a> muestra el precio para sus fechas.</p>
 
@@ -209,13 +194,16 @@
           <p class="eyebrow">Galería</p>
           <h2 id="gallery-title">Fotografías</h2>
         </header>
-        <ul class="grid" role="list">
-          <li class="g-terrace"><a href="../photos/terrace-view.webp" data-lightbox><img src="../photos/terrace-view.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Terraza con pérgola y una mesa blanca a la sombra; tras los muros de piedra, la bahía."></a></li>
-          <li class="g-bay"><a href="../photos/bay-panorama.webp" data-lightbox><img src="../photos/bay-panorama.webp" width="1360" height="766" loading="lazy" decoding="async" alt="La bahía de Platys Gialos desde las terrazas de Akrotiraki."></a></li>
-          <li class="g-above"><a href="../photos/houses-above.webp" data-lightbox><img src="../photos/houses-above.webp" width="1360" height="906" loading="lazy" decoding="async" alt="La casa desde arriba, con la pérgola, las terrazas enlosadas y el mar."></a></li>
-          <li class="g-shore"><a href="../photos/rocky-shore.webp" data-lightbox><img src="../photos/rocky-shore.webp" width="1360" height="765" loading="lazy" decoding="async" alt="La costa rocosa bajo la casa, agua transparente y flores silvestres."></a></li>
-          <li class="g-hill"><a href="../photos/house-hill.webp" data-lightbox><img src="../photos/house-hill.webp" width="1360" height="906" loading="lazy" decoding="async" alt="Uno de los dúplex con la luz dorada de la tarde y las montañas detrás."></a></li>
-          <li class="g-dusk"><a href="../photos/dusk-boats.webp" data-lightbox><img src="../photos/dusk-boats.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Veleros fondeados en la bahía al anochecer, con un tamarisco delante."></a></li>
+        <ul class="grid grid-9" role="list">
+          <li class="gi gi-1"><a href="../photos/bay-panorama.webp" data-lightbox><img src="../photos/bay-panorama.webp" width="1360" height="766" loading="lazy" decoding="async" alt="La bahía de Platys Gialos desde las terrazas de Akrotiraki."></a></li>
+          <li class="gi gi-2"><a href="../photos/terrace-view.webp" data-lightbox><img src="../photos/terrace-view.webp" width="765" height="1020" loading="lazy" decoding="async" alt="Terraza a la sombra de una pérgola con una mesa blanca; la bahía más allá de los muros de piedra."></a></li>
+          <li class="gi gi-3"><a href="../photos/sunset-terrace.webp" data-lightbox><img src="../photos/sunset-terrace.webp" width="1360" height="907" loading="lazy" decoding="async" alt="Sol bajo sobre el mar junto a la casa, con un arbusto y el muro encalado en primer plano."></a></li>
+          <li class="gi gi-4"><a href="../photos/house-bay-above.webp" data-lightbox><img src="../photos/house-bay-above.webp" width="1360" height="1020" loading="lazy" decoding="async" alt="La casa desde la colina, con la bahía y la playa de Platys Gialos detrás."></a></li>
+          <li class="gi gi-5"><a href="../photos/headland-sunset.webp" data-lightbox><img src="../photos/headland-sunset.webp" width="1360" height="868" loading="lazy" decoding="async" alt="El sol bajo detrás de un cabo, el mar en calma y dorado."></a></li>
+          <li class="gi gi-6"><a href="../photos/night-bay.webp" data-lightbox><img src="../photos/night-bay.webp" width="1360" height="907" loading="lazy" decoding="async" alt="La casa iluminada de noche; detrás, las luces de Platys Gialos a lo largo de la bahía."></a></li>
+          <li class="gi gi-7"><a href="../photos/deckchairs-night.webp" data-lightbox><img src="../photos/deckchairs-night.webp" width="1360" height="907" loading="lazy" decoding="async" alt="Dos tumbonas en una terraza de piedra de noche, con las luces de la bahía al fondo."></a></li>
+          <li class="gi gi-8"><a href="../photos/rocky-cove.webp" data-lightbox><img src="../photos/rocky-cove.webp" width="1360" height="765" loading="lazy" decoding="async" alt="Agua turquesa y transparente sobre rocas claras en una pequeña cala bajo la casa."></a></li>
+          <li class="gi gi-9"><a href="../photos/house-hill.webp" data-lightbox><img src="../photos/house-hill.webp" width="1360" height="906" loading="lazy" decoding="async" alt="Un dúplex con la luz dorada del atardecer y las montañas detrás."></a></li>
         </ul>
       </div>
     </section>
@@ -263,6 +251,13 @@
                   width="1200" height="480" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
         <p class="map-caption"><a href="https://www.google.com/maps/search/?api=1&amp;query=36.928199,24.725909" rel="noopener">Abrir en Google Maps</a> · 36.9282° N, 24.7259° E</p>
+        <figure class="pano" aria-labelledby="pano-title">
+          <h3 class="pano-title" id="pano-title">Mirar alrededor</h3>
+          <div class="pano-frame">
+            <iframe src="https://www.google.com/maps/embed?pb=!4v1762030000000!6m8!1m7!1sleWMo3gnah5fDcMQrP03Wg!2m2!1d36.9277699!2d24.7256609!3f57.4!4f-4.09!5f0.7820865974627469" title="Vista en 360° desde el camino sobre la casa" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <figcaption>Desde el camino sobre la casa, 360° · <a href="https://maps.app.goo.gl/pmtXuSFABhRgeYxA6" rel="noopener">Abrir en Google Maps</a></figcaption>
+        </figure>
       </div>
     </section>
 

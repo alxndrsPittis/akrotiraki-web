@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <!-- Asset version: ?v=20261101f. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101g. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aktiv auf Sifnos · Akrotiraki, Platys Gialos</title>
-  <meta name="description" content="Wandern, Radfahren, Boote und Tauchen auf Sifnos, unterwegs mit Bus, Auto oder Roller, die Töpferwerkstätten und Ideen mit Kindern.">
+  <meta name="description" content="Wandern, Radfahren, Boote und Tauchen auf Sifnos, unterwegs mit Bus, Auto oder Roller und Ideen mit Kindern.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#151c22" media="(prefers-color-scheme: dark)">
   <meta property="og:title" content="Aktiv auf Sifnos · Akrotiraki, Platys Gialos">
-  <meta property="og:description" content="Wanderwege, E-Bikes, Boote, Mietfahrzeuge und Töpferei auf Sifnos: Hinweise für die Gäste von Akrotiraki.">
+  <meta property="og:description" content="Wanderwege, E-Bikes, Boote und Mietfahrzeuge auf Sifnos: Hinweise für die Gäste von Akrotiraki.">
   <meta property="og:type" content="article">
   <meta property="og:image" content="../photos/sifnos/profitis-ilias-ridge.jpg"><!-- make absolute once the custom domain is set -->
   <meta property="og:locale" content="de_DE">
@@ -26,39 +26,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
-  <link rel="stylesheet" href="../site.css?v=20261101f">
-  <!-- TEMPORARY: site.css has no NAV-COLLAPSE entry for html[lang="de"] yet, so the nav would not collapse on phones.
-       Copy of the generated EL rules with a DE breakpoint of 1180px. Remove once site.css covers "de". -->
-  <style>
-    @media (max-width: 1180px) {
-      html[lang="de"].js .nav-toggle { display: inline-flex; order: 2; }
-      html[lang="de"] .lang-menu { margin-left: auto; order: 1; }
-      html[lang="de"].js .site-nav {
-        position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
-        flex-direction: column; align-items: stretch; gap: 0;
-        background: var(--paper); border-bottom: 1px solid var(--line);
-        padding: .5rem var(--gutter) 1.5rem;
-      }
-      html[lang="de"].js .site-nav:not(.open) { display: none; }
-      html[lang="de"] .site-nav ul { flex-direction: column; gap: 0; }
-      html[lang="de"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="de"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
-      html[lang="de"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
-      html[lang="de"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
-      html[lang="de"] .site-nav ul { order: 0; }
-      html[lang="de"] .site-nav .btn { order: 1; }
-      html[lang="de"] .site-nav .nav-accent { order: 2; }
-      html[lang="de"] .nav-staff { order: 3; }
-      html[lang="de"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
-      html[lang="de"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
-      /* Without JS: nav stays visible below the wordmark */
-      html[lang="de"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
-      html[lang="de"]:not(.js) .site-nav { width: 100%; }
-    }
-  </style>
+  <link rel="stylesheet" href="../site.css?v=20261101g">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261101f"></script>
-  <script src="../site.js?v=20261101f" defer></script>
+  <script src="./strings.js?v=20261101g"></script>
+  <script src="../site.js?v=20261101g" defer></script>
 </head>
 <body class="page-guide">
   <a class="skip" href="#main">Zum Inhalt springen</a>
@@ -100,7 +71,7 @@
         <li><a href="beaches.html">Strände</a></li>
         <li><a href="outdoors.html" aria-current="page">Aktiv</a></li>
         <li><a href="food.html">Essen</a></li>
-        <!-- Add guide pages here (next: <li><a href="culture.html">Culture</a></li>); the list wraps on phones. -->
+        <li><a href="culture.html">Kultur</a></li>
       </ul>
     </div>
   </nav>
@@ -217,35 +188,7 @@
           </ul>
         </section>
 
-        <figure class="photo">
-          <img src="../photos/sifnos/pottery-kopela-style.jpg" width="1600" height="1200" loading="lazy" decoding="async" alt="Bemalte Keramik aus Sifnos in einem Regal: ein verzierter Teller, ein Deckelgefäß und blaue Becher.">
-          <figcaption><p class="photo-credit">Foto: <a href="https://commons.wikimedia.org/wiki/File:Kopela_Style_Sifniot_Pottery_1.jpg" rel="noopener">Catlemur</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0" rel="license noopener">CC BY-SA 4.0</a>, über Wikimedia Commons</p></figcaption>
-        </figure>
-
-        <section class="guide-section" id="pottery" aria-labelledby="o-pottery">
-          <h2 id="o-pottery">Töpferei</h2>
-          <p>Auf Sifnos gehören Töpferei und Küche zusammen. Der Ton der Insel ist feuerfest, und die Gerichte der Insel sind für ihre Töpfe gemacht: der <i lang="el-Latn">tsikali</i> für das alltägliche Kochen, die <i lang="el-Latn">skepastaria</i> für Revithada, der <i lang="el-Latn">mastelo</i> für lange geschmortes Fleisch. Die Werkstätten lagen traditionell am Meer, wo Boote die Töpfe abholen konnten. Einige Familien arbeiten bis heute hier, und Sie können sie besuchen.</p>
-          <ul class="places" role="list">
-            <li>
-              <p class="pl-name">Atsonios</p>
-              <p class="pl-where">Vathi</p>
-              <p class="pl-desc">Die Familienwerkstatt von Antonis Atsonios, heute von seinem Sohn Yannis geführt, mit ihrem Brennofen am Meer in Tsopos.</p>
-              <p class="pl-map"><a class="pin" href="https://www.google.com/maps/search/?api=1&amp;query=Atsonios+Ceramics+Vathi+Sifnos" rel="noopener" aria-label="Atsonios ceramics, Vathi auf Google Maps"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path d="M8 15s5-4.6 5-8.5A5 5 0 0 0 3 6.5C3 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Karte</span></a></p>
-            </li>
-            <li>
-              <p class="pl-name">Peristeriona</p>
-              <p class="pl-where">Kamares</p>
-              <p class="pl-desc">Das Geschäft von Georgios Atsonios nahe dem Hafen, im Sommer geöffnet.</p>
-              <p class="pl-map"><a class="pin" href="https://www.google.com/maps/search/?api=1&amp;query=Peristeriona+ceramics+Kamares+Sifnos" rel="noopener" aria-label="Peristeriona ceramics, Kamares auf Google Maps"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path d="M8 15s5-4.6 5-8.5A5 5 0 0 0 3 6.5C3 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Karte</span></a></p>
-            </li>
-            <li>
-              <p class="pl-name">Lembesis</p>
-              <p class="pl-where">Artemonas</p>
-              <p class="pl-desc">Eine Familienwerkstatt in vierter Generation, die ihre eigene Ware verkauft.</p>
-              <p class="pl-map"><a class="pin" href="https://www.google.com/maps/search/?api=1&amp;query=Lembesis+pottery+Artemonas+Sifnos" rel="noopener" aria-label="Lembesis pottery, Artemonas auf Google Maps"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path d="M8 15s5-4.6 5-8.5A5 5 0 0 0 3 6.5C3 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Karte</span></a></p>
-            </li>
-          </ul>
-        </section>
+        <p class="more" id="pottery">Töpferwerkstätten: siehe <a href="culture.html#pottery">Kultur</a>.</p>
 
         <section class="guide-section" id="children" aria-labelledby="o-children">
           <h2 id="o-children">Mit Kindern</h2>

@@ -133,9 +133,15 @@ p { margin: 0 0 1em; max-width: 62ch; }
 
 
 
-/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: EN 1140px, EL 1220px (Greek labels run longer) */
-/* Greek: tighter gaps so the expanded nav fits */
-html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-nav ul { gap: clamp(.8rem, 1.4vw, 1.05rem); }
+
+
+
+/* NAV-COLLAPSE:BEGIN — generated; collapse breakpoints: en 1140px, el 1220px, fr 1260px, es 1220px, de 1180px (labels differ in length per language) */
+/* Longer labels (el, fr, es, de): tighter gaps, capped, so the expanded nav fits */
+html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
+html[lang="fr"] .header-inner, html[lang="fr"] .site-nav, html[lang="fr"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
+html[lang="es"] .header-inner, html[lang="es"] .site-nav, html[lang="es"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
+html[lang="de"] .header-inner, html[lang="de"] .site-nav, html[lang="de"] .site-nav ul { gap: clamp(.75rem, 1.2vw, 1rem); }
 @media (max-width: 1140px) {
   html[lang="en"].js .nav-toggle { display: inline-flex; order: 2; }
   html[lang="en"] .lang-menu { margin-left: auto; order: 1; }
@@ -185,6 +191,81 @@ html[lang="el"] .header-inner, html[lang="el"] .site-nav, html[lang="el"] .site-
   /* Without JS: nav stays visible below the wordmark */
   html[lang="el"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
   html[lang="el"]:not(.js) .site-nav { width: 100%; }
+}
+@media (max-width: 1260px) {
+  html[lang="fr"].js .nav-toggle { display: inline-flex; order: 2; }
+  html[lang="fr"] .lang-menu { margin-left: auto; order: 1; }
+  html[lang="fr"].js .site-nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: .5rem var(--gutter) 1.5rem;
+  }
+  html[lang="fr"].js .site-nav:not(.open) { display: none; }
+  html[lang="fr"] .site-nav ul { flex-direction: column; gap: 0; }
+  html[lang="fr"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="fr"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="fr"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
+  html[lang="fr"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="fr"] .site-nav ul { order: 0; }
+  html[lang="fr"] .site-nav .btn { order: 1; }
+  html[lang="fr"] .site-nav .nav-accent { order: 2; }
+  html[lang="fr"] .nav-staff { order: 3; }
+  html[lang="fr"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
+  html[lang="fr"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
+  /* Without JS: nav stays visible below the wordmark */
+  html[lang="fr"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
+  html[lang="fr"]:not(.js) .site-nav { width: 100%; }
+}
+@media (max-width: 1220px) {
+  html[lang="es"].js .nav-toggle { display: inline-flex; order: 2; }
+  html[lang="es"] .lang-menu { margin-left: auto; order: 1; }
+  html[lang="es"].js .site-nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: .5rem var(--gutter) 1.5rem;
+  }
+  html[lang="es"].js .site-nav:not(.open) { display: none; }
+  html[lang="es"] .site-nav ul { flex-direction: column; gap: 0; }
+  html[lang="es"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="es"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="es"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
+  html[lang="es"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="es"] .site-nav ul { order: 0; }
+  html[lang="es"] .site-nav .btn { order: 1; }
+  html[lang="es"] .site-nav .nav-accent { order: 2; }
+  html[lang="es"] .nav-staff { order: 3; }
+  html[lang="es"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
+  html[lang="es"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
+  /* Without JS: nav stays visible below the wordmark */
+  html[lang="es"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
+  html[lang="es"]:not(.js) .site-nav { width: 100%; }
+}
+@media (max-width: 1180px) {
+  html[lang="de"].js .nav-toggle { display: inline-flex; order: 2; }
+  html[lang="de"] .lang-menu { margin-left: auto; order: 1; }
+  html[lang="de"].js .site-nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-left: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: .5rem var(--gutter) 1.5rem;
+  }
+  html[lang="de"].js .site-nav:not(.open) { display: none; }
+  html[lang="de"] .site-nav ul { flex-direction: column; gap: 0; }
+  html[lang="de"] .site-nav ul a { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="de"] .site-nav .btn { margin-top: 1.2rem; text-align: center; }
+  html[lang="de"] .nav-staff { margin-top: .6rem; justify-content: center; padding: .6rem 0; }
+  html[lang="de"] .site-nav .nav-accent { display: block; padding: .9rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  html[lang="de"] .site-nav ul { order: 0; }
+  html[lang="de"] .site-nav .btn { order: 1; }
+  html[lang="de"] .site-nav .nav-accent { order: 2; }
+  html[lang="de"] .nav-staff { order: 3; }
+  html[lang="de"] .site-nav .nav-langs { order: 4; flex-direction: row; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .4rem; list-style: none; margin: .6rem 0 0; padding: .6rem 0 0; border-top: 1px solid var(--line); }
+  html[lang="de"] .site-nav .nav-langs a { display: inline-block; padding: .5rem .5rem; font-size: .88rem; text-transform: none; letter-spacing: 0; border: 0; }
+  /* Without JS: nav stays visible below the wordmark */
+  html[lang="de"]:not(.js) .header-inner { flex-wrap: wrap; padding-bottom: .5rem; }
+  html[lang="de"]:not(.js) .site-nav { width: 100%; }
 }
 /* NAV-COLLAPSE:END */
 
@@ -595,10 +676,10 @@ html { scroll-padding-top: calc(var(--header-h) + 8px); }
   color: var(--ink); text-decoration: none; padding: .35rem 0; border-bottom: 1px solid transparent;
 }
 .site-nav ul a:hover { border-bottom-color: var(--sand); }
-.site-nav .nav-accent { color: var(--sea); white-space: nowrap; }
-.site-nav .nav-accent:hover, .site-nav .nav-accent[aria-current] { border-bottom-color: var(--sea); }
+.site-nav .nav-accent { color: var(--sand-text); font-weight: 600; white-space: nowrap; }
+.site-nav .nav-accent:hover, .site-nav .nav-accent[aria-current] { border-bottom-color: var(--sand); }
 .site-nav .btn { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; padding: .72rem 1.15rem; font-weight: 500; }
-.nav-staff { font-size: .72rem; letter-spacing: .08em; }
+.nav-staff { font-size: .72rem; letter-spacing: .08em; font-weight: 600; }
 .site-nav .nav-langs { display: none; }
 
 /* Language menu */
@@ -673,3 +754,39 @@ p { max-width: 66ch; }
 
 /* Friends' places on the hub */
 .friends { border-top: 1px solid var(--line); padding-top: clamp(28px, 4vw, 44px); margin-top: clamp(32px, 5vw, 56px); }
+
+/* Gallery, nine photos: one large, one tall, then wide and small pieces */
+.grid.grid-9 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: clamp(120px, 32vw, 220px); gap: 6px; }
+.grid-9 .gi { grid-column: auto; grid-row: auto; }
+.grid-9 .gi-1 { grid-column: 1 / 3; }
+.grid-9 .gi-2 { grid-column: 1; grid-row: span 2; }
+.grid-9 .gi-5 { grid-column: 1 / 3; }
+@media (min-width: 760px) {
+  .grid.grid-9 { grid-template-columns: repeat(4, 1fr); grid-auto-rows: clamp(130px, 12.5vw, 195px); gap: 10px; }
+  .grid-9 .gi-1 { grid-column: 1 / 3; grid-row: 1 / 3; }
+  .grid-9 .gi-2 { grid-column: 3; grid-row: 1 / 3; }
+  .grid-9 .gi-3 { grid-column: 4; grid-row: 1; }
+  .grid-9 .gi-4 { grid-column: 4; grid-row: 2; }
+  .grid-9 .gi-5 { grid-column: 1 / 3; grid-row: 3; }
+  .grid-9 .gi-6 { grid-column: 3 / 5; grid-row: 3; }
+  .grid-9 .gi-7 { grid-column: 1; grid-row: 4; }
+  .grid-9 .gi-8 { grid-column: 2; grid-row: 4; }
+  .grid-9 .gi-9 { grid-column: 3 / 5; grid-row: 4; }
+}
+
+/* Bathroom photo beside the apartment cards */
+.bath-figure { margin: 0; max-width: 240px; }
+.bath-figure img { width: 100%; border-radius: var(--img-r); }
+.bath-figure figcaption { font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-text); margin-top: .5rem; }
+@media (min-width: 1000px) {
+  .cards { grid-template-columns: 1fr 1fr minmax(0, 200px); }
+  .bath-figure { padding-top: 1.6rem; }
+}
+@media (min-width: 760px) and (max-width: 999px) { .bath-figure { grid-column: 1 / -1; max-width: 200px; } }
+
+/* 360° panorama under the map */
+.pano { margin: clamp(32px, 5vw, 56px) 0 0; }
+.pano-title { font-size: 1.5rem; margin: 0 0 .8rem; }
+.pano-frame { position: relative; aspect-ratio: 16 / 9; background: var(--grey-soft); border-radius: var(--img-r); overflow: hidden; }
+.pano-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.pano figcaption { margin-top: .6rem; font-size: .88rem; color: var(--muted-text); }
