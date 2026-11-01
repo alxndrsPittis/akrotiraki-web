@@ -1,4 +1,5 @@
-// DOM helpers: element builder, icons, toasts, dialogs.
+// DOM helpers: element builder, icons, toasts, dialogs; per-device preferences (Profile).
+import { setMoneyWhole } from './lib.js';
 
 export const $ = (s, r = document) => r.querySelector(s);
 
@@ -163,3 +164,72 @@ export function blobToBase64(blob) {
     r.readAsDataURL(blob);
   });
 }
+
+// ---------- Per-device preferences (Profile screen) ----------
+// Stored in localStorage `ak.prefs`. index.html applies scheme and density before first paint (keep its list in sync).
+const PREFS_KEY = 'ak.prefs';
+export const SCHEMES = [
+  { group: '', items: [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] },
+  { group: 'Akrotiraki', items: [['paper', 'Paper'], ['grey', 'Grey'], ['dusk', 'Dusk']] },
+  { group: 'Personal', items: [['graphene', 'Graphene']] },
+  { group: 'Classics', items: [['material-darker', 'Material Darker'], ['material-lighter', 'Material Lighter'], ['nord', 'Nord'],
+    ['solarized-light', 'Solarized Light'], ['solarized-dark', 'Solarized Dark'], ['gruvbox-dark', 'Gruvbox Dark'],
+    ['catppuccin-latte', 'Catppuccin Latte'], ['catppuccin-mocha', 'Catppuccin Mocha']] },
+];
+const SCHEME_IDS = new Set(SCHEMES.flatMap((g) => g.items.map(([id]) => id)));
+export const PREF_CHOICES = {
+  calView: { month: 'Month', quarter: '3 months', season: 'Season', year: 'Year', list: 'List' },
+  start: { calendar: 'Calendar', requests: 'Requests', stats: 'Statistics' },
+  density: { comfortable: 'Comfortable', compact: 'Compact' },
+  money: { cents: 'With cents', whole: 'Whole euros' },
+};
+export const PREF_DEFAULTS = { scheme: 'system', calView: 'month', start: 'calendar', density: 'comfortable', money: 'cents' };
+const darkMq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+
+export function getPrefs() {
+  let p = {};
+  try { p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch { /* private mode or corrupt */ }
+  const out = { ...PREF_DEFAULTS };
+  if (SCHEME_IDS.has(p.scheme)) out.scheme = p.scheme;
+  for (const k of ['calView', 'start', 'density', 'money']) if (PREF_CHOICES[k][p[k]]) out[k] = p[k];
+  if (!PREF_CHOICES.calView[p.calView]) { // before the Profile screen the calendar remembered the last view here
+    try { const v = localStorage.getItem('ak.cal.view'); if (PREF_CHOICES.calView[v]) out.calView = v; } catch { /* ignore */ }
+  }
+  return out;
+}
+export function setPrefs(changes) {
+  const p = { ...getPrefs(), ...changes };
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* private mode: applies for this session only */ }
+  sessionPrefs = p;
+  applyPrefs(p);
+  return p;
+}
+export function resetPrefs() {
+  try { localStorage.removeItem(PREFS_KEY); localStorage.removeItem('ak.cal.view'); } catch { /* ignore */ }
+  sessionPrefs = null;
+  applyPrefs(PREF_DEFAULTS);
+  return { ...PREF_DEFAULTS };
+}
+let sessionPrefs = null;
+export const prefs = () => sessionPrefs || getPrefs();
+
+/** System → paper or dusk; Light → paper; Dark → dusk. */
+export function resolveScheme(s) {
+  if (s === 'system') return darkMq?.matches ? 'dusk' : 'paper';
+  if (s === 'light') return 'paper';
+  if (s === 'dark') return 'dusk';
+  return SCHEME_IDS.has(s) ? s : 'paper';
+}
+export function applyPrefs(p = prefs()) {
+  const root = document.documentElement;
+  root.dataset.scheme = resolveScheme(p.scheme);
+  if (p.density === 'compact') root.dataset.density = 'compact'; else delete root.dataset.density;
+  setMoneyWhole(p.money === 'whole');
+  const cs = getComputedStyle(root);
+  const bg = cs.getPropertyValue('--paper').trim();
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta && bg) meta.setAttribute('content', bg);
+  const csMeta = document.querySelector('meta[name="color-scheme"]');
+  if (csMeta) csMeta.setAttribute('content', cs.colorScheme === 'dark' ? 'dark' : 'light');
+}
+darkMq?.addEventListener?.('change', () => { if (prefs().scheme === 'system') applyPrefs(); });

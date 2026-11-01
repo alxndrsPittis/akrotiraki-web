@@ -4,18 +4,17 @@
 //  Season   season_start..season_end from Settings, bars only.
 //  Year     January–December, bars only.
 //  List     stays grouped by month (whole-house bookings merged into one row).
-// The chosen view is remembered on the device (localStorage). Bars in the compressed views show a small label on
+// The calendar opens in the Profile's default view (per device); switching applies until the app is reloaded. Bars in the compressed views show a small label on
 // hover (mouse) or on the first tap (touch); a second tap, or the label, opens the reservation.
 // Month and 3 months zoom horizontally (pinch, ctrl/cmd + wheel, or the − Fit + control in the corner cell); the day
 // width is remembered per view on the device.
 import { state, activeUnits, unitById, groupMembers, pendingCount } from '../state.js';
-import { h, icon } from '../ui.js';
+import { h, icon, prefs } from '../ui.js';
 import { todayISO, ymd, addDays, diffDays, daysInMonth, weekday, MONTHS, MON, WD1, fmtRange, fmtDate,
   plural, fromWebsite, SOURCES, STATUSES, byCheckIn } from '../lib.js';
 import { openReservation } from './reservation.js';
 
 const VIEWS = { month: 'Month', quarter: '3 months', season: 'Season', year: 'Year', list: 'List' };
-const VIEW_KEY = 'ak.cal.view';
 const MONTHS_SHOWN = { month: 1, quarter: 3, list: 3 }; // prev/next moves by this many months; season and year by a year
 const yearly = (v) => v === 'season' || v === 'year';
 
@@ -28,12 +27,12 @@ let lastPointer = '';
 let tip = null;            // {el, id, pinned}
 
 function readView() {
-  try { const v = localStorage.getItem(VIEW_KEY); return VIEWS[v] ? v : 'month'; } catch { return 'month'; }
+  const v = prefs().calView;
+  return VIEWS[v] ? v : 'month';
 }
-function saveView(v) {
-  view = v;
-  try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ }
-}
+function saveView(v) { view = v; }
+/** Profile changed the default view: show it now. */
+export function resetCalendarView() { view = readView(); cur = null; lastKey = null; }
 
 /** Season as MM-DD strings from Settings (fallback 1 May – 31 Oct). */
 function seasonDays() {

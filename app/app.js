@@ -3,9 +3,9 @@ import config from './config.js';
 import { state, loadCache, applyBootstrap, clearState, subscribe, emit, pendingCount } from './state.js';
 import * as auth from './auth.js';
 import { configureApi, call, ApiError } from './api.js';
-import { $, h, icon, toast, openDialog } from './ui.js';
+import { $, h, icon, toast, openDialog, prefs, setPrefs, resetPrefs, applyPrefs, SCHEMES, PREF_CHOICES } from './ui.js';
 import { fmtDateTime, capitalize } from './lib.js';
-import { renderCalendar } from './views/calendar.js';
+import { renderCalendar, resetCalendarView } from './views/calendar.js';
 import { renderRequests } from './views/requests.js';
 import { renderExpenses } from './views/expenses.js';
 import { renderTotals } from './views/totals.js';
@@ -23,11 +23,13 @@ const ROUTES = {
   totals: { title: 'Totals', render: renderTotals },
   stats: { title: 'Statistics', render: renderStats },
   prices: { title: 'Prices', render: renderPrices },
+  profile: { title: 'Profile', render: renderProfile },
 };
 let route = 'calendar';
 let lastRefresh = 0;
 
 const el = { signin: $('#signin'), app: $('#app'), view: $('#view') };
+applyPrefs(); // scheme and density were set by index.html; this also sets the currency display
 
 // Tab icons (inline SVG)
 document.querySelectorAll('[data-icon]').forEach((s) => s.replaceWith(icon(s.dataset.icon)));
@@ -120,7 +122,7 @@ function showApp() {
 
 function navigate() {
   const name = location.hash.slice(1);
-  route = ROUTES[name] ? name : 'calendar';
+  route = ROUTES[name] ? name : name ? 'calendar' : prefs().start; // no hash: the Profile's start screen
   document.querySelectorAll('.tabs a[data-route]').forEach((a) => {
     if (a.dataset.route === route) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -169,7 +171,9 @@ function renderChrome() {
   const foot = $('#rail-foot');
   foot.replaceChildren();
   if (user) {
-    foot.append(h('p', { class: 'who' }, h('strong', null, user.name || user.email), h('span', null, user.email)),
+    const prof = h('a', { href: '#profile', 'data-route': 'profile', class: 'rail-profile' }, icon('user'), h('span', null, 'Profile'));
+    if (route === 'profile') prof.setAttribute('aria-current', 'page');
+    foot.append(prof, h('p', { class: 'who' }, h('strong', null, user.name || user.email), h('span', null, user.email)),
       h('button', { class: 'btn ghost sm', type: 'button', onclick: signOut }, 'Sign out'));
   }
 }
@@ -179,6 +183,7 @@ $('#account-btn').addEventListener('click', () => {
   const user = state.user || { name: a?.name, email: a?.email };
   const refreshBtn = h('button', { class: 'btn', type: 'button' }, icon('refresh'), 'Refresh');
   const pricesLink = h('a', { class: 'btn ghost wide prices-link', href: '#prices' }, icon('tag'), 'Prices and discounts');
+  const profileLink = h('a', { class: 'btn ghost wide account-link', href: '#profile' }, icon('user'), 'Profile and display');
   const outBtn = h('button', { class: 'btn danger', type: 'button' }, 'Sign out');
   const dlg = openDialog({
     title: 'Account',
@@ -190,7 +195,7 @@ $('#account-btn').addEventListener('click', () => {
         h('dt', null, 'Role'), h('dd', null, capitalize(state.user?.role || '–')),
         h('dt', null, 'Data'), h('dd', null, MOCK ? 'Demo (in memory)' : state.offline ? 'Offline copy' : 'Live'),
         h('dt', null, 'Last updated'), h('dd', null, state.updatedAt ? fmtDateTime(state.updatedAt) : '–')),
-      pricesLink),
+      pricesLink, profileLink),
     foot: [outBtn, refreshBtn],
   });
   refreshBtn.addEventListener('click', async () => {
@@ -200,7 +205,76 @@ $('#account-btn').addEventListener('click', () => {
   });
   outBtn.addEventListener('click', () => { dlg.close(); signOut(); });
   pricesLink.addEventListener('click', () => dlg.close());
+  profileLink.addEventListener('click', () => dlg.close());
 });
+
+// ---------- Profile (account details + per-device display options) ----------
+function renderProfile(root, force = false) {
+  const a = auth.getAuth();
+  const user = state.user || (a ? { name: a.name, email: a.email } : {});
+  // Data refreshes re-render the view; keep the form (and focus) unless the account shown changed.
+  const sig = `${user.name}|${user.email}|${state.user?.role}`;
+  if (!force && root.dataset.profileSig === sig && root.querySelector('.profile')) return;
+  root.dataset.profileSig = sig;
+  const p = prefs();
+  const uid = 'prf';
+  const opts = (map, val) => Object.entries(map).map(([k, label]) => h('option', { value: k, selected: k === val }, label));
+  const selectField = (key, label, map) => {
+    const sel = h('select', { id: `${uid}-${key}` }, opts(map, p[key]));
+    sel.addEventListener('change', () => save({ [key]: sel.value }));
+    return h('div', { class: 'field' }, h('label', { class: 'field-label', for: sel.id }, label), sel);
+  };
+  const segField = (key, label, map) => h('fieldset', { class: 'field' }, h('legend', { class: 'field-label' }, label),
+    h('div', { class: 'seg' }, Object.entries(map).map(([k, text]) => {
+      const id = `${uid}-${key}-${k}`;
+      const inp = h('input', { type: 'radio', name: `${uid}-${key}`, id, value: k, checked: p[key] === k });
+      inp.addEventListener('change', () => { if (inp.checked) save({ [key]: k }); });
+      return [inp, h('label', { for: id }, text)];
+    })));
+  function save(changes) {
+    setPrefs(changes);
+    if ('calView' in changes) resetCalendarView();
+    if ('scheme' in changes) swatches.dataset.scheme = changes.scheme === 'system' ? document.documentElement.dataset.scheme : changes.scheme;
+  }
+
+  const schemeSel = h('select', { id: `${uid}-scheme`, 'aria-describedby': `${uid}-scheme-hint` },
+    SCHEMES.map((g) => (g.group ? h('optgroup', { label: g.group }, opts(Object.fromEntries(g.items), p.scheme)) : opts(Object.fromEntries(g.items), p.scheme))));
+  schemeSel.addEventListener('change', () => save({ scheme: schemeSel.value }));
+  // Native <option>s cannot hold colours, so one strip previews the chosen scheme (its own tokens via data-scheme).
+  const swatches = h('span', { class: 'swatches', 'aria-hidden': 'true', 'data-scheme': p.scheme === 'system' ? document.documentElement.dataset.scheme : p.scheme },
+    Array.from({ length: 7 }, () => h('i')));
+
+  const resetBtn = h('button', { class: 'btn', type: 'button' }, 'Reset to defaults');
+  resetBtn.addEventListener('click', () => {
+    resetPrefs();
+    resetCalendarView();
+    renderProfile(root, true);
+    toast('Display options reset.');
+    $(`#${uid}-scheme`)?.focus();
+  });
+
+  root.replaceChildren(h('div', { class: 'profile' },
+    h('section', { class: 'card', 'aria-labelledby': `${uid}-acc` },
+      h('div', { class: 'card-head' }, h('h2', { id: `${uid}-acc` }, 'Account')),
+      h('dl', { class: 'kv' },
+        h('dt', null, 'Name'), h('dd', null, user.name || '–'),
+        h('dt', null, 'Email'), h('dd', null, user.email || '–'),
+        h('dt', null, 'Role'), h('dd', null, capitalize(state.user?.role || '–'))),
+      h('p', { class: 'hint', style: 'margin-top:12px' }, 'Name and role are set in the Users tab of the sheet.')),
+    h('section', { class: 'card', 'aria-labelledby': `${uid}-dev` },
+      h('div', { class: 'card-head' }, h('h2', { id: `${uid}-dev` }, 'On this device')),
+      h('p', { class: 'hint' }, 'Saved in this browser only and applied straight away.'),
+      h('div', { class: 'field', style: 'margin-top:14px' },
+        h('label', { class: 'field-label', for: schemeSel.id }, 'Colour scheme'),
+        h('div', { class: 'scheme-row' }, schemeSel, swatches),
+        h('span', { class: 'hint', id: `${uid}-scheme-hint` }, 'System follows the light or dark setting of this device.')),
+      selectField('calView', 'Default calendar view', PREF_CHOICES.calView),
+      selectField('start', 'Start screen', PREF_CHOICES.start),
+      segField('density', 'Density', PREF_CHOICES.density),
+      segField('money', 'Currency display', PREF_CHOICES.money)),
+    h('div', { class: 'profile-foot' }, resetBtn,
+      h('button', { class: 'btn danger', type: 'button', onclick: signOut }, 'Sign out'))));
+}
 
 function signOut() {
   auth.signOut();

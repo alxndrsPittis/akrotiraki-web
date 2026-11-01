@@ -50,7 +50,15 @@ Edit `config.js`:
   Writes update local state from the object the server returns.
 - **Roles**: managers can add and edit everything but cannot confirm reservations; owners can, and can
   "Confirm anyway" over an overlap (`force: true`).
-- **Calendar views** (switch remembered on the device, `localStorage` `ak.cal.view`): Month (day timeline), 3 months
+- **Profile** (`#profile`; Account menu on phones, bottom of the side rail on desktop): name, email and role, and
+  per-device display options in `localStorage` `ak.prefs` (code in `ui.js`, applied at once): colour scheme (System,
+  Light, Dark; Akrotiraki: Paper, Grey, Dusk; Personal: Graphene; Classics: Material Darker/Lighter, Nord,
+  Solarized Light/Dark, Gruvbox Dark, Catppuccin Latte/Mocha), default calendar view, start screen (used when the URL
+  has no `#…`), density (Compact ≈ 10% smaller type and spacing) and currency display (cents when an amount has them,
+  or whole euros). Schemes are `[data-scheme="…"]` token blocks in `app.css`; an inline script in `index.html` sets
+  `data-scheme`/`data-density` and `theme-color` before first paint (keep its list in sync with `SCHEMES` in `ui.js`).
+  Every scheme sets the same roles, text contrast ≥ 4.5:1 (some classic accents are darkened or lightened for that).
+- **Calendar views** (opens in the Profile's default view; a switch lasts until reload): Month (day timeline), 3 months
   (compressed; names on wide screens only), Season (`season_start`..`season_end`), Year, and List (stays grouped by
   month, from today in the current period). Prev/next move by a month, three months or a year. Bars in the
   compressed views show a label on hover, or on the first tap on phones. A source filter applies to every view.
@@ -94,11 +102,11 @@ Edit `config.js`:
 ## Files
 
 ```
-index.html, app.css, app.js     shell, routing, sign-in flow
+index.html, app.css, app.js     shell, routing, sign-in flow, Profile screen
 config.js                       API_URL / CLIENT_ID / MOCK
 api.js, auth.js, state.js       API client, Google sign-in, state + cache
 actions.js                      writes (save/cancel/confirm, expenses, receipts)
-lib.js, calc.js, ui.js          dates/formatting/overlap, totals maths, DOM helpers
+lib.js, calc.js, ui.js          dates/formatting/overlap, totals maths, DOM helpers + device preferences
 mock.js                         in-memory fake backend for demo mode
 views/                          calendar, requests, reservation form, expenses, totals, stats, prices
 sw.js, manifest.webmanifest     PWA

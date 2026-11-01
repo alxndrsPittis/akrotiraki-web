@@ -57,9 +57,11 @@ export function fmtDateTime(iso) {
 }
 
 const fmtCache = new Map();
+let wholeMoney = false; // Profile "Currency display": whole euros (rounded) instead of cents when an amount has them
+export function setMoneyWhole(on) { wholeMoney = !!on; }
 export function money(n, currency = 'EUR') {
   const v = Number(n) || 0;
-  const frac = Math.round(v * 100) % 100 !== 0;
+  const frac = !wholeMoney && Math.round(v * 100) % 100 !== 0;
   const key = currency + frac;
   if (!fmtCache.has(key)) {
     try {

@@ -7,8 +7,28 @@
   <meta name="description" content="Reservations, expenses and totals for Akrotiraki, Sifnos.">
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#14191e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f5f3">
+  <script>
+    // Colour scheme and density from the Profile screen (localStorage ak.prefs), applied before first paint.
+    // Keep in sync with SCHEMES in ui.js and the [data-scheme] blocks in app.css (value = the scheme's --paper).
+    (function () {
+      var p = {}, d = document.documentElement;
+      try { p = JSON.parse(localStorage.getItem('ak.prefs') || '{}') || {}; } catch (e) { /* private mode */ }
+      var bg = { paper: '#f5f5f3', grey: '#f0f0ee', dusk: '#14191e', graphene: '#212121', 'material-darker': '#212121',
+        'material-lighter': '#fafafa', nord: '#2e3440', 'solarized-light': '#fdf6e3', 'solarized-dark': '#002b36',
+        'gruvbox-dark': '#282828', 'catppuccin-latte': '#eff1f5', 'catppuccin-mocha': '#1e1e2e' };
+      var dark = { dusk: 1, graphene: 1, 'material-darker': 1, nord: 1, 'solarized-dark': 1, 'gruvbox-dark': 1, 'catppuccin-mocha': 1 };
+      var s = p.scheme || 'system';
+      if (s === 'system') s = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dusk' : 'paper';
+      else if (s === 'light') s = 'paper';
+      else if (s === 'dark') s = 'dusk';
+      if (!bg[s]) s = 'paper';
+      d.setAttribute('data-scheme', s);
+      if (p.density === 'compact') d.setAttribute('data-density', 'compact');
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', bg[s]);
+      document.querySelector('meta[name="color-scheme"]').setAttribute('content', dark[s] ? 'dark' : 'light');
+    })();
+  </script>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
