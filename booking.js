@@ -221,7 +221,7 @@
   /* ---------------------------------------------------------------- errors */
   var errBox = document.getElementById('form-error');
   var FIELD_INPUT = { unit_id: 'unit_id', check_in: 'check_in', check_out: 'check_out', guests: 'guests',
-    email: 'email', guest_name: 'guest_name', phone: 'phone', message: 'message' };
+    email: 'email', guest_name: 'guest_name', phone: 'phone', message: 'message', extras_note: 'extras_note', extras: 'extras_note' };
   var FIELD_STEP = { check_in: 1, check_out: 1, guests: 1, unit_id: 2 };
   function fieldError(field, text) {
     var p = document.getElementById('err-' + field); if (p) { p.textContent = text; p.hidden = false; }
@@ -342,6 +342,103 @@
     cards.__list = list;
   }
 
+  /* ---------------------------------------------------------------- extras */
+  // Loaded once per page (public `extras`); shown in step 3 for the chosen apartment. The summary line
+  // re-quotes with the selection (debounced) so the total includes the paid extras.
+  var EXTRAS = null, exState = {}, exBox = document.getElementById('extras'), exTimer = null, exSeq = 0, chosenX = null;
+  function exName(e) { return (e.names && e.names[LANG]) || e.name || e.id; }
+  function exFits(e, u) {
+    if (e.unit_id && String(e.unit_id).toLowerCase() !== String(u.id).toLowerCase()) return false;
+    if (e.unit_type && String(e.unit_type).toLowerCase() !== String(u.type).toLowerCase()) return false;
+    return true;
+  }
+  function exUnitPrice(e, st) {
+    var o = (e.options || []).filter(function (x) { return x.label === st.option; })[0];
+    return o && o.price != null ? o.price : e.price;
+  }
+  function exPriceText(e, st) {
+    if (e.category === 'quote') return T.exOnRequest;
+    if (e.category !== 'paid') return '';
+    return T.exPer(e.kind, money(Number(exUnitPrice(e, st)) || 0, EXTRAS && EXTRAS.currency));
+  }
+  function renderExtras(u) {
+    if (!exBox) return;
+    var list = (EXTRAS && EXTRAS.extras || []).filter(function (e) { return exFits(e, u); });
+    var groups = [['paid', T.exPaid], ['request', T.exRequest], ['quote', T.exQuote]], html = '';
+    groups.forEach(function (g) {
+      var items = list.filter(function (e) { return (e.category || 'paid') === g[0]; });
+      if (!items.length) return;
+      html += '<fieldset class="ex-group"><legend>' + esc(g[1]) + '</legend>';
+      items.forEach(function (e) {
+        var st = exState[e.id] || (exState[e.id] = { on: false, qty: 1, option: e.options && e.options.length ? e.options[0].label : '' });
+        var id = 'ex-' + e.id, max = Math.max(1, Number(e.max_qty) || 1);
+        html += '<div class="ex-item" data-ex="' + esc(e.id) + '"><label class="ex-check" for="' + id + '"><input type="checkbox" id="' + id + '"' + (st.on ? ' checked' : '') + '> <span>' + esc(exName(e)) + '</span></label>';
+        if (e.options && e.options.length) {
+          html += '<select class="ex-option" aria-label="' + esc(T.exOption + ': ' + exName(e)) + '">' + e.options.map(function (o) {
+            return '<option' + (o.label === st.option ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+          }).join('') + '</select>';
+        }
+        if (max > 1) html += '<input class="ex-qty" type="number" min="1" max="' + max + '" value="' + st.qty + '" inputmode="numeric" aria-label="' + esc(T.exQty + ': ' + exName(e)) + '">';
+        var pt = exPriceText(e, st);
+        if (pt) html += '<span class="ex-price">' + esc(pt) + '</span>';
+        html += '</div>';
+      });
+      html += '</fieldset>';
+    });
+    var note = form.elements.extras_note ? form.elements.extras_note.value : '';
+    html += '<div class="field"><label for="f-exnote">' + esc(T.exNote) + ' <span class="opt">' + esc(T.exOptional) + '</span></label>' +
+      '<input id="f-exnote" name="extras_note" type="text" maxlength="500" aria-describedby="err-extras_note">' +
+      '<p class="field-error" id="err-extras_note" hidden></p></div>';
+    exBox.innerHTML = html;
+    form.elements.extras_note.value = note;
+  }
+  function exSelection() {
+    if (!chosenX || !EXTRAS) return [];
+    return (EXTRAS.extras || []).filter(function (e) { return exFits(e, chosenX.u) && exState[e.id] && exState[e.id].on; })
+      .map(function (e) {
+        var st = exState[e.id], o = { id: e.id, qty: Math.max(1, Math.min(Number(e.max_qty) || 1, Math.floor(Number(st.qty) || 1))) };
+        if (e.options && e.options.length) o.option = st.option;
+        return o;
+      });
+  }
+  function setSummary(q) {
+    var x = chosenX, parts = [unitName(x.u), range(sel.a, sel.b), T.guestsN(sel.guests)];
+    if (q && !q.incomplete) parts.push(money(q.total, q.currency));
+    var line = parts.join(' · ');
+    var ex = q && Number(q.extras_total) > 0 ? q.extras_total : 0;
+    if (ex) line += ' (' + T.exIncl(money(ex, q.currency)) + ')';
+    document.getElementById('chosen').textContent = line;
+    var sum = document.getElementById('extras-sum');
+    if (sum) {
+      var lines = (q && q.extras || []).filter(function (e) { return Number(e.amount) > 0; })
+        .map(function (e) { return e.name + (e.option ? ' (' + e.option + ')' : '') + ' ' + money(e.amount, q.currency); });
+      sum.textContent = lines.join(', ');
+      sum.hidden = !lines.length;
+    }
+  }
+  function requote() {
+    clearTimeout(exTimer);
+    var seq = ++exSeq, sel0 = exSelection();
+    if (!sel0.length) { setSummary(chosenX.quote); return; }
+    exTimer = setTimeout(function () {
+      call('quote', { unit_id: chosenX.u.id, check_in: sel.a, check_out: sel.b, guests: sel.guests, extras: sel0, lang: LANG }).then(function (r) {
+        if (seq === exSeq && r && r.ok && r.data) setSummary(r.data);
+      }).catch(function () {});
+    }, 300);
+  }
+  if (exBox) {
+    exBox.addEventListener('change', function (e) {
+      var item = e.target.closest('[data-ex]'); if (!item) return;
+      var st = exState[item.getAttribute('data-ex')]; if (!st) return;
+      if (e.target.type === 'checkbox') st.on = e.target.checked;
+      else if (e.target.classList.contains('ex-option')) { st.option = e.target.value; st.on = true; item.querySelector('input[type=checkbox]').checked = true; }
+      else if (e.target.classList.contains('ex-qty')) st.qty = e.target.value;
+      var ex = (EXTRAS.extras || []).filter(function (x) { return x.id === item.getAttribute('data-ex'); })[0];
+      var pr = item.querySelector('.ex-price'); if (pr && ex) pr.textContent = exPriceText(ex, st);
+      requote();
+    });
+  }
+
   /* ----------------------------------------------------- step 2 → step 3 */
   cards.addEventListener('click', function (e) {
     var b = e.target.closest('[data-unit]'); if (!b) return;
@@ -349,9 +446,11 @@
     if (!x) return;
     chosen = x.u.id;
     form.elements.unit_id.value = chosen;
-    var parts = [unitName(x.u), range(sel.a, sel.b), T.guestsN(sel.guests)];
-    if (x.quote && !x.quote.incomplete) parts.push(money(x.quote.total, x.quote.currency));
-    document.getElementById('chosen').textContent = parts.join(' · ');
+    if (!chosenX || chosenX.u.id !== x.u.id) exState = {};
+    chosenX = x;
+    renderExtras(x.u);
+    setSummary(x.quote);
+    requote();
     show(3);
   });
 
@@ -363,6 +462,7 @@
     else if (v.guest_name.length > 120) errs.guest_name = T.err.guest_name_long;
     if (v.phone.length > 40) errs.phone = T.err.phone;
     if (v.message.length > 2000) errs.message = T.err.message;
+    if (v.extras_note.length > 500) errs.extras_note = T.err.extras_note;
     return errs;
   }
   // Server messages are English; show the page-language string for known cases.
@@ -399,7 +499,8 @@
     var v = {
       guest_name: form.elements.guest_name.value.replace(/\s+/g, ' ').trim(),
       email: form.elements.email.value.trim(), phone: form.elements.phone.value.trim(),
-      message: form.elements.message.value.trim()
+      message: form.elements.message.value.trim(),
+      extras_note: form.elements.extras_note ? form.elements.extras_note.value.replace(/\s+/g, ' ').trim() : ''
     };
     var errs = validate(v), keys = Object.keys(errs);
     if (keys.length) {
@@ -410,8 +511,9 @@
     var payload = {
       unit_id: chosen, check_in: sel.a, check_out: sel.b, guests: sel.guests,
       guest_name: v.guest_name, email: v.email, phone: v.phone, message: v.message,
-      lang: LANG, hp: form.elements.hp.value, t: OPENED
+      lang: LANG, hp: form.elements.hp.value, t: OPENED, extras: exSelection()
     };
+    if (v.extras_note) payload.extras_note = v.extras_note;
     btn.disabled = true; btn.textContent = T.sending;
     var wait = Math.max(0, MIN_FILL_MS + 300 - (Date.now() - OPENED));   // stay clear of the backend's 4 s rule
     setTimeout(function () {
@@ -436,6 +538,7 @@
   /* ------------------------------------------------------------------ load */
   show(1, false);
   if (API) {
+    call('extras', { lang: LANG }).then(function (r) { if (r && r.ok && r.data) EXTRAS = r.data; }).catch(function () {});
     availP = call('availability', {}).then(function (res) {
       if (!res || !res.ok || !res.data || !res.data.units) throw new Error('availability');
       avail = res.data;

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <!-- Asset version: ?v=20261102a. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261102b. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Quatre appartements au-dessus de Platys Gialos, Sifnos</title>
@@ -30,12 +30,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261102a">
+  <link rel="stylesheet" href="../site.css?v=20261102b">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="./strings.js?v=20261102a"></script>
-  <script src="../site.js?v=20261102a" defer></script>
-  <script src="../mark.js?v=20261102a" defer></script>
-  <script src="../booking.js?v=20261102a" defer></script>
+  <script src="./strings.js?v=20261102b"></script>
+  <script src="../site.js?v=20261102b" defer></script>
+  <script src="../mark.js?v=20261102b" defer></script>
+  <script src="../booking.js?v=20261102b" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Aller au contenu</a>
@@ -340,6 +340,8 @@
               <h3 id="s3-title" tabindex="-1">Vos coordonnées</h3>
               <p class="step-summary"><span id="chosen"></span> · <button type="button" class="link-btn" data-go="2">Modifier</button></p>
               <input type="hidden" name="unit_id">
+              <p class="extras-sum" id="extras-sum" aria-live="polite" hidden></p>
+              <div class="extras" id="extras"></div>
               <div class="field">
                 <label for="f-name">Nom</label>
                 <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">

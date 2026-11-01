@@ -2,6 +2,10 @@
 // Loaded before ../site.js, which merges window.AKRO_STRINGS.es over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.es = {
+  exPaid: 'Extras', exRequest: 'Peticiones', exQuote: 'Bajo consulta', exOnRequest: 'precio a consultar',
+  exNote: '¿Algo más?', exOptional: '(opcional)', exQty: 'Cantidad', exOption: 'Opción',
+  exIncl: function (m) { return 'extras incluidos: ' + m; },
+  exPer: function (k, m) { return m + ' ' + ({ per_stay: 'por estancia', per_night: 'por noche', per_person_night: 'por persona y noche' }[k] || ''); },
   // solicitud en tres pasos: tarjetas de apartamentos (booking.js)
   guestsN: function (n) { return n + (n === 1 ? ' persona' : ' personas'); },
   sqm: function (n) { return n + ' m²'; },
@@ -30,6 +34,7 @@ window.AKRO_STRINGS.es = {
   pickedRange: function (n, a, d) { return n + (n === 1 ? ' noche' : ' noches') + ', del ' + a + ' al ' + d + '.'; },
   calError: 'No se ha podido cargar el calendario. Aun así, puede enviarnos una solicitud más abajo.',
   err: {
+    extras_note: 'La nota es demasiado larga (500 caracteres como máximo).',
     unit_id: 'Elija un apartamento.',
     check_in: 'Elija una fecha de llegada.',
     check_in_past: 'La fecha de llegada ya ha pasado.',

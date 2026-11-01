@@ -118,3 +118,66 @@ export function conflictsFor(res, list) {
 export const byCheckIn = (a, b) => a.check_in.localeCompare(b.check_in) || a.unit_id.localeCompare(b.unit_id);
 /** Label of a quote's discount rule, as the backend stores it in discount_label: "Long stay 7+ nights, 10%". */
 export const ruleLabel = (q) => (q && Number(q.rule_discount) > 0 && q.rule_name ? `${q.rule_name}, ${Number(q.rule_percent) || 0}%` : '');
+
+// ---- Extras (API.md "Extras") ----
+export const EXTRA_CATEGORIES = { paid: 'Paid', request: 'Request', quote: 'On request' };
+export const EXTRA_KINDS = { per_stay: 'Per stay', per_night: 'Per night', per_person_night: 'Per person per night' };
+export const EXTRA_LANGS = ['en', 'el', 'fr', 'es', 'de'];
+/** Options text 'label=price;label' → [{label, price|null}] (lenient, like the backend's hand-edit reading). */
+export function parseExtraOptions(text) {
+  const out = [];
+  for (const part of String(text ?? '').split(';')) {
+    if (!part.trim()) continue;
+    const eq = part.lastIndexOf('=');
+    const label = (eq >= 0 ? part.slice(0, eq) : part).trim();
+    const raw = eq >= 0 ? part.slice(eq + 1).trim() : '';
+    const n = raw === '' ? null : Number(raw.replace(',', '.'));
+    if (!label || out.some((o) => o.label.toLowerCase() === label.toLowerCase())) continue;
+    out.push({ label, price: n != null && isFinite(n) && n >= 0 ? round2(n) : null });
+  }
+  return out;
+}
+/** An Extras row → {id, name, category, kind, price, options, unit_type, unit_id, max_qty, active, sort, index}. */
+export function normExtra(row, index = 0) {
+  const category = String(row.category || '').trim().toLowerCase() || 'paid';
+  const maxQty = Number(row.max_qty);
+  return {
+    id: String(row.id ?? '').trim(), name: String(row.name_en || '').trim() || String(row.id ?? ''),
+    category, kind: String(row.kind || '').trim().toLowerCase() || 'per_stay',
+    price: category === 'paid' ? round2(Number(row.price) || 0) : 0,
+    options: category === 'paid' ? parseExtraOptions(row.options) : [],
+    unit_type: String(row.unit_type || '').trim().toLowerCase(), unit_id: String(row.unit_id || '').trim(),
+    max_qty: Number.isInteger(maxQty) && maxQty >= 1 ? Math.min(maxQty, 99) : 1,
+    active: truthy(row.active) || row.active === 'TRUE', sort: Number(row.sort) || 0, index,
+  };
+}
+/** Same as the backend extraAmount: per_stay = price × qty; per_night × nights; per_person_night × nights × guests. */
+export function extraAmount(kind, price, qty, nights, guests) {
+  let u = qty;
+  if (kind === 'per_night' || kind === 'per_person_night') u *= nights;
+  if (kind === 'per_person_night') u *= guests;
+  return Math.round(Math.round((Number(price) || 0) * 100) * u) / 100;
+}
+/** A reservation's stored extras (JSON text or array) → [{id, qty, option, unit_price, amount}]; [] when unreadable. */
+export function parseExtrasLines(v) {
+  let list = v;
+  if (v == null || v === '') return [];
+  if (typeof v === 'string') { try { list = JSON.parse(v); } catch { return []; } }
+  if (!Array.isArray(list)) return [];
+  return list.filter((l) => l && typeof l === 'object' && l.id).map((l) => ({
+    id: String(l.id), qty: Number(l.qty) >= 1 ? Math.round(Number(l.qty)) : 1, option: String(l.option || ''),
+    unit_price: round2(Number(l.unit_price) || 0), amount: round2(Number(l.amount) || 0),
+  }));
+}
+/** 'Breakfast basket × 7 nights × 2 guests', 'Bottle of wine (Assyrtiko) × 1', 'Baby cot × 2' (as the emails, Mail.js extraLabel_). */
+export function extraLabel(name, line, kind, nights, guests, priced) {
+  let s = name + (line.option ? ` (${line.option})` : '');
+  const perNight = kind === 'per_night' || kind === 'per_person_night';
+  const qty = Number(line.qty) || 1;
+  if (priced && perNight) {
+    if (qty > 1) s += ` × ${qty}`;
+    s += ` × ${plural(nights, 'night')}`;
+    if (kind === 'per_person_night') s += ` × ${plural(Number(guests) || 0, 'guest')}`;
+  } else if (priced || qty > 1) s += ` × ${qty}`;
+  return s;
+}

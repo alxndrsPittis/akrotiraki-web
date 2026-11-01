@@ -1,6 +1,10 @@
 // Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.de = {
+  exPaid: 'Extras', exRequest: 'Wünsche', exQuote: 'Auf Anfrage', exOnRequest: 'Preis auf Anfrage',
+  exNote: 'Sonst noch etwas?', exOptional: '(optional)', exQty: 'Anzahl', exOption: 'Auswahl',
+  exIncl: function (m) { return 'inkl. Extras ' + m; },
+  exPer: function (k, m) { return m + ' ' + ({ per_stay: 'pro Aufenthalt', per_night: 'pro Nacht', per_person_night: 'pro Person und Nacht' }[k] || ''); },
   // Anfrage in drei Schritten: Wohnungskarten (booking.js)
   guestsN: function (n) { return n + (n === 1 ? ' Person' : ' Personen'); },
   sqm: function (n) { return n + ' m²'; },
@@ -29,6 +33,7 @@ window.AKRO_STRINGS.de = {
   pickedRange: function (n, a, d) { return n + (n === 1 ? ' Nacht' : ' Nächte') + ', ' + a + ' bis ' + d + '.'; },
   calError: 'Der Kalender konnte nicht geladen werden. Sie können Ihre Anfrage trotzdem unten senden.',
   err: {
+    extras_note: 'Die Notiz ist zu lang (höchstens 500 Zeichen).',
     unit_id: 'Bitte wählen Sie eine Wohnung.',
     check_in: 'Bitte wählen Sie ein Anreisedatum.',
     check_in_past: 'Das Anreisedatum liegt in der Vergangenheit.',

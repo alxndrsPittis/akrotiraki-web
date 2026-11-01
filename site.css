@@ -862,3 +862,17 @@ p { max-width: 66ch; }
 @media (prefers-reduced-motion: reduce) { .apt-card.is-skeleton { animation: none; } }
 .step1-grid .cal-months { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1.2rem; }
 .step1-grid .cal-day { min-height: 28px; font-size: .84rem; }
+
+/* Extras in step 3 */
+.extras { display: grid; gap: 1rem; }
+.extras-sum { margin: -.6rem 0 0; font-size: .86rem; color: var(--muted-text); }
+.extras-sum[hidden] { display: none; }
+.ex-group { border: 0; border-top: 1px solid var(--line); margin: 0; padding: .8rem 0 0; display: grid; gap: .45rem; }
+.ex-group legend { padding: 0 .6rem 0 0; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-text); }
+.ex-item { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; font-size: .94rem; }
+.ex-check { display: inline-flex; align-items: center; gap: .55rem; cursor: pointer; flex: 1 1 16rem; }
+.ex-check input { width: auto; min-height: 0; accent-color: var(--sea); }
+.ex-item select, .ex-item .ex-qty { width: auto; min-height: 2.2rem; padding: .3rem .5rem; font-size: .88rem; }
+.ex-item .ex-qty { width: 4.2rem; }
+.ex-item select { padding-right: 2rem; }
+.ex-price { font-size: .84rem; color: var(--muted-text); white-space: nowrap; }

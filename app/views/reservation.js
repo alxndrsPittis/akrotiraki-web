@@ -1,8 +1,8 @@
 // Reservation form: bottom sheet on phones, dialog on wide screens.
-import { state, activeUnits, unitById, isOwner, currency, depositPercent } from '../state.js';
+import { state, activeUnits, unitById, isOwner, currency, depositPercent, extrasList, extraById } from '../state.js';
 import { h, icon, openDialog, confirmDialog, toast } from '../ui.js';
 import { addDays, diffDays, todayISO, isISODate, conflictsFor, fmtRange, fmtDateTime, money, num, plural, round2,
-  depositOf, isEmail, ruleLabel, SOURCES, STATUSES, LANGS } from '../lib.js';
+  depositOf, isEmail, ruleLabel, extraAmount, extraLabel, SOURCES, STATUSES, LANGS } from '../lib.js';
 import * as actions from '../actions.js';
 
 let seq = 0;
@@ -15,9 +15,9 @@ export function conflictList(list) {
 }
 
 /**
- * Price lines for a stay: accommodation + cleaning − discount = total (what the guest pays), deposit on that total.
- * price is net of the discount (API.md), so accommodation = price + discount − cleaning. Empty when there is no price.
- * full: always show the accommodation line (the form), not only when there is something to split.
+ * Price lines for a stay: accommodation + cleaning − discount + extras = total (what the guest pays), deposit on that total.
+ * price is net of the discount and includes extras_total (API.md), so accommodation = price + discount − cleaning − extras.
+ * Empty when there is no price. full: always show the accommodation line (the form), not only when there is something to split.
  * The discount line names its rule when the stay has a discount_label: "Discount (Long stay 7+ nights, 10%)".
  */
 export function priceBreakdown(r, { deposit = true, full = false } = {}) {
@@ -25,15 +25,199 @@ export function priceBreakdown(r, { deposit = true, full = false } = {}) {
   const price = Number(r.price) || 0;
   if (!(price > 0)) return null;
   const disc = Math.max(0, Number(r.discount) || 0);
-  const fee = Math.min(Math.max(0, Number(r.cleaning_fee) || 0), price + disc);
+  const ex = Math.min(Math.max(0, Number(r.extras_total) || 0), price + disc);
+  const fee = Math.min(Math.max(0, Number(r.cleaning_fee) || 0), price + disc - ex);
   const pct = depositPercent();
   const row = (k, v, cls = '') => [h('dt', { class: cls }, k), h('dd', { class: `num ${cls}` }, v)];
   return h('dl', { class: 'breakdown' },
-    full || fee > 0 || disc > 0 ? row('Accommodation', money(round2(price + disc - fee), cur)) : null,
+    full || fee > 0 || disc > 0 || ex > 0 ? row('Accommodation', money(round2(price + disc - fee - ex), cur)) : null,
     fee > 0 ? row('Cleaning fee', money(fee, cur)) : null,
     disc > 0 ? row(r.discount_label ? `Discount (${r.discount_label})` : 'Discount', h('span', { 'aria-label': `minus ${money(disc, cur)}` }, `−${money(disc, cur)}`), 'disc') : null,
+    ex > 0 ? row('Extras', money(ex, cur)) : null,
     row('Total', money(price, cur), 'total'),
     deposit ? row(`Deposit ${pct}%`, money(depositOf(price, pct), cur), 'dep') : null);
+}
+
+/** A reservation's extras with names: [{id, name, category, kind, option, qty, unit_price, amount}] (name_en; the id when the extra is gone). */
+export function describeExtras(r) {
+  return (r.extras || []).map((l) => {
+    const x = extraById(l.id);
+    return { ...l, name: x ? x.name : l.id, category: x ? x.category : 'paid', kind: x ? x.kind : '' };
+  });
+}
+/** Quote-category extras still without an amount ("price to set"); approving needs them priced. */
+export const unpricedExtras = (r) => describeExtras(r).filter((x) => x.category === 'quote' && !(Number(x.amount) > 0));
+
+/** Extras of a stay as three short lists: priced lines with amounts, on request ("price to set") and requests. */
+export function extrasSummary(r) {
+  const list = describeExtras(r);
+  if (!list.length) return null;
+  const cur = currency();
+  const n = diffDays(r.check_in, r.check_out);
+  const priced = list.filter((x) => x.category === 'paid' || (x.category === 'quote' && Number(x.amount) > 0));
+  const onReq = list.filter((x) => x.category === 'quote' && !(Number(x.amount) > 0));
+  const reqs = list.filter((x) => x.category === 'request');
+  return h('div', { class: 'ex-sum' },
+    priced.length ? h('ul', { class: 'ex-sum-list' }, priced.map((x) => h('li', null,
+      h('span', null, extraLabel(x.name, x, x.kind, n, r.guests, x.category === 'paid')), h('span', { class: 'num' }, money(x.amount, cur))))) : null,
+    onReq.length ? h('ul', { class: 'ex-sum-list' }, onReq.map((x) => h('li', { class: 'ex-tbd' },
+      h('span', null, extraLabel(x.name, x, x.kind, n, r.guests, false)), h('span', { class: 'tag-tbd' }, 'price to set')))) : null,
+    reqs.length ? h('p', { class: 'ex-sum-req' }, h('span', { class: 'muted' }, 'Requests: '),
+      reqs.map((x) => extraLabel(x.name, x, x.kind, n, r.guests, false)).join(', ')) : null);
+}
+
+const KIND_UNIT = { per_stay: '', per_night: ' / night', per_person_night: ' / person / night' };
+/** "€10 / person / night", "from €18", "free request", "price to set". */
+function unitPriceText(x, cur) {
+  if (x.category === 'request') return 'Free';
+  if (x.category === 'quote') return 'Price to set';
+  const ps = x.options.map((o) => (o.price == null ? x.price : o.price));
+  const lo = ps.length ? Math.min(...ps) : x.price, hi = ps.length ? Math.max(...ps) : x.price;
+  return `${lo !== hi ? 'from ' : ''}${money(lo, cur)}${KIND_UNIT[x.kind] ?? ''}`;
+}
+
+/**
+ * Extras editor for the reservation form. initial: the stay's stored lines. ctx(): {unit_id, nights, guests}.
+ * onChange(): any selection / qty / option / amount change. Stored paid lines keep their unit_price (agreed when booked)
+ * unless the option changes; new lines take the current Extras price. Quote lines take the amount typed by the owner.
+ */
+function extrasEditor(initial, ctx, onChange, uid) {
+  const cur = currency();
+  const stored = new Map(initial.map((l) => [l.id, l]));
+  const sel = new Map(initial.map((l) => {
+    const x = extraById(l.id);
+    const isQuote = x?.category === 'quote';
+    return [l.id, { qty: l.qty, option: l.option || '', amountText: isQuote && Number(l.amount) > 0 ? String(l.amount) : '' }];
+  }));
+  const refreshers = [];
+  const total = h('span', { class: 'ex-total num' });
+  const count = h('span', { class: 'ex-count' });
+  const list = h('div', { class: 'ex-groups' });
+  const box = h('details', { class: 'extras-box', open: sel.size > 0 },
+    h('summary', null, h('span', { class: 'ex-title' }, 'Extras'), count),
+    list,
+    h('p', { class: 'ex-foot' }, h('span', null, 'Extras total'), total));
+
+  /** Lines for the current selection: {id, name, category, kind, qty, option, unit_price, amount, amountSet, needsGuests}. */
+  function lines() {
+    const { nights, guests } = ctx();
+    const out = [];
+    for (const [id, s] of sel) {
+      const x = extraById(id);
+      const st = stored.get(id);
+      if (!x) { // extra removed from the tab: keep the stored line as it is
+        out.push({ id, name: id, category: 'paid', kind: '', qty: s.qty, option: s.option, unit_price: st?.unit_price || 0, amount: st?.amount || 0, amountSet: true });
+        continue;
+      }
+      const l = { id, name: x.name, category: x.category, kind: x.kind, qty: s.qty, option: x.options.length ? s.option : '', unit_price: 0, amount: 0, amountSet: false };
+      if (x.category === 'paid') {
+        const opt = x.options.find((o) => o.label.toLowerCase() === l.option.toLowerCase());
+        const listPrice = opt && opt.price != null ? opt.price : x.price;
+        l.unit_price = st && (st.option || '') === l.option ? st.unit_price : listPrice;
+        l.needsGuests = x.kind === 'per_person_night' && !(guests >= 1);
+        l.missingOption = x.options.length > 0 && !opt;
+        l.amount = l.needsGuests ? 0 : extraAmount(x.kind, l.unit_price, l.qty, nights, guests);
+        l.amountSet = true;
+      } else if (x.category === 'quote' && s.amountText.trim() !== '') {
+        l.amount = round2(num(s.amountText));
+        l.unit_price = round2(l.amount / l.qty);
+        l.amountSet = true;
+        l.badAmount = !/^\s*\d+([.,]\d{1,2})?\s*$/.test(s.amountText);
+      }
+      out.push(l);
+    }
+    return out;
+  }
+  const totalOf = (ls) => round2(ls.reduce((a, l) => a + (Number(l.amount) || 0), 0));
+
+  function refresh() {
+    const ls = lines();
+    const t = totalOf(ls);
+    total.textContent = money(t, cur);
+    count.textContent = ls.length ? `${plural(ls.length, 'chosen', 'chosen')}${t > 0 ? ` · ${money(t, cur)}` : ''}${ls.some((l) => l.category === 'quote' && !l.amountSet) ? ' · price to set' : ''}` : 'none';
+    for (const f of refreshers) f(ls);
+  }
+
+  function rowFor(x, note) {
+    const on = () => sel.has(x.id);
+    const key = `${uid}-x-${x.id}`;
+    const cb = h('input', { type: 'checkbox', id: key, checked: on() });
+    const maxQ = Math.max(x.max_qty, sel.get(x.id)?.qty || 1);
+    const qtyOut = h('output', { class: 'qty-val', 'aria-live': 'polite' });
+    const minus = h('button', { type: 'button', class: 'btn sm icon-btn qty-btn', 'aria-label': `Fewer: ${x.name}` }, '−');
+    const plus = h('button', { type: 'button', class: 'btn sm icon-btn qty-btn', 'aria-label': `More: ${x.name}` }, '+');
+    const stepper = maxQ > 1 ? h('span', { class: 'qty', role: 'group', 'aria-label': `Quantity of ${x.name}` }, minus, qtyOut, plus) : null;
+    const optSel = x.options.length ? h('select', { class: 'ex-opt', 'aria-label': `Option for ${x.name}` },
+      h('option', { value: '' }, 'Choose…'),
+      x.options.map((o) => h('option', { value: o.label }, `${o.label} · ${money(o.price == null ? x.price : o.price, cur)}`))) : null;
+    const amt = x.category === 'quote' ? h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', class: 'ex-amt-in',
+      placeholder: 'Price to set', 'aria-label': `Amount for ${x.name} (${cur})`, value: sel.get(x.id)?.amountText || '' }) : null;
+    const amtOut = h('span', { class: 'ex-amt num' });
+    const ctrl = h('div', { class: 'ex-ctrl' }, stepper, optSel, amt, amtOut);
+    const row = h('div', { class: `ex-line cat-${x.category}` },
+      h('label', { class: 'ex-check', for: key }, cb,
+        h('span', { class: 'ex-name' }, x.name, note ? h('small', { class: 'muted' }, ` (${note})`) : null),
+        h('span', { class: 'ex-unit' }, unitPriceText(x, cur))),
+      ctrl);
+    const sync = (ls) => {
+      const s = sel.get(x.id);
+      const l = ls.find((y) => y.id === x.id);
+      row.classList.toggle('on', !!s);
+      ctrl.hidden = !s;
+      cb.checked = !!s;
+      if (!s || !l) return;
+      qtyOut.textContent = String(s.qty);
+      minus.disabled = s.qty <= 1;
+      plus.disabled = s.qty >= maxQ;
+      if (optSel && optSel.value !== s.option) optSel.value = s.option;
+      if (optSel) optSel.setAttribute('aria-invalid', l.missingOption ? 'true' : 'false');
+      if (amt) amt.setAttribute('aria-invalid', l.badAmount ? 'true' : 'false');
+      amtOut.classList.remove('tbd', 'bad');
+      if (x.category === 'request') amtOut.textContent = '';
+      else if (x.category === 'quote' && !l.amountSet) { amtOut.textContent = ''; }
+      else if (l.missingOption) { amtOut.textContent = 'choose'; amtOut.classList.add('bad'); }
+      else if (l.needsGuests) { amtOut.textContent = 'enter guests'; amtOut.classList.add('bad'); }
+      else amtOut.textContent = money(l.amount, cur);
+    };
+    refreshers.push(sync);
+    cb.addEventListener('change', () => {
+      if (cb.checked) sel.set(x.id, { qty: 1, option: x.options.length === 1 ? x.options[0].label : '', amountText: '' });
+      else sel.delete(x.id);
+      refresh(); onChange();
+      if (cb.checked) (optSel || amt)?.focus();
+    });
+    const step = (d) => { const s = sel.get(x.id); s.qty = Math.min(maxQ, Math.max(1, s.qty + d)); refresh(); onChange(); };
+    minus.addEventListener('click', () => step(-1));
+    plus.addEventListener('click', () => step(1));
+    optSel?.addEventListener('change', () => { sel.get(x.id).option = optSel.value; refresh(); onChange(); });
+    amt?.addEventListener('input', () => { sel.get(x.id).amountText = amt.value; refresh(); onChange(); });
+    // Keep form-level input/change listeners from re-running for every keystroke in here twice.
+    return row;
+  }
+
+  /** (Re)build the list for the current unit: active extras that fit it, plus anything already chosen. */
+  function build() {
+    refreshers.length = 0;
+    const u = unitById(ctx().unit_id);
+    const fits = (x) => (!x.unit_type || x.unit_type === String(u?.type || '').toLowerCase()) && (!x.unit_id || x.unit_id.toLowerCase() === String(u?.id || '').toLowerCase());
+    const all = extrasList().slice().sort((a, b) => a.sort - b.sort || a.index - b.index);
+    const shown = all.filter((x) => (x.active && fits(x)) || sel.has(x.id));
+    const groups = [['paid', 'Paid'], ['request', 'Requests'], ['quote', 'On request (price agreed later)']];
+    const missing = [...sel.keys()].filter((id) => !extraById(id));
+    list.replaceChildren(
+      ...groups.map(([cat, title]) => {
+        const xs = shown.filter((x) => x.category === cat);
+        if (!xs.length) return null;
+        return h('fieldset', { class: 'ex-group' }, h('legend', null, title),
+          xs.map((x) => rowFor(x, !x.active ? 'inactive' : !fits(x) ? 'other apartment' : '')));
+      }),
+      missing.length ? h('p', { class: 'hint' }, `No longer in the Extras list: ${missing.join(', ')} (kept as booked).`) : null,
+      !all.length ? h('p', { class: 'hint' }, 'No extras defined yet (Prices → Extras).') : null);
+    refresh();
+  }
+  build();
+  return { el: box, lines, total: () => totalOf(lines()), build, refresh, open: () => { box.open = true; },
+    focus: (id) => { box.open = true; list.querySelector(`#${CSS.escape(`${uid}-x-${id}`)}`)?.closest('.ex-line')?.querySelector('.ex-amt-in, select, input')?.focus(); } };
 }
 
 /** mailto: link that opens the owner's own mail app, addressed to the guest. */
@@ -75,11 +259,20 @@ async function askEmail(kind, r, { extra = null, danger = false, okLabel } = {})
 export async function approveRequest(input) {
   const r = state.reservations.find((x) => x.id === input.id) || input;
   if (!isOwner()) { toast('Only owners can approve.', 'error'); return false; }
+  const unpriced = unpricedExtras(r);
+  if (unpriced.length) {
+    const ok = await confirmDialog(`${unpriced.map((x) => x.name).join(', ')} ${unpriced.length === 1 ? 'has' : 'have'} no price yet. ` +
+      'Set the amount agreed with the guest (or untick the extra) before approving: the confirmation email lists every extra with its price.',
+    { title: 'Extras on request', ok: 'Set price & approve', extra: h('div', { class: 'dlg-extra' }, extrasSummary(r)) });
+    if (ok) openReservation(r, { intent: 'approve', focusExtra: unpriced[0].id });
+    return false;
+  }
   if (!(r.price > 0)) { openReservation(r, { intent: 'approve' }); return false; }
   const conf = conflictsFor({ ...r, status: 'confirmed' }, state.reservations);
   const extra = h('div', { class: 'dlg-extra' },
     h('p', { class: 'hint' }, `${r.guest_name || 'Unnamed'} · ${stayLine(r)}`),
     priceBreakdown(r),
+    extrasSummary(r),
     conf.length ? overlapBox(conf, true) : null);
   const notify = await askEmail('confirm', r, { extra, danger: conf.length > 0, okLabel: conf.length ? 'Approve anyway' : 'Approve' });
   if (notify === null) return false;
@@ -166,18 +359,22 @@ export function openReservation(input = {}, opts = {}) {
   const notes = h('textarea', { rows: 3, value: r.notes || '' });
   const warn = h('div', { class: 'warn', hidden: true, 'aria-live': 'polite' });
   const err = h('p', { class: 'form-error', role: 'alert', hidden: true });
+  const exSlot = h('div');
 
   const form = h('form', { class: 'form', novalidate: true },
     unitSeg,
     h('div', { class: 'row2' }, field('Check-in', ci), field('Check-out', co)),
     nightsOut,
     warn,
-    approving ? h('p', { class: 'info-note' }, 'Set the price before approving: the confirmation email shows it with the deposit.') : null,
+    approving ? h('p', { class: 'info-note' }, unpricedExtras(r).length
+      ? 'Set the price of the extras on request before approving: the confirmation email lists every extra with its price.'
+      : 'Set the price before approving: the confirmation email shows it with the deposit.') : null,
     field('Guest name', name),
     h('div', { class: 'row2' }, field('Guests', guests, capHint), field('Source', source)),
     field('Email', email, h('span', { class: 'hint' }, 'Optional. Requests from the website have one.')),
     h('div', { class: 'row2' }, field('Phone', phone), field('Language', lang)),
     field('Status', status, !owner ? h('span', { class: 'hint' }, 'Only owners can confirm.') : null),
+    exSlot,
     h('div', { class: 'row3 price-fields' }, field(`Price, total (${currency()})`, price, priceNote),
       field('of which cleaning', cleaning), field('Discount', discount, discHint)),
     h('div', { class: 'quote-row' }, quoteInfo, recalcBtn),
@@ -207,6 +404,15 @@ export function openReservation(input = {}, opts = {}) {
     foot: [cancelBtn, closeBtn, saveBtn],
   });
 
+  // Extras: context read from the form; any change re-runs update(), which keeps the price in step.
+  const exCtx = () => {
+    const u = form.querySelector(`input[name="${uid}-unit"]:checked`)?.value || r.unit_id;
+    const n = isISODate(ci.value) && isISODate(co.value) && co.value > ci.value ? diffDays(ci.value, co.value) : 0;
+    return { unit_id: u, nights: n, guests: Math.max(0, Math.round(num(guests.value))) };
+  };
+  const ex = extrasEditor(existing ? existing.extras || [] : [], exCtx, () => update(), uid);
+  exSlot.replaceWith(ex.el);
+
   const read = () => ({
     ...(existing || {}),
     unit_id: form.querySelector(`input[name="${uid}-unit"]:checked`)?.value || '',
@@ -217,6 +423,7 @@ export function openReservation(input = {}, opts = {}) {
     price: num(price.value), paid: num(paid.value), cleaning_fee: num(cleaning.value), discount: effDisc(), discount_label: discLabel(),
     email: email.value.trim(), phone: phone.value.trim(), lang: lang.value,
     checked: checked.checked, notes: notes.value.trim(),
+    extras: ex.lines(), extras_total: ex.total(),
   });
 
   let serverConflicts = null;
@@ -246,6 +453,7 @@ export function openReservation(input = {}, opts = {}) {
   }
 
   function update() {
+    syncExtras();
     const cur = read();
     if (isISODate(cur.check_in) && isISODate(cur.check_out) && cur.check_out > cur.check_in) {
       const n = diffDays(cur.check_in, cur.check_out);
@@ -287,7 +495,8 @@ export function openReservation(input = {}, opts = {}) {
   let priceTouched = !autoQuote;
   let quoted = false;
   let lastQuote = null; // complete quote for the current unit and dates
-  let gross = existing && existing.price > 0 ? round2(existing.price + (Number(existing.discount) || 0)) : null;
+  // gross = accommodation + cleaning (no discount, no extras); price = gross − discount + extras total.
+  let gross = existing && existing.price > 0 ? round2(existing.price + (Number(existing.discount) || 0) - (Number(existing.extras_total) || 0)) : null;
   let priceMode = gross != null ? 'base' : null; // 'quote' | 'base' | 'manual' | null
   let qSeq = 0, qTimer = 0;
   const cur$ = () => currency();
@@ -301,9 +510,35 @@ export function openReservation(input = {}, opts = {}) {
     if (discTyped() && existing?.discount_label && num(discount.value) === Number(existing.discount)) return existing.discount_label;
     return '';
   };
-  /** Price-list total before any discount (the quote total is already net of the rule discount). */
-  const qGross = (q) => round2((Number(q.total) || 0) + (Number(q.rule_discount) || 0));
+  /** Price-list accommodation + cleaning (the quote total is net of the rule discount and includes the extras). */
+  const qGross = (q) => round2((Number(q.total) || 0) + (Number(q.rule_discount) || 0) - (Number(q.extras_total) || 0));
   const setPrice = (v) => { price.value = v > 0 ? String(round2(v)) : ''; };
+  const autoPrice = () => setPrice(gross - Math.max(0, effDisc()) + ex.total());
+
+  // Extras changes: the price follows (list or saved base: gross − discount + extras; typed by hand: by the difference),
+  // and a price from the list is re-quoted with the extras and guests.
+  let lastEx = ex.total();
+  let lastExKey = '';
+  const quoteLines = () => ex.lines().filter((l) => !l.missingOption && !l.needsGuests && !l.badAmount);
+  const exKey = () => {
+    const ls = quoteLines();
+    return JSON.stringify([ls.map((l) => [l.id, l.qty, l.option, l.amountSet ? l.amount : null]), ls.some((l) => l.kind === 'per_person_night') ? exCtx().guests : 0]);
+  };
+  lastExKey = exKey();
+  function syncExtras() {
+    const t = ex.total();
+    if (t !== lastEx) {
+      const d = round2(t - lastEx);
+      lastEx = t;
+      if ((priceMode === 'quote' || priceMode === 'base') && gross != null) autoPrice();
+      else if (num(price.value) > 0) setPrice(num(price.value) + d);
+    }
+    const k = exKey();
+    if (k !== lastExKey) {
+      lastExKey = k;
+      if (priceMode === 'quote' || (autoQuote && !priceTouched)) { clearTimeout(qTimer); qTimer = setTimeout(() => runQuote(false), 400); }
+    }
+  }
 
   price.addEventListener('input', () => { priceTouched = true; priceMode = 'manual'; gross = null; });
   cleaning.addEventListener('input', () => { priceTouched = true; });
@@ -312,12 +547,12 @@ export function openReservation(input = {}, opts = {}) {
       // A quote is loaded: the price becomes the price-list total less the discount again.
       priceMode = 'quote';
       gross = qGross(lastQuote);
-      setPrice(gross - Math.max(0, effDisc()));
+      autoPrice();
       cleaning.value = lastQuote.cleaning_fee ? String(lastQuote.cleaning_fee) : '';
       priceTouched = false;
       quoted = true;
     } else if (priceMode === 'base' && gross != null) {
-      setPrice(gross - Math.max(0, effDisc()));
+      autoPrice();
     }
   });
 
@@ -330,7 +565,8 @@ export function openReservation(input = {}, opts = {}) {
     quoteInfo.replaceChildren(...[
       q.incomplete
         ? h('p', { class: 'bad' }, `No rate in the price list for ${plural(missing, 'night')} of ${q.nights}. Enter the price by hand, or add the rates to the Prices tab.`)
-        : h('p', null, `Price list: ${plural(q.nights, 'night')}${per}, `, h('strong', null, money(q.total, c)), q.cleaning_fee ? ' with cleaning' : '',
+        : h('p', null, `Price list: ${plural(q.nights, 'night')}${per}, `, h('strong', null, money(q.total, c)),
+          q.cleaning_fee && Number(q.extras_total) > 0 ? ' with cleaning and extras' : q.cleaning_fee ? ' with cleaning' : Number(q.extras_total) > 0 ? ' with extras' : '',
           Number(q.rule_discount) > 0 ? ` and ${q.rule_name || 'a discount rule'} (−${money(q.rule_discount, c)})` : ''),
       q.below_min ? h('p', { class: 'bad' }, `Shorter than the minimum stay of ${plural(Number(q.min_nights) || 0, 'night')} for these dates.`) : null,
     ].filter(Boolean));
@@ -342,8 +578,8 @@ export function openReservation(input = {}, opts = {}) {
     const d = Math.max(0, cur.discount);
     const fromList = priceMode === 'quote' && lastQuote;
     priceNote.textContent = !(cur.price > 0) ? ''
-      : fromList ? (d > 0 ? `Price list ${money(qGross(lastQuote), c)} − discount` : 'From the price list')
-        : priceMode === 'base' && d > 0 && gross != null ? `${money(gross, c)} − discount`
+      : fromList ? (d > 0 ? `Price list ${money(qGross(lastQuote), c)} − discount${cur.extras_total > 0 ? ' + extras' : ''}` : cur.extras_total > 0 ? 'Price list + extras' : 'From the price list')
+        : priceMode === 'base' && (d > 0 || cur.extras_total > 0) && gross != null ? `${money(gross, c)}${d > 0 ? ' − discount' : ''}${cur.extras_total > 0 ? ' + extras' : ''}`
           : priceMode === 'manual' ? (d > 0 ? 'Entered by hand, after discount' : 'Entered by hand') : '';
     priceNote.classList.toggle('auto', !!fromList);
     let dErr = '';
@@ -370,14 +606,15 @@ export function openReservation(input = {}, opts = {}) {
     recalcBtn.disabled = true;
     quoteInfo.replaceChildren(h('p', { class: 'hint' }, 'Getting the price…'));
     try {
-      const q = await actions.quoteFor(cur.unit_id, cur.check_in, cur.check_out);
+      lastExKey = exKey();
+      const q = await actions.quoteFor(cur.unit_id, cur.check_in, cur.check_out, { extras: quoteLines(), guests: cur.guests });
       if (my !== qSeq || !dlg.isConnected) return;
       // An incomplete quote only covers the priced nights: never use its total.
       lastQuote = q.incomplete ? null : q;
       if (!q.incomplete && (manual || !priceTouched)) {
         priceMode = 'quote';
         gross = qGross(q);
-        setPrice(gross - Math.max(0, effDisc()));
+        autoPrice();
         cleaning.value = q.cleaning_fee ? String(q.cleaning_fee) : '';
         priceTouched = false;
         quoted = true;
@@ -410,6 +647,7 @@ export function openReservation(input = {}, opts = {}) {
   recalcBtn.addEventListener('click', () => runQuote(true));
   form.addEventListener('change', (e) => {
     const dates = e.target === ci || e.target === co || e.target.name === `${uid}-unit`;
+    if (e.target.name === `${uid}-unit`) ex.build();
     if (dates) invalidateQuote();
     if (dates || e.target === source) scheduleQuote();
   });
@@ -419,6 +657,7 @@ export function openReservation(input = {}, opts = {}) {
   form.addEventListener('submit', (e) => { e.preventDefault(); save(false); });
   update();
   scheduleQuote();
+  if (opts.focusExtra) setTimeout(() => ex.focus(opts.focusExtra), 50);
 
   function fail(msg, el) {
     err.textContent = msg;
@@ -439,7 +678,14 @@ export function openReservation(input = {}, opts = {}) {
     if (cur.paid > cur.price && cur.price > 0) return fail('Paid is more than the price.', paid);
     if (cur.discount < 0) return fail('The discount cannot be negative.', discount);
     if (lastQuote && cur.discount > qGross(lastQuote)) return fail(`The discount is more than the price-list total (${money(qGross(lastQuote), currency())}).`, discount);
-    if (cur.cleaning_fee > cur.price + cur.discount && cur.price > 0) return fail('The cleaning fee is more than the price before discount.', cleaning);
+    for (const l of cur.extras) {
+      if (l.missingOption) return fail(`Choose the option for ${l.name}.`, ex.focus(l.id));
+      if (l.needsGuests) return fail(`Enter the number of guests (needed for ${l.name}).`, guests);
+      if (l.badAmount) return fail(`Enter the amount for ${l.name} as a number, or leave it empty.`, ex.focus(l.id));
+    }
+    const tbd = cur.extras.filter((l) => l.category === 'quote' && !(l.amount > 0));
+    if (approving && tbd.length) return fail(`Set the price of ${tbd.map((l) => l.name).join(', ')} (or untick ${tbd.length === 1 ? 'it' : 'them'}) before approving.`, ex.focus(tbd[0].id));
+    if (cur.cleaning_fee > cur.price + cur.discount - cur.extras_total && cur.price > 0) return fail('The cleaning fee is more than the price before discount and extras.', cleaning);
     if (cur.email && !isEmail(cur.email)) return fail('Enter a valid email address, or leave it empty.', email);
     if (approving && !(cur.price > 0)) return fail('Enter the price, or press Recalculate price.', price);
     // New stay priced by the list (quote loaded and price untouched, or a direct booking with no price and no quote):
@@ -450,6 +696,10 @@ export function openReservation(input = {}, opts = {}) {
     // A pending request with an email that is confirmed or declined here also emails the guest: ask first.
     const emailKind = existing?.status === 'pending' && cur.email
       ? (cur.status === 'confirmed' ? 'confirm' : cur.status === 'cancelled' ? 'decline' : null) : null;
+    // Extras: priced by the server when autopricing; otherwise sent as lines (unit_price, amount) only when changed.
+    const exKeyOf = (ls) => JSON.stringify(ls.map((l) => [l.id, l.qty, l.option || '', round2(l.unit_price), round2(l.amount)]));
+    const sendExtras = autoprice ? (cur.extras.length ? cur.extras : undefined)
+      : exKeyOf(cur.extras) !== exKeyOf(existing?.extras || []) ? cur.extras : undefined;
     if (emailKind && notifyAnswer === undefined) {
       const ans = await askEmail(emailKind, cur, { okLabel: 'Save',
         extra: emailKind === 'confirm' && !(cur.price > 0) ? h('p', { class: 'hint' }, 'No price is set: the email will say the amount follows.') : null });
@@ -459,7 +709,7 @@ export function openReservation(input = {}, opts = {}) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
     try {
-      const d = await actions.saveReservation(cur, force, { notify: emailKind ? notifyAnswer : undefined, autoprice, discountSet: discTyped() });
+      const d = await actions.saveReservation(cur, force, { notify: emailKind ? notifyAnswer : undefined, autoprice, discountSet: discTyped(), extras: sendExtras });
       const n = d.conflicts.length;
       if (!(approving && d.reservation.status === 'pending')) toast(n && d.reservation.status !== 'cancelled'
         ? `Saved. Overlaps ${plural(n, 'other stay')}.`

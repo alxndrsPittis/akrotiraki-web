@@ -14,6 +14,9 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefin
  * opts.discountSet: the owner typed a discount (0 included). When autopricing without one, `discount` and
  *   `discount_label` are omitted so the server applies the best discount rule (API.md); with one, the owner's
  *   value wins and the label is left for the server to clear.
+ * opts.extras: send the booked extras (omitted = stored extras unchanged). With autoprice, lines
+ *   {id, qty, option?, amount? (quote extras with amountSet)} are priced by the server; otherwise they are stored as
+ *   given and must carry unit_price and amount (the form keeps price consistent).
  */
 export async function saveReservation(reservation, force = false, opts = {}) {
   const payload = { reservation: pick(reservation, RES_FIELDS) };
@@ -25,6 +28,15 @@ export async function saveReservation(reservation, force = false, opts = {}) {
     delete payload.reservation.cleaning_fee;
     delete payload.reservation.discount_label;
     if (!opts.discountSet) delete payload.reservation.discount;
+  }
+  if (Array.isArray(opts.extras)) {
+    payload.reservation.extras = opts.extras.map((l) => {
+      const o = { id: l.id, qty: l.qty };
+      if (l.option) o.option = l.option;
+      if (opts.autoprice) { if (l.category === 'quote' && l.amountSet) o.amount = l.amount; }
+      else { o.unit_price = l.unit_price; o.amount = l.amount; }
+      return o;
+    });
   }
   if (force) payload.force = true;
   if (typeof opts.notify === 'boolean') payload.notify = opts.notify;
@@ -43,9 +55,21 @@ export async function setReservationStatus(id, status, { force = false, notify }
 }
 
 /** Price-list quote: { nights, nightly:[{date,price}], accommodation, cleaning_fee, rule_discount, rule_name, rule_percent,
- *  total (net of rule_discount), currency, incomplete, min_nights, below_min } */
-export function quoteFor(unit_id, check_in, check_out) {
-  return call('quoteFor', { unit_id, check_in, check_out });
+ *  extras:[{id,name,category,kind,option,qty,unit_price,amount}], extras_total,
+ *  total (net of rule_discount, extras included), currency, incomplete, min_nights, below_min }
+ *  extras: form lines {id, qty, option, category, amount, amountSet}; amount is sent only for quote extras with an agreed price. */
+export function quoteFor(unit_id, check_in, check_out, { extras, guests } = {}) {
+  const p = { unit_id, check_in, check_out };
+  if (extras?.length) {
+    p.extras = extras.map((l) => {
+      const o = { id: l.id, qty: l.qty };
+      if (l.option) o.option = l.option;
+      if (l.category === 'quote' && l.amountSet) o.amount = l.amount;
+      return o;
+    });
+    p.guests = guests ?? 0;
+  }
+  return call('quoteFor', p);
 }
 
 export async function saveExpense(expense) {
@@ -70,6 +94,7 @@ export function uploadReceipt(filename, mimeType, base64) {
 function syncPricing(p) {
   if (!p) return p;
   if (Array.isArray(p.prices)) state.prices = p.prices;
+  if (Array.isArray(p.extras)) state.extras = p.extras;
   const cf = p.cleaning_fees;
   if (cf) {
     const s = { ...state.settings };
@@ -86,6 +111,7 @@ function syncPricing(p) {
 export const getPricing = () => call('getPricing', {});
 export const savePrices = (rows) => call('savePrices', { rows }).then(syncPricing);
 export const saveDiscounts = (rows) => call('saveDiscounts', { rows }).then(syncPricing);
+export const saveExtras = (rows) => call('saveExtras', { rows }).then(syncPricing);
 export const saveCleaningFees = (fees) => call('saveCleaningFees', fees).then(syncPricing);
 
 /** Surface an API error as a toast (sign-in errors are handled by the app shell). */

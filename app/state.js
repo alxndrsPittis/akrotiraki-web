@@ -1,5 +1,5 @@
 // App state, last-bootstrap cache and change notifications.
-import { truthy } from './lib.js';
+import { truthy, round2, normExtra, parseExtrasLines } from './lib.js';
 
 const CACHE_KEY = 'ak.cache.v1';
 
@@ -16,6 +16,7 @@ export const state = {
   reservations: [],
   expenses: [],
   plan: [],            // optional business plan rows {month:'YYYY-MM', unit_nights, room_revenue, expenses}
+  extras: [],          // Extras tab rows as sent (all, also inactive): {id, name_en, …, category, kind, price, options, …}
 };
 
 const subs = new Set();
@@ -30,11 +31,14 @@ function normalize(data) {
   state.reservations = (data.reservations || []).map(normRes);
   state.expenses = (data.expenses || []).map(normExp);
   state.plan = Array.isArray(data.plan) ? data.plan : [];
+  state.extras = Array.isArray(data.extras) ? data.extras : [];
 }
 export const normRes = (r) => ({ ...r, checked: truthy(r.checked), price: Number(r.price) || 0, paid: Number(r.paid) || 0,
   cleaning_fee: Number(r.cleaning_fee) || 0, discount: Number(r.discount) || 0, guests: Number(r.guests) || 0,
   discount_label: Number(r.discount) > 0 ? String(r.discount_label || '').trim() : '',
-  email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '' });
+  email: String(r.email || '').trim(), phone: String(r.phone || '').trim(), lang: r.lang || '',
+  // extras: the stored JSON text parsed to [{id, qty, option, unit_price, amount}]; extras_total kept as sent.
+  extras: parseExtrasLines(r.extras), extras_total: round2(Number(r.extras_total) || 0) });
 export const normExp = (e) => ({ ...e, amount: Number(e.amount) || 0, unit_id: e.unit_id || '' });
 
 export function applyBootstrap(data, persistIt = true) {
@@ -60,14 +64,14 @@ export function loadCache() {
 export function persist() {
   if (state.mock) return;
   try {
-    const { user, units, settings, prices, reservations, expenses, plan } = state;
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ updatedAt: state.updatedAt, data: { user, units, settings, prices, reservations, expenses, plan } }));
+    const { user, units, settings, prices, reservations, expenses, plan, extras } = state;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ updatedAt: state.updatedAt, data: { user, units, settings, prices, reservations, expenses, plan, extras } }));
   } catch { /* quota or private mode */ }
 }
 
 export function clearState() {
   try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
-  Object.assign(state, { loaded: false, offline: false, updatedAt: null, user: null, units: [], settings: {}, prices: [], reservations: [], expenses: [], plan: [] });
+  Object.assign(state, { loaded: false, offline: false, updatedAt: null, user: null, units: [], settings: {}, prices: [], reservations: [], expenses: [], plan: [], extras: [] });
 }
 
 /** Replace-or-insert an object by id in a state list, persist and notify. */
@@ -97,3 +101,11 @@ export const activeUnits = () => {
   return act.length ? act : state.units;
 };
 export const unitName = (id) => (id ? unitById(id)?.name || id : 'Shared');
+
+/** Extras rows normalized (lib normExtra), in sheet order; cached per state version. */
+let exCache = { src: null, list: [] };
+export function extrasList() {
+  if (exCache.src !== state.extras) exCache = { src: state.extras, list: state.extras.map((r, i) => normExtra(r, i)).filter((x) => x.id) };
+  return exCache.list;
+}
+export const extraById = (id) => extrasList().find((x) => x.id === id);

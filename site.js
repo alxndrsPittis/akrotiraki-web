@@ -14,6 +14,10 @@
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
+      exPaid: 'Extras', exRequest: 'Requests', exQuote: 'On request', exOnRequest: 'price on request',
+      exNote: 'Anything else?', exOptional: '(optional)', exQty: 'Quantity', exOption: 'Choice',
+      exIncl: function (m) { return 'incl. extras ' + m; },
+      exPer: function (k, m) { return m + ' ' + ({ per_stay: 'per stay', per_night: 'per night', per_person_night: 'per person per night' }[k] || ''); },
       // three-step request: apartment cards (booking.js)
       guestsN: function (n) { return n + (n === 1 ? ' guest' : ' guests'); },
       sqm: function (n) { return n + ' m²'; },
@@ -51,7 +55,8 @@
         guest_name: 'Please enter your name.',
         guest_name_long: 'Your name is too long.',
         phone: 'The phone number is too long (40 characters at most).',
-        message: 'Your message is too long (2,000 characters at most).'
+        message: 'Your message is too long (2,000 characters at most).',
+        extras_note: 'The note is too long (500 characters at most).'
       },
       checkFields: 'Please check the fields marked below.',
       sending: 'Sending…', send: 'Send request',
@@ -76,6 +81,10 @@
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
+      exPaid: 'Επιπλέον', exRequest: 'Αιτήματα', exQuote: 'Κατόπιν συνεννόησης', exOnRequest: 'τιμή κατόπιν συνεννόησης',
+      exNote: 'Κάτι άλλο;', exOptional: '(προαιρετικό)', exQty: 'Ποσότητα', exOption: 'Επιλογή',
+      exIncl: function (m) { return 'μαζί με τα επιπλέον ' + m; },
+      exPer: function (k, m) { return m + ' ' + ({ per_stay: 'ανά διαμονή', per_night: 'ανά νύχτα', per_person_night: 'ανά άτομο ανά νύχτα' }[k] || ''); },
       guestsN: function (n) { return n + (n === 1 ? ' άτομο' : ' άτομα'); },
       sqm: function (n) { return n + ' τ.μ.'; },
       cardSleeps: function (a, b) { return (a === b ? b : a + '–' + b) + ' άτομα'; },
@@ -111,7 +120,8 @@
         guest_name: 'Γράψτε το όνομά σας.',
         guest_name_long: 'Το όνομα είναι πολύ μεγάλο.',
         phone: 'Το τηλέφωνο είναι πολύ μεγάλο (έως 40 χαρακτήρες).',
-        message: 'Το μήνυμα είναι πολύ μεγάλο (έως 2.000 χαρακτήρες).'
+        message: 'Το μήνυμα είναι πολύ μεγάλο (έως 2.000 χαρακτήρες).',
+        extras_note: 'Η σημείωση είναι πολύ μεγάλη (έως 500 χαρακτήρες).'
       },
       checkFields: 'Ελέγξτε τα πεδία που σημειώνονται παρακάτω.',
       sending: 'Αποστολή…', send: 'Αποστολή αιτήματος',
