@@ -45,9 +45,9 @@ let DISCOUNTS = [
   { id: 'd1', name: 'Long stay 7+ nights', kind: 'long_stay', percent: 10, min_nights: 7, days_before: '', from: '', to: '', unit_type: '', unit_id: '', active: true, notes: '' },
   { id: 'd2', name: 'Early booking', kind: 'early_booking', percent: 5, min_nights: '', days_before: 120, from: '', to: '', unit_type: '', unit_id: '', active: false, notes: 'Try next season' },
   { id: 'd3', name: 'Late October', kind: 'period', percent: 15, min_nights: '', days_before: '', from: `${+todayISO().slice(0, 4) + 1}-10-15`, to: `${+todayISO().slice(0, 4) + 1}-10-31`, unit_type: 'studio', unit_id: '', active: false, notes: '' },
-  { id: 'd4', name: 'Gap filler', kind: 'gap', percent: 10, min_nights: '', days_before: '', max_gap_nights: 3, from: '', to: '', unit_type: '', unit_id: '', active: false, notes: '' },
-].map((d) => ({ max_gap_nights: '', ...d }));
-// gap: announced backend kind (field max_gap_nights); mirrored here so the app can be tried before the backend has it.
+  { id: 'd4', name: 'Gap filler', kind: 'gap', percent: 10, min_nights: '', days_before: '', max_gap_nights: 3, touching: false, from: '', to: '', unit_type: '', unit_id: '', active: false, notes: '' },
+].map((d) => ({ max_gap_nights: '', touching: false, ...d }));
+// gap (fields max_gap_nights, touching): mirrored from the backend so the app can be tried in demo mode.
 const KINDS = ['long_stay', 'early_booking', 'last_minute', 'period', 'gap'];
 const isWhole = (v) => v === '' || v == null || (Number.isInteger(Number(v)) && Number(v) >= 0);
 const usable = (d) => KINDS.includes(d.kind) && Number(d.percent) > 0 && Number(d.percent) <= 100 &&
@@ -55,10 +55,12 @@ const usable = (d) => KINDS.includes(d.kind) && Number(d.percent) > 0 && Number(
   !(d.kind === 'period' && !d.from) && !(d.kind === 'long_stay' && !(Number(d.min_nights) >= 1)) &&
   !((d.kind === 'early_booking' || d.kind === 'last_minute') && (d.days_before === '' || d.days_before == null)) &&
   !(d.kind === 'gap' && !(Number(d.max_gap_nights) >= 1));
-/** Gap rule (mock reading, to be confirmed by the backend): the stay lies between two confirmed stays of the same unit
- *  (the previous one leaves on or before check-in, the next arrives on or after check-out) that are at most
- *  max_gap_nights apart. Stays overlapping the requested dates are ignored (e.g. the reservation being re-quoted). */
-function fillsGap(unit_id, check_in, check_out, maxGap) {
+/** Gap rule, mock reading of the backend: neighbours are the nearest confirmed stays of the unit before and after.
+ *  touching false: the stay exactly fills the gap (previous leaves on check-in, next arrives on check-out) and that gap
+ *  is ≤ maxGap nights. touching true: the stay touches a confirmed stay on at least one side and the gap left on the
+ *  other side (to the next confirmed stay) is ≤ maxGap; with no stay on the other side it does not apply.
+ *  Stays overlapping the requested dates are ignored (e.g. the reservation being re-quoted). */
+function fillsGap(unit_id, check_in, check_out, maxGap, touching) {
   let prevOut = null, nextIn = null;
   for (const r of db?.reservations || []) {
     if (r.unit_id !== unit_id || r.status !== 'confirmed') continue;
@@ -66,7 +68,12 @@ function fillsGap(unit_id, check_in, check_out, maxGap) {
     if (r.check_out <= check_in && (!prevOut || r.check_out > prevOut)) prevOut = r.check_out;
     if (r.check_in >= check_out && (!nextIn || r.check_in < nextIn)) nextIn = r.check_in;
   }
-  return !!(prevOut && nextIn && diffDays(prevOut, nextIn) <= maxGap);
+  const before = prevOut === check_in, after = nextIn === check_out;
+  if (!touching) return before && after && diffDays(check_in, check_out) <= maxGap;
+  if (before && after) return true;
+  if (before) return !!nextIn && diffDays(check_out, nextIn) <= maxGap;
+  if (after) return !!prevOut && diffDays(prevOut, check_in) <= maxGap;
+  return false;
 }
 const typeFee = (u) => {
   const own = SETTINGS[`cleaning_fee_${u.id}`];
@@ -84,7 +91,7 @@ function bestRule(u, nightly, check_in) {
     if (d.kind === 'long_stay' && nightly.length < Number(d.min_nights)) continue;
     if (d.kind === 'early_booking' && lead < Number(d.days_before)) continue;
     if (d.kind === 'last_minute' && !(lead >= 0 && lead <= Number(d.days_before))) continue;
-    if (d.kind === 'gap' && !fillsGap(u.id, check_in, addDays(check_in, nightly.length), Number(d.max_gap_nights))) continue;
+    if (d.kind === 'gap' && !fillsGap(u.id, check_in, addDays(check_in, nightly.length), Number(d.max_gap_nights), d.touching === true || /^true$/i.test(String(d.touching)))) continue;
     const base = nightly.filter((n) => n.price != null && (!d.from || (n.date >= d.from && n.date <= d.to))).reduce((s, n) => s + n.price, 0);
     const amount = round2(base * Number(d.percent) / 100);
     if (amount > 0 && (!best || amount > best.amount)) best = { amount, name: d.name, percent: Number(d.percent) };
@@ -721,6 +728,8 @@ const actions = {
       if (needsDays && (r.days_before === '' || r.days_before == null)) bad(i, 'days_before', 'Days before is required for this kind.');
       if (!isWhole(r.max_gap_nights)) bad(i, 'max_gap_nights', 'Max gap nights must be a whole number ≥ 0.');
       if (r.kind === 'gap' && !(Number(r.max_gap_nights) >= 1)) bad(i, 'max_gap_nights', 'A gap rule needs max gap nights of at least 1.');
+      const tc = r.touching;
+      if (!(tc === true || tc === false || tc === '' || tc == null || /^(true|false)$/i.test(String(tc)))) bad(i, 'touching', 'Touching must be true or false.');
       const from = String(r.from || ''), to = String(r.to || '');
       if (from && !isISODate(from)) bad(i, 'from', 'From must be a date.');
       if (to && !isISODate(to)) bad(i, 'to', 'To must be a date.');
@@ -737,7 +746,8 @@ const actions = {
       if (notes.length > 500) bad(i, 'notes', 'Notes are limited to 500 characters.');
       return { id, name, kind: r.kind, percent, min_nights: r.min_nights === '' || r.min_nights == null ? '' : Number(r.min_nights),
         days_before: r.days_before === '' || r.days_before == null ? '' : Number(r.days_before),
-        max_gap_nights: r.max_gap_nights === '' || r.max_gap_nights == null ? '' : Number(r.max_gap_nights), from, to, unit_type, unit_id,
+        max_gap_nights: r.max_gap_nights === '' || r.max_gap_nights == null ? '' : Number(r.max_gap_nights),
+        touching: r.touching === true || /^true$/i.test(String(r.touching)), from, to, unit_type, unit_id,
         active: a === true || /^true$/i.test(String(a)), notes };
     });
     DISCOUNTS = out;

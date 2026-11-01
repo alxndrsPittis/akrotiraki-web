@@ -50,6 +50,15 @@ Edit `config.js`:
   Writes update local state from the object the server returns.
 - **Roles**: managers can add and edit everything but cannot confirm reservations; owners can, and can
   "Confirm anyway" over an overlap (`force: true`).
+- **Calendar views** (switch remembered on the device, `localStorage` `ak.cal.view`): Month (day timeline), 3 months
+  (compressed; names on wide screens only), Season (`season_start`..`season_end`), Year, and List (stays grouped by
+  month, from today in the current period). Prev/next move by a month, three months or a year. Bars in the
+  compressed views show a label on hover, or on the first tap on phones. A source filter applies to every view.
+  Dev knob: `?mock=1&many=1` adds ~300 stays to the demo data for performance checks.
+- **Whole-house requests** (`group_id`): the Requests tab shows the group as one card (apartments, total guests, group
+  total and deposit, extras from the first); Approve all / Decline all call `setReservationStatus` with
+  `apply_to_group: true` on the first id. Group bars carry a link glyph; the form lists the other apartments.
+  The pending badge counts a group once.
 - **Requests** (tab with a badge; also the "Pending (n)" chip on the calendar): every pending reservation as a card
   with contact, message, price breakdown (accommodation + cleaning − discount = total, deposit on the total) and overlaps. Approve (owners)
   asks for a price first when it is 0, then confirms with `setReservationStatus` and a "Send email" switch
@@ -72,6 +81,10 @@ Edit `config.js`:
 - **Statistics** (tab): KPI row and SVG charts (occupancy per apartment, revenue vs `plan`, sources, stay length and
   lead time, expenses by category), computed on the device like Totals; each chart has a data table. Bootstrap's
   optional `plan` rows and `settings.sheet_url` are used when present.
+- **Price quick actions**: Copy year, Adjust by % (preview table, then the draft is changed; Save rates writes it),
+  Last-minute discount (updates the first `last_minute` rule or adds one, sets `from` = today and `to` = the
+  "until" date, turns it on and saves). Discount kinds include `gap` (`max_gap_nights`, `touching`); unknown kinds
+  are kept and saved back unchanged.
 - **Prices** (owners; side rail on desktop, Account menu or the Totals header on phones): seasonal rates, cleaning
   fees, discount rules and extras via `getPricing` / `savePrices` / `saveCleaningFees` / `saveDiscounts` / `saveExtras`. Each card saves on
   its own and replaces the whole tab; server `data.row` / `data.field` errors are marked on the cell.

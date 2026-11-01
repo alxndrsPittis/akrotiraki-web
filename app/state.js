@@ -126,7 +126,8 @@ export const depositPercent = () => {
   const n = Number(state.settings?.deposit_percent);
   return isFinite(n) && n >= 0 && n <= 100 && state.settings?.deposit_percent !== '' && state.settings?.deposit_percent != null ? n : 30;
 };
-export const pendingCount = () => state.reservations.filter((r) => r.status === 'pending').length;
+/** Pending requests; a whole-house request (one reservation per unit, same group_id) counts once, as on the Requests tab. */
+export const pendingCount = () => new Set(state.reservations.filter((r) => r.status === 'pending').map((r) => (r.group_id ? `g:${r.group_id}` : r.id))).size;
 export const unitById = (id) => state.units.find((u) => u.id === id);
 export const activeUnits = () => {
   const act = state.units.filter((u) => u.active === undefined || u.active === '' || truthy(u.active));

@@ -2,8 +2,8 @@
 // saveCleaningFees / saveDiscounts / saveExtras, API.md "Owner pricing actions"). Edits live in module drafts, so a
 // background refresh never wipes them; each card saves on its own and is reloaded from the reply.
 import { state, isOwner } from '../state.js';
-import { h, icon, toast, confirmDialog } from '../ui.js';
-import { fmtDate, isISODate, money, num, todayISO, plural, capitalize, EXTRA_CATEGORIES, EXTRA_KINDS, EXTRA_LANGS } from '../lib.js';
+import { h, icon, toast, confirmDialog, openDialog } from '../ui.js';
+import { fmtDate, isISODate, money, num, todayISO, plural, capitalize, addDays, round2, EXTRA_CATEGORIES, EXTRA_KINDS, EXTRA_LANGS } from '../lib.js';
 import * as actions from '../actions.js';
 
 const KINDS = {
@@ -11,6 +11,15 @@ const KINDS = {
   early_booking: 'Early booking',
   last_minute: 'Last minute',
   period: 'Period',
+  gap: 'Gap filler', // fields max_gap_nights, touching
+};
+/** One line under each kind. */
+const KIND_HELP = {
+  long_stay: 'For stays of at least the minimum number of nights.',
+  early_booking: 'For stays booked at least this many days before arrival.',
+  last_minute: 'For arrivals within this many days of the booking.',
+  period: 'For the nights between From and To.',
+  gap: 'For stays that fill a gap of up to this many nights between confirmed bookings (optionally: that touch a booking on one side).',
 };
 
 let data = null;        // last getPricing payload
@@ -22,7 +31,8 @@ const key = () => `k${++keySeq}`;
 
 // Drafts
 let rates = [];         // {_k, target:'type:maisonette'|'unit:u1', from, to, price_per_night, min_nights, notes}
-let rules = [];         // {_k, id, name, kind, percent, min_nights, days_before, from, to, unit_type, unit_id, active, notes}
+let rules = [];         // {_k, id, name, kind, percent, min_nights, days_before, max_gap_nights, touching, from, to, unit_type, unit_id, active, notes}
+                        // kind is kept as sent, also when this app does not know it (it is saved back unchanged)
 let fees = { maisonette: '', studio: '', per_unit: {} };
 let extras = [];        // {_k, id, locked, name_en…name_de, category, kind, price, options, unit_type, unit_id, max_qty, active, sort, notes}
 const dirty = { rates: false, fees: false, rules: false, extras: false };
@@ -44,8 +54,10 @@ function fromPayload(p) {
     min_nights: Number(r.min_nights) ? String(r.min_nights) : '', notes: str(r.notes),
   }));
   rules = (p.discounts || []).map((d) => ({
-    _k: key(), id: str(d.id), name: str(d.name), kind: KINDS[d.kind] ? d.kind : 'long_stay', percent: str(d.percent),
-    min_nights: str(d.min_nights), days_before: str(d.days_before), from: str(d.from), to: str(d.to),
+    _k: key(), id: str(d.id), name: str(d.name), kind: str(d.kind).trim().toLowerCase() || 'long_stay', percent: str(d.percent),
+    min_nights: str(d.min_nights), days_before: str(d.days_before),
+    max_gap_nights: Number(d.max_gap_nights) ? str(d.max_gap_nights) : '', touching: d.touching === true || /^true$/i.test(str(d.touching)),
+    from: str(d.from), to: str(d.to),
     unit_type: str(d.unit_type).toLowerCase(), unit_id: str(d.unit_id),
     active: d.active === true || /^true$/i.test(str(d.active)), notes: str(d.notes),
   }));
@@ -239,6 +251,8 @@ function ratesCard() {
     rebuild();
     toast(`Copied ${plural(src.length, 'row')} to ${next}. Check the dates, then save.`);
   });
+  const adjBtn = rates.length ? h('button', { class: 'btn sm', type: 'button' }, icon('calc'), 'Adjust by %') : null;
+  adjBtn?.addEventListener('click', () => adjustDialog());
   const sortBtn = h('button', { class: 'btn sm', type: 'button', title: 'Sort by start date; longer ranges first so short special weeks come after them' }, icon('sort'), 'Sort by date');
   sortBtn.addEventListener('click', () => {
     const len = (r) => (isISODate(r.from) && isISODate(r.to) ? r.to.localeCompare(r.from) : 0);
@@ -289,7 +303,7 @@ function ratesCard() {
     h('div', { class: 'card-head' }, h('h2', { id: 'pr-rates' }, 'Seasonal rates'),
       h('label', { class: 'field compact year-pick' }, h('span', { class: 'sr-only' }, 'Year'), yearSel)),
     h('p', { class: 'hint' }, 'Nightly price per type or per apartment; From and To are both included. A row for one apartment beats a type row; otherwise the lower row wins where rows overlap.'),
-    h('div', { class: 'card-tools' }, addBtn, sortBtn, copyBtn),
+    h('div', { class: 'card-tools' }, addBtn, sortBtn, copyBtn, adjBtn),
     shown.length ? h('div', { class: 'rate-table' },
       h('div', { class: 'rate-row rate-headrow', 'aria-hidden': 'true' },
         h('span', { class: 'row-no' }, '#'), h('span', null, 'Applies to'), h('span', null, 'From'), h('span', null, 'To'),
@@ -301,6 +315,73 @@ function ratesCard() {
     h('div', { class: 'card-foot' },
       h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Prices tab in the Sheet with these rows.'),
       statusLine('rates'), saveBtn));
+}
+
+/** "Adjust all rates by ±%": preview of every changed row, then the drafts are updated (Save rates writes them). */
+function adjustDialog() {
+  const opts = Object.fromEntries(targetOptions());
+  const scoped = yearFilter !== 'all';
+  const pct = h('input', { type: 'text', inputmode: 'text', autocomplete: 'off', placeholder: 'e.g. 5 or -10', 'aria-describedby': 'adj-help' });
+  const scope = scoped ? h('select', null,
+    h('option', { value: 'shown' }, `Rows of ${yearFilter} (${rates.filter((r) => inYear(r, yearFilter)).length})`),
+    h('option', { value: 'all' }, `All rows (${rates.length})`)) : null;
+  const roundBox = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: true, id: 'adj-round' });
+  const preview = h('div', { class: 'adj-preview', 'aria-live': 'polite' });
+  const applyBtn = h('button', { class: 'btn primary', type: 'button', disabled: true }, 'Apply');
+  const backBtn = h('button', { class: 'btn', type: 'button' }, 'Back');
+  const parse = () => {
+    const t = pct.value.trim().replace(',', '.').replace(/%$/, '').replace(/^\+/, '');
+    const p = t === '' ? NaN : Number(t);
+    return isFinite(p) && p !== 0 && p > -100 && p <= 200 ? p : null;
+  };
+  const newPrice = (v, p) => {
+    const x = num(v) * (1 + p / 100);
+    return roundBox.checked ? Math.max(1, Math.round(x)) : Math.max(0.01, round2(x));
+  };
+  const rowsInScope = () => rates.filter((r) => (!scope || scope.value === 'all' || inYear(r, yearFilter)) && num(r.price_per_night) > 0);
+  const draw = () => {
+    const p = parse();
+    preview.replaceChildren();
+    applyBtn.disabled = p == null;
+    if (p == null) {
+      preview.append(h('p', { class: 'hint' }, pct.value.trim() ? 'Enter a percent between −99 and 200, not 0.' : 'Enter a percent to see the new prices.'));
+      return;
+    }
+    const list = rowsInScope();
+    applyBtn.textContent = `Apply to ${plural(list.length, 'row')}`;
+    preview.append(h('table', { class: 'table compact adj-table' },
+      h('thead', null, h('tr', null, h('th', null, 'Applies to'), h('th', null, 'Dates'), h('th', { class: 'num' }, 'Now'), h('th', { class: 'num' }, 'New'))),
+      h('tbody', null, list.map((r) => h('tr', null,
+        h('td', null, opts[r.target] || r.target),
+        h('td', null, isISODate(r.from) && isISODate(r.to) ? `${fmtDate(r.from, { year: true })} – ${fmtDate(r.to, { year: true })}` : '–'),
+        h('td', { class: 'num' }, money(num(r.price_per_night), cur())),
+        h('td', { class: 'num strong' }, money(newPrice(r.price_per_night, p), cur())))))));
+  };
+  [pct, scope, roundBox].forEach((el) => el?.addEventListener(el === pct ? 'input' : 'change', draw));
+  const dlg = openDialog({
+    title: 'Adjust rates',
+    body: h('div', { class: 'form' },
+      h('div', { class: 'row2' },
+        h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Change (%)'), pct),
+        scope ? h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Rows'), scope) : h('div')),
+      h('p', { id: 'adj-help', class: 'hint' }, 'Positive raises the prices, negative lowers them. Rows without a price are left as they are.'),
+      h('div', { class: 'switch-row' }, h('label', { for: 'adj-round' }, 'Round to whole euros'), roundBox),
+      preview),
+    foot: [backBtn, applyBtn],
+  });
+  backBtn.addEventListener('click', () => dlg.close());
+  applyBtn.addEventListener('click', () => {
+    const p = parse();
+    if (p == null) return;
+    const list = rowsInScope();
+    for (const r of list) r.price_per_night = String(newPrice(r.price_per_night, p));
+    markDirty('rates');
+    dlg.close();
+    rebuild();
+    toast(`${plural(list.length, 'rate')} changed by ${p > 0 ? '+' : ''}${p}%. Check them, then Save rates.`);
+  });
+  draw();
+  pct.focus();
 }
 
 // ---------- Card 2: cleaning fees ----------
@@ -348,6 +429,10 @@ function rulePreview(d) {
   if (d.kind === 'long_stay') s = num(d.min_nights) >= 1 ? `${p}% off for stays of ${num(d.min_nights)}+ nights` : `${p}% off long stays (set the minimum nights)`;
   else if (d.kind === 'early_booking') s = str(d.days_before).trim() !== '' ? `${p}% off when booked at least ${num(d.days_before)} days before arrival` : `${p}% off early bookings (set the days before)`;
   else if (d.kind === 'last_minute') s = str(d.days_before).trim() !== '' ? `${p}% off when booked within ${num(d.days_before)} days of arrival` : `${p}% off last-minute bookings (set the days)`;
+  else if (d.kind === 'gap') s = num(d.max_gap_nights) >= 1
+    ? `${p}% off for stays that fill a gap of up to ${plural(num(d.max_gap_nights), 'night')} between bookings${d.touching ? ', or touch a booking on one side' : ''}`
+    : `${p}% off for stays that fill a gap between bookings (set the max gap)`;
+  else if (!KINDS[d.kind]) s = `${p}% off, kind "${d.kind}" (not known to this app; it is saved unchanged)`;
   else s = range ? `${p}% off nights ${range}` : `${p}% off a period (set From and To)`;
   if (range && d.kind !== 'period') s += `, nights ${range} only`;
   if (d.unit_id) s += `, ${unitNameOf(d.unit_id)} only`;
@@ -361,7 +446,7 @@ function rulesCard() {
   const unitOpts = [['', 'Any apartment'], ...units().map((u) => [u.id, u.name || u.id])];
   const addBtn = h('button', { class: 'btn sm', type: 'button' }, icon('plus'), 'Add rule');
   addBtn.addEventListener('click', () => {
-    rules.push({ _k: key(), id: '', name: '', kind: 'long_stay', percent: '10', min_nights: '7', days_before: '', from: '', to: '', unit_type: '', unit_id: '', active: true, notes: '' });
+    rules.push({ _k: key(), id: '', name: '', kind: 'long_stay', percent: '10', min_nights: '7', days_before: '', max_gap_nights: '', touching: false, from: '', to: '', unit_type: '', unit_id: '', active: true, notes: '' });
     markDirty('rules');
     rebuild();
     rootEl.querySelector('[data-card="rules"] .rule:last-of-type [data-field="name"]')?.focus();
@@ -377,7 +462,9 @@ function rulesCard() {
       box.querySelectorAll('[data-kinds]').forEach((el) => { el.hidden = !el.dataset.kinds.split(' ').includes(d.kind); });
       const fl = box.querySelector('.range-label');
       if (fl) fl.textContent = d.kind === 'period' ? 'Dates (required)' : 'Only for nights between (optional)';
+      kindHelp.textContent = KIND_HELP[d.kind] || '';
     };
+    const kindHelp = h('p', { class: 'hint kind-help' }, KIND_HELP[d.kind] || '');
     box.addEventListener('input', refresh);
     box.addEventListener('change', refresh);
     const act = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: d.active, 'aria-label': `${label}: active`, 'data-field': 'active' });
@@ -392,11 +479,19 @@ function rulesCard() {
         cellInput(d, 'name', { type: 'text', maxlength: 100, placeholder: 'Rule name', class: 'rule-name', 'aria-label': `${label}: name`, autocomplete: 'off' }, 'rules'),
         h('label', { class: 'toggle' }, act, 'Active'), dup, del),
       preview,
+      kindHelp,
       h('div', { class: 'rule-grid' },
-        f('Kind', cellSelect(d, 'kind', Object.entries(KINDS), { 'aria-label': `${label}: kind` }, 'rules')),
+        f('Kind', cellSelect(d, 'kind', [...Object.entries(KINDS), ...(KINDS[d.kind] ? [] : [[d.kind, `Other: ${d.kind}`]])], { 'aria-label': `${label}: kind` }, 'rules')),
         f('Percent', cellInput(d, 'percent', { type: 'text', inputmode: 'decimal', autocomplete: 'off', 'aria-label': `${label}: percent` }, 'rules')),
         f('Min nights', cellInput(d, 'min_nights', { type: 'text', inputmode: 'numeric', autocomplete: 'off', 'aria-label': `${label}: minimum nights` }, 'rules'), '', 'long_stay'),
         f('Days before arrival', cellInput(d, 'days_before', { type: 'text', inputmode: 'numeric', autocomplete: 'off', 'aria-label': `${label}: days before arrival` }, 'rules'), '', 'early_booking last_minute'),
+        f('Max gap (nights)', cellInput(d, 'max_gap_nights', { type: 'text', inputmode: 'numeric', autocomplete: 'off', 'aria-label': `${label}: max gap nights` }, 'rules'), '', 'gap'),
+        h('label', { class: 'cell toggle-cell', 'data-kinds': 'gap', hidden: d.kind !== 'gap' }, fieldLabel('Touching one side'),
+          (() => {
+            const t = h('input', { type: 'checkbox', class: 'switch sm', role: 'switch', checked: !!d.touching, 'data-field': 'touching', 'aria-label': `${label}: also when touching a booking on one side` });
+            t.addEventListener('change', () => { d.touching = t.checked; markDirty('rules'); });
+            return t;
+          })()),
         f('Unit type', cellSelect(d, 'unit_type', typeOpts, { 'aria-label': `${label}: unit type` }, 'rules')),
         f('Apartment', cellSelect(d, 'unit_id', unitOpts, { 'aria-label': `${label}: apartment` }, 'rules'))),
       h('fieldset', { class: 'rule-range' },
@@ -409,25 +504,89 @@ function rulesCard() {
   });
 
   const saveBtn = h('button', { class: 'btn primary', type: 'button' }, 'Save rules');
-  saveBtn.addEventListener('click', () => runSave('rules', saveBtn, () => actions.saveDiscounts(rules.map((d) => {
-    const whole = (v) => (str(v).trim() === '' ? '' : Number(str(v).trim()));
-    const days = d.kind === 'early_booking' || d.kind === 'last_minute';
-    return {
-      ...(d.id ? { id: d.id } : {}), name: d.name.trim(), kind: d.kind, percent: str(d.percent).trim() === '' ? '' : num(d.percent),
-      min_nights: d.kind === 'long_stay' ? whole(d.min_nights) : '', days_before: days ? whole(d.days_before) : '',
-      from: d.from || '', to: d.to || '', unit_type: d.unit_type || '', unit_id: d.unit_id || '', active: !!d.active, notes: d.notes.trim(),
-    };
-  })), (p) => `Discount rules saved (${plural((p.discounts || []).filter((x) => x.active === true || /^true$/i.test(String(x.active))).length, 'active rule')}).`));
+  saveBtn.addEventListener('click', () => saveRules(saveBtn));
+  const lmBtn = h('button', { class: 'btn sm', type: 'button' }, icon('tag'), 'Last-minute discount');
+  lmBtn.addEventListener('click', () => lastMinuteDialog());
 
   return h('section', { class: 'card', 'data-card': 'rules', 'aria-labelledby': 'pr-rules' },
     h('div', { class: 'card-head' }, h('h2', { id: 'pr-rules' }, 'Discount rules')),
     h('p', { class: 'hint' }, 'Applied to the accommodation only (never the cleaning fee). When several rules fit a stay, the one giving the biggest discount wins; rules never stack.'),
-    h('div', { class: 'card-tools' }, addBtn),
+    h('div', { class: 'card-tools' }, addBtn, lmBtn),
     list.length ? h('div', { class: 'rule-list' }, list) : h('p', { class: 'empty' }, 'No discount rules.'),
     errorLine('rules'),
     h('div', { class: 'card-foot' },
       h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Saving replaces the whole Discounts tab in the Sheet.'),
       statusLine('rules'), saveBtn));
+}
+
+function saveRules(btn) {
+  return runSave('rules', btn, () => actions.saveDiscounts(rules.map((d) => {
+    const whole = (v) => (str(v).trim() === '' ? '' : Number(str(v).trim()));
+    const days = d.kind === 'early_booking' || d.kind === 'last_minute';
+    return {
+      ...(d.id ? { id: d.id } : {}), name: d.name.trim(), kind: d.kind, percent: str(d.percent).trim() === '' ? '' : num(d.percent),
+      min_nights: d.kind === 'long_stay' ? whole(d.min_nights) : '', days_before: days ? whole(d.days_before) : '',
+      max_gap_nights: d.kind === 'gap' ? whole(d.max_gap_nights) : '', touching: d.kind === 'gap' ? !!d.touching : false,
+      from: d.from || '', to: d.to || '', unit_type: d.unit_type || '', unit_id: d.unit_id || '', active: !!d.active, notes: d.notes.trim(),
+    };
+  })), (p) => `Discount rules saved (${plural((p.discounts || []).filter((x) => x.active === true || /^true$/i.test(String(x.active))).length, 'active rule')}).`);
+}
+
+/** Quick action: X% for arrivals within N days, until a date. Updates the first last-minute rule (or adds one),
+ *  turns it on and saves. "Until" is the rule's To (From = today): only nights up to that date are discounted. */
+function lastMinuteDialog() {
+  const t = todayISO();
+  const ex = rules.find((d) => d.kind === 'last_minute');
+  const pct = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', value: ex ? ex.percent : '15' });
+  const days = h('input', { type: 'text', inputmode: 'numeric', autocomplete: 'off', value: ex?.days_before || '7' });
+  const until = h('input', { type: 'date', min: t, value: ex && isISODate(ex.to) && ex.to >= t ? ex.to : addDays(t, 30) });
+  const out = h('p', { class: 'rule-preview', 'aria-live': 'polite' });
+  const err = h('p', { class: 'form-error', role: 'alert', hidden: true });
+  const okBtn = h('button', { class: 'btn primary', type: 'button' }, ex ? (ex.active ? 'Save' : 'Turn on and save') : 'Add and save');
+  const backBtn = h('button', { class: 'btn', type: 'button' }, 'Back');
+  const read = () => ({ p: num(pct.value), n: str(days.value).trim(), u: until.value });
+  const check = ({ p, n, u }) => (!(p > 0 && p <= 100) ? 'Percent must be more than 0 and at most 100.'
+    : !/^\d+$/.test(n) ? 'Days must be a whole number.' : !isISODate(u) || u < t ? 'Until must be today or later.' : '');
+  const draw = () => {
+    const v = read();
+    const msg = check(v);
+    out.textContent = msg || `${v.p}% off the accommodation for arrivals within ${plural(Number(v.n), 'day')}, for nights up to ${fmtDate(v.u, { year: true })}.`;
+    out.classList.toggle('bad', !!msg);
+  };
+  [pct, days, until].forEach((el) => el.addEventListener('input', draw));
+  const dirtyOther = dirty.rules;
+  const dlg = openDialog({
+    title: 'Last-minute discount',
+    body: h('div', { class: 'form' },
+      h('div', { class: 'row3' },
+        h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Percent'), pct),
+        h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Days before arrival'), days),
+        h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Until'), until)),
+      out,
+      h('p', { class: 'hint' }, ex ? `Updates the rule "${ex.name || 'Last minute'}".` : 'Adds a rule named "Last minute".',
+        ' Applied to the accommodation only; when several rules fit a stay, the biggest discount wins.'),
+      dirtyOther ? h('p', { class: 'hint warn-hint' }, icon('warn', 'ic tiny'), ' Your other unsaved rule changes are saved too.') : null,
+      err),
+    foot: [backBtn, okBtn],
+  });
+  backBtn.addEventListener('click', () => dlg.close());
+  okBtn.addEventListener('click', async () => {
+    const v = read();
+    const msg = check(v);
+    if (msg) { err.textContent = msg; err.hidden = false; return; }
+    let d = rules.find((x) => x.kind === 'last_minute');
+    if (!d) {
+      d = { _k: key(), id: '', name: 'Last minute', kind: 'last_minute', percent: '', min_nights: '', days_before: '', max_gap_nights: '', touching: false,
+        from: '', to: '', unit_type: '', unit_id: '', active: true, notes: '' };
+      rules.push(d);
+    }
+    Object.assign(d, { percent: String(v.p), days_before: v.n, from: t, to: v.u, active: true });
+    markDirty('rules');
+    await saveRules(okBtn);
+    if (!dirty.rules) dlg.close(); else { err.textContent = errors.rules?.message || 'Not saved.'; err.hidden = false; }
+  });
+  draw();
+  pct.focus();
 }
 
 // ---------- Card 4: extras ----------

@@ -1,5 +1,5 @@
 // Reservation form: bottom sheet on phones, dialog on wide screens.
-import { state, activeUnits, unitById, isOwner, currency, depositPercent, extrasList, extraById } from '../state.js';
+import { state, activeUnits, unitById, isOwner, currency, depositPercent, extrasList, extraById, groupMembers } from '../state.js';
 import { h, icon, openDialog, confirmDialog, toast } from '../ui.js';
 import { addDays, diffDays, todayISO, isISODate, conflictsFor, fmtRange, fmtDateTime, money, num, plural, round2,
   depositOf, isEmail, ruleLabel, extraAmount, extraLabel, SOURCES, STATUSES, LANGS } from '../lib.js';
@@ -311,6 +311,95 @@ export async function declineRequest(input) {
   return true;
 }
 
+// ---- Whole-house requests (group_id): one decision for every apartment, setReservationStatus apply_to_group ----
+const unitsText = (members) => members.map((m) => unitById(m.unit_id)?.name || m.unit_id).join(', ');
+function groupLine(members) {
+  const r = members[0];
+  const guests = members.reduce((s, m) => s + (Number(m.guests) || 0), 0);
+  return `${r.guest_name || 'Unnamed'} · whole house (${unitsText(members)}) · ${fmtRange(r.check_in, r.check_out)} · ` +
+    `${plural(diffDays(r.check_in, r.check_out), 'night')}${guests ? ' · ' + plural(guests, 'guest') : ''}`;
+}
+/** Group totals in the shape priceBreakdown reads: sums of price, cleaning, discount and extras; the label only when shared. */
+export function groupSum(members) {
+  const sum = (k) => round2(members.reduce((s, m) => s + (Number(m[k]) || 0), 0));
+  const labels = [...new Set(members.filter((m) => Number(m.discount) > 0).map((m) => m.discount_label || ''))];
+  return { price: sum('price'), cleaning_fee: sum('cleaning_fee'), discount: sum('discount'), extras_total: sum('extras_total'),
+    discount_label: labels.length === 1 ? labels[0] : '' };
+}
+const groupConflicts = (members) => members.flatMap((m) => conflictsFor({ ...m, status: 'confirmed' }, state.reservations)
+  .filter((c) => !(c.group_id && c.group_id === m.group_id)));
+
+/** Owner approves a whole-house request: every apartment priced, then ONE confirmation (apply_to_group on the first id). */
+export async function approveGroup(input) {
+  const first = state.reservations.find((x) => x.id === input[0]?.id) || input[0];
+  if (!first) return false;
+  if (!isOwner()) { toast('Only owners can approve.', 'error'); return false; }
+  const members = groupMembers(first).filter((m) => m.status === 'pending');
+  const unpriced = members.filter((m) => !(m.price > 0));
+  if (unpriced.length) {
+    toast(`Set the price of ${unitsText(unpriced)} first.`, 'error');
+    openReservation(unpriced[0]);
+    return false;
+  }
+  const tbd = unpricedExtras(first);
+  if (tbd.length) {
+    const ok = await confirmDialog(`${tbd.map((x) => x.name).join(', ')} ${tbd.length === 1 ? 'has' : 'have'} no price yet. Set the amount agreed with the guest before approving.`,
+      { title: 'Extras on request', ok: 'Set price', extra: h('div', { class: 'dlg-extra' }, extrasSummary(first)) });
+    if (ok) openReservation(first, { focusExtra: tbd[0].id });
+    return false;
+  }
+  const conf = groupConflicts(members);
+  const extra = h('div', { class: 'dlg-extra' },
+    h('p', { class: 'hint' }, groupLine(members)),
+    priceBreakdown(groupSum(members)),
+    extrasSummary({ ...first, guests: members.reduce((t, m) => t + (Number(m.guests) || 0), 0) }),
+    conf.length ? overlapBox(conf, true) : null);
+  const notify = await askEmail('confirm', first, { extra, danger: conf.length > 0, okLabel: conf.length ? 'Approve all anyway' : 'Approve all' });
+  if (notify === null) return false;
+  try {
+    try {
+      await actions.setReservationStatus(first.id, 'confirmed', { force: conf.length > 0, notify, applyToGroup: true });
+    } catch (e) {
+      if (e.code !== 'conflict') throw e;
+      const list = e.data?.conflicts || [];
+      const ok = await confirmDialog(`Part of the house now overlaps ${plural(list.length, 'other stay')}. Approve all anyway?`,
+        { title: 'Overlapping stay', ok: 'Approve all anyway', danger: true, extra: conflictList(list) });
+      if (!ok) return false;
+      await actions.setReservationStatus(first.id, 'confirmed', { force: true, notify, applyToGroup: true });
+    }
+  } catch (e) { actions.report(e); return false; }
+  toast(notify ? `Whole house confirmed. Emailing ${first.email}.` : `Whole house confirmed (${plural(members.length, 'apartment')}).`);
+  return true;
+}
+
+/** Decline a whole-house request (owner or manager): every apartment cancelled, ONE optional email. */
+export async function declineGroup(input) {
+  const first = state.reservations.find((x) => x.id === input[0]?.id) || input[0];
+  if (!first) return false;
+  const members = groupMembers(first).filter((m) => m.status === 'pending');
+  const notify = await askEmail('decline', first, { okLabel: 'Decline all', extra: h('p', { class: 'hint dlg-extra' }, groupLine(members)) });
+  if (notify === null) return false;
+  try {
+    await actions.setReservationStatus(first.id, 'cancelled', { notify, applyToGroup: true });
+  } catch (e) { actions.report(e); return false; }
+  toast(notify ? `Declined. Emailing ${first.email}.` : 'Whole-house request declined.');
+  return true;
+}
+
+/** "Part of a whole-house booking" note for the form, with links to the other apartments. */
+function groupNote(r, onOpen) {
+  const members = groupMembers(r);
+  if (!r.group_id) return null;
+  const others = members.filter((m) => m.id !== r.id);
+  return h('div', { class: 'info-note group-note' },
+    h('p', null, icon('link', 'ic tiny'), ' Part of a whole-house booking',
+      members[0] && members[0].id !== r.id ? ` (message and extras on ${unitById(members[0].unit_id)?.name || members[0].unit_id})` : '', '.'),
+    others.length ? h('p', { class: 'group-links' }, 'Other apartments: ', others.map((m, i) => [i ? ', ' : '',
+      h('button', { type: 'button', class: 'linkish', onclick: () => onOpen(m) },
+        `${unitById(m.unit_id)?.name || m.unit_id}${m.status !== r.status ? ` (${(STATUSES[m.status] || m.status).toLowerCase()})` : ''}`)])) : null,
+    r.status === 'pending' ? h('p', { class: 'hint' }, 'Approve or decline all apartments together on the Requests tab.') : null);
+}
+
 /**
  * Reservation form. opts.intent = 'approve': opened from a request without a price;
  * saving continues into the approval dialog.
@@ -369,6 +458,7 @@ export function openReservation(input = {}, opts = {}) {
   const exSlot = h('div');
 
   const form = h('form', { class: 'form', novalidate: true },
+    existing?.group_id ? groupNote(existing, (m) => { dlg.close(); openReservation(m); }) : null,
     unitSeg,
     h('div', { class: 'row2' }, field('Check-in', ci), field('Check-out', co)),
     nightsOut,
