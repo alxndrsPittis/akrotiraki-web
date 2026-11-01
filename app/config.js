@@ -9,7 +9,7 @@ const config = {
   // OAuth 2.0 Web client ID from Google Cloud Console
   // (must equal the `client_id` value in the Settings tab of the Sheet).
   // Add https://alxndrspittis.github.io as an authorised JavaScript origin.
-  CLIENT_ID: "",
+  CLIENT_ID: "698870207083-4nmc5lcgvi6cc2unm9plgqis1ag73t77.apps.googleusercontent.com",
 
   // Force MOCK mode even when API_URL is set. `?mock=1` in the URL does the same.
   MOCK: false,
