@@ -3,21 +3,17 @@
   'use strict';
   document.documentElement.classList.add('js');
 
+  // Theme previews (English home page only, where themes.css is loaded): ?theme=dusk|aegean|terracotta
+  if (document.querySelector('link[href^="themes.css"]')) {
+    var theme = (location.search.match(/[?&]theme=(dusk|aegean|terracotta)\b/) || [])[1];
+    if (theme) document.documentElement.setAttribute('data-theme', theme);
+  }
+
   // Interface strings by page language (<html lang="en|el">). English is the fallback.
   var LANG = (document.documentElement.getAttribute('data-lang') || document.documentElement.lang || 'en').slice(0, 2);
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
-      // rates table (booking.js)
-      rDates: 'Dates',
-      rCaption: function (y) { return 'Nightly rates for ' + y; },
-      rPerNight: function (m) { return m + ' / night'; },
-      rMin: function (n) { return 'minimum ' + n + ' nights'; },
-      rCleaning: function (m, s) { return 'Cleaning fee per stay: ' + m + ' maisonette, ' + s + ' studio.'; },
-      rDiscStay: function (p, n) { return p + '% off for stays of ' + n + ' nights or more'; },
-      rDiscEarly: function (p, d) { return p + '% off for bookings made ' + d + ' days ahead'; },
-      rDiscDates: function (p, a, b) { return p + '% off for stays between ' + a + ' and ' + b; },
-      rForType: { maisonette: ' (maisonettes)', studio: ' (studios)' },
       // booking.js (request to stay)
       name: 'Name', email: 'Email', arrival: 'Arrival', departure: 'Departure', house: 'Apartment', guests: 'Guests',
       any: 'Any apartment', maisonette: 'Maisonette', studio: 'Studio',
@@ -55,6 +51,8 @@
       quote: function (total, n) { return 'Indicative price: ' + total + ' for ' + n + ', including the cleaning fee. We confirm it in our reply.'; },
       quoteNoFee: function (total, n) { return 'Indicative price: ' + total + ' for ' + n + '. We confirm it in our reply.'; },
       quoteIncomplete: 'We will send you the price by email.',
+      quoteDiscount: function (p, n, a) { return 'Includes ' + (p ? p + '% ' : '') + 'discount' + (n ? ' “' + n + '”' : '') + ' (−' + a + ').'; },
+      quoteDiscountPart: function (n, a) { return (n || 'discount') + ' −' + a; },
       quoteHow: 'How it is calculated',
       quoteRate: function (n, price) { return n + ' × ' + price; },
       quoteCleaning: function (fee) { return 'cleaning ' + fee; },
@@ -62,15 +60,6 @@
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
-      rDates: 'Ημερομηνίες',
-      rCaption: function (y) { return 'Τιμές ανά νύχτα για το ' + y; },
-      rPerNight: function (m) { return m + ' / νύχτα'; },
-      rMin: function (n) { return 'ελάχιστο ' + n + ' νύχτες'; },
-      rCleaning: function (m, s) { return 'Κόστος καθαριότητας ανά διαμονή: ' + m + ' η μεζονέτα, ' + s + ' το στούντιο.'; },
-      rDiscStay: function (p, n) { return 'Έκπτωση ' + p + '% για διαμονές ' + n + ' νυχτών και άνω'; },
-      rDiscEarly: function (p, d) { return 'Έκπτωση ' + p + '% για κρατήσεις ' + d + ' ημέρες νωρίτερα'; },
-      rDiscDates: function (p, a, b) { return 'Έκπτωση ' + p + '% για διαμονές από ' + a + ' έως ' + b; },
-      rForType: { maisonette: ' (μεζονέτες)', studio: ' (στούντιο)' },
       name: 'Ονοματεπώνυμο', email: 'Email', arrival: 'Άφιξη', departure: 'Αναχώρηση', house: 'Διαμέρισμα', guests: 'Άτομα',
       any: 'Οποιοδήποτε', maisonette: 'Μεζονέτα', studio: 'Στούντιο',
       prevMonth: 'Προηγούμενος μήνας', nextMonth: 'Επόμενος μήνας',
@@ -106,6 +95,8 @@
       quote: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + ', με το κόστος καθαριότητας. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
       quoteNoFee: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + '. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
       quoteIncomplete: 'Θα σας στείλουμε την τιμή με email.',
+      quoteDiscount: function (p, n, a) { return 'Περιλαμβάνει έκπτωση ' + (p ? p + '% ' : '') + (n ? '«' + n + '» ' : '') + '(−' + a + ').'; },
+      quoteDiscountPart: function (n, a) { return (n || 'έκπτωση') + ' −' + a; },
       quoteHow: 'Πώς υπολογίζεται',
       quoteRate: function (n, price) { return n + ' × ' + price; },
       quoteCleaning: function (fee) { return 'καθαριότητα ' + fee; },

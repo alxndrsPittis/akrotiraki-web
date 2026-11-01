@@ -1,16 +1,6 @@
 // Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.de = {
-  // Preistabelle (booking.js)
-  rDates: 'Zeitraum',
-  rCaption: function (y) { return 'Preise pro Nacht für ' + y; },
-  rPerNight: function (m) { return m + ' / Nacht'; },
-  rMin: function (n) { return 'mindestens ' + n + ' Nächte'; },
-  rCleaning: function (m, s) { return 'Endreinigung pro Aufenthalt: ' + m + ' Maisonette, ' + s + ' Studio.'; },
-  rDiscStay: function (p, n) { return p + ' % Rabatt bei Aufenthalten ab ' + n + ' Nächten'; },
-  rDiscEarly: function (p, d) { return p + ' % Rabatt bei Buchung ' + d + ' Tage im Voraus'; },
-  rDiscDates: function (p, a, b) { return p + ' % Rabatt für Aufenthalte vom ' + a + ' bis ' + b; },
-  rForType: { maisonette: ' (Maisonetten)', studio: ' (Studios)' },
   photo: function (i, n) { return 'Foto ' + i + ' von ' + n; },
   // booking.js (Anfrage)
   name: 'Name', email: 'E-Mail', arrival: 'Anreise', departure: 'Abreise', house: 'Wohnung', guests: 'Personen',
@@ -49,6 +39,8 @@ window.AKRO_STRINGS.de = {
   quote: function (total, n) { return 'Richtpreis: ' + total + ' für ' + n + ', einschließlich Endreinigung. Wir bestätigen ihn in unserer Antwort.'; },
   quoteNoFee: function (total, n) { return 'Richtpreis: ' + total + ' für ' + n + '. Wir bestätigen ihn in unserer Antwort.'; },
   quoteIncomplete: 'Den Preis schicken wir Ihnen per E-Mail.',
+  quoteDiscount: function (p, n, a) { return 'Enthält ' + (p ? p + ' % ' : '') + 'Rabatt' + (n ? ' „' + n + '“' : '') + ' (−' + a + ').'; },
+  quoteDiscountPart: function (n, a) { return (n || 'Rabatt') + ' −' + a; },
   quoteHow: 'So setzt er sich zusammen',
   quoteRate: function (n, price) { return n + ' × ' + price; },
   quoteCleaning: function (fee) { return 'Endreinigung ' + fee; },

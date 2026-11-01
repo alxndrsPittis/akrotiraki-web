@@ -1,0 +1,43 @@
+/* Theme previews for discussion. Loaded only on the English home page; activated by ?theme=dusk|aegean|terracotta
+   (site.js sets data-theme on <html>). Token overrides only; without ?theme= nothing here applies.
+   All text colours below are ≥ 4.5:1 on their backgrounds. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap");
+
+/* --- dusk: dark by default, warm white text, ochre accent, editorial --- */
+html[data-theme="dusk"] {
+  --paper: #121a24; --ink: #efe7da; --muted: #a6adb5; --muted-text: #b4bcc4; --line: #2a3542;
+  --sea: #9cc6e4; --sea-soft: #1c3346; --sand: #d6a85e; --sand-text: #e0b56b; --sand-soft: #241f17;
+  --grey-soft: #1e2833; --field: #18222d; --staff: #9db3c6;
+  color-scheme: dark;
+}
+html[data-theme="dusk"] h1 { font-weight: 400; font-style: italic; letter-spacing: -0.01em; }
+html[data-theme="dusk"] .eyebrow { color: var(--sand-text); }
+html[data-theme="dusk"] .eyebrow::before { background: var(--sand); }
+html[data-theme="dusk"] .form { background: #1a2430; border: 1px solid var(--line); }
+html[data-theme="dusk"] .btn-solid:hover { background: var(--sand); border-color: var(--sand); color: #121a24; }
+
+/* --- aegean: crisp white, deep ink, one cobalt accent, sharper and larger display --- */
+html[data-theme="aegean"] {
+  --paper: #ffffff; --ink: #0d1b2a; --muted: #5a6773; --muted-text: #4a5764; --line: #e3e7ec;
+  --sea: #1747c9; --sea-soft: #e8eefc; --sand: #1747c9; --sand-text: #1747c9; --sand-soft: #eef2fd;
+  --grey-soft: #f1f3f6; --field: #ffffff; --staff: #536b80;
+  color-scheme: light;
+}
+html[data-theme="aegean"] h1 { font-size: clamp(2.8rem, 6.2vw, 4.8rem); font-weight: 500; letter-spacing: -0.015em; }
+html[data-theme="aegean"] h2 { font-size: clamp(2.1rem, 3.9vw, 3rem); font-weight: 500; }
+html[data-theme="aegean"] .btn-quiet { border-color: var(--sea); color: var(--sea); }
+html[data-theme="aegean"] .btn-quiet:hover { background: var(--sea); color: #fff; }
+html[data-theme="aegean"] .btn-solid { background: var(--sea); border-color: var(--sea); color: #fff; }
+html[data-theme="aegean"] .card { border-top-color: var(--sea); }
+
+/* --- terracotta: the paper background, a vivid terracotta accent, heavier serif, wider labels --- */
+html[data-theme="terracotta"] {
+  --sand: #c4532d; --sand-text: #a8431f; --sand-soft: #f6e3da;
+  color-scheme: light;
+}
+html[data-theme="terracotta"] h1, html[data-theme="terracotta"] h2, html[data-theme="terracotta"] h3 { font-weight: 600; }
+html[data-theme="terracotta"] .eyebrow, html[data-theme="terracotta"] .info dt,
+html[data-theme="terracotta"] .card-meta, html[data-theme="terracotta"] .site-nav ul a,
+html[data-theme="terracotta"] .site-nav .nav-accent { letter-spacing: .24em; }
+html[data-theme="terracotta"] .btn-solid { background: var(--sand-text); border-color: var(--sand-text); color: #fff; }
+html[data-theme="terracotta"] .card { border-top-color: var(--sand); }

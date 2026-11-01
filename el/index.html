@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="el">
 <head>
-  <!-- Asset version: ?v=20261101i. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261101j. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ακρωτηράκι · Τέσσερα διαμερίσματα πάνω από τον Πλατύ Γιαλό, Σίφνος</title>
@@ -27,10 +27,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Noto+Serif+Display:ital,wght@0,300;0,400;1,300&display=swap">
   <link rel="preload" as="image" href="../photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="../site.css?v=20261101i">
+  <link rel="stylesheet" href="../site.css?v=20261101j">
   <script>document.documentElement.classList.add("js")</script>
-  <script src="../site.js?v=20261101i" defer></script>
-  <script src="../booking.js?v=20261101i" defer></script>
+  <script src="../site.js?v=20261101j" defer></script>
+  <script src="../booking.js?v=20261101j" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Μετάβαση στο περιεχόμενο</a>
@@ -48,7 +48,6 @@
       <nav id="site-nav" class="site-nav" aria-label="Κύρια πλοήγηση">
         <ul>
           <li><a href="#houses">Διαμερίσματα</a></li>
-          <li><a href="#rates">Τιμές</a></li>
           <li><a href="#gallery">Φωτογραφίες</a></li>
           <li><a href="#practical">Χρήσιμα</a></li>
           <li><a href="#location">Τοποθεσία</a></li>
@@ -133,6 +132,7 @@
             <figcaption>Μπάνιο</figcaption>
           </figure>
         </div>
+        <p class="rates-note">Εποχιακές τιμές· η <a href="#contact">φόρμα αιτήματος</a> δείχνει την τιμή για τις ημερομηνίες σας.</p>
 
 
         <figure class="wide wide-after">
@@ -142,19 +142,6 @@
       </div>
     </section>
 
-    <!-- Rates: table filled by booking.js from the backend's public `rates` action -->
-    <section class="section rates" id="rates" aria-labelledby="rates-title">
-      <div class="wrap">
-        <header class="section-head">
-          <p class="eyebrow">Τιμές</p>
-          <h2 id="rates-title">Εποχιακές τιμές</h2>
-        </header>
-        <div class="rates-box" id="rates-box" aria-live="polite" aria-busy="true">
-          <div class="rates-skeleton" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-        </div>
-        <p class="rates-foot">Οι τιμές περιλαμβάνουν ΦΠΑ. Η <a href="#contact">φόρμα αιτήματος</a> δείχνει το ακριβές σύνολο για τις ημερομηνίες σας.</p>
-      </div>
-    </section>
 
     <!-- The place -->
     <section class="section place" id="place" aria-labelledby="place-title">
