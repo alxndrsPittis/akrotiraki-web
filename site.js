@@ -23,7 +23,7 @@
         check_in: 'Please choose an arrival date.',
         check_in_past: 'The arrival date is in the past.',
         check_out: 'Please choose a departure date after the arrival.',
-        check_out_long: 'For stays longer than 60 nights, please write to us by email.',
+        check_out_long: 'For stays longer than 60 nights, please call us.',
         guests: function (n) { return 'Please enter between 1 and ' + n + ' guests for this apartment.'; },
         email: 'Please enter a valid email address.',
         guest_name: 'Please enter your name.',
@@ -33,13 +33,13 @@
       },
       checkFields: 'Please check the fields marked below.',
       sending: 'Sending…', send: 'Send request',
-      network: 'We could not send your request. Please try again in a moment, or write to us by email.',
+      network: 'We could not send your request. Please try again in a moment, or call us.',
       quick: 'That was very quick. Please check your details and send the request again.',
       duplicate: 'We already have this request and will reply soon. There is no need to send it again.',
-      cap: 'We cannot take more requests right now. Please try again later or write to us by email.',
+      cap: 'We cannot take more requests right now. Please try again later or call us.',
       reload: 'Your request could not be sent. Please reload the page and try again.',
-      blocked: 'Your request could not be sent. Please write to us by email instead.',
-      closed: 'Online requests are closed at the moment. Please write to us by email.',
+      blocked: 'Your request could not be sent. Please call us instead.',
+      closed: 'Online requests are closed at the moment. Please call us.',
       // indicative price (quote)
       nightsN: function (n) { return n + (n === 1 ? ' night' : ' nights'); },
       quote: function (total, n) { return 'Indicative price: ' + total + ' for ' + n + ', including the cleaning fee. We confirm it in our reply.'; },
@@ -66,7 +66,7 @@
         check_in: 'Διαλέξτε ημερομηνία άφιξης.',
         check_in_past: 'Η ημερομηνία άφιξης έχει περάσει.',
         check_out: 'Διαλέξτε ημερομηνία αναχώρησης μετά την άφιξη.',
-        check_out_long: 'Για διαμονή πάνω από 60 διανυκτερεύσεις, γράψτε μας με email.',
+        check_out_long: 'Για διαμονή πάνω από 60 διανυκτερεύσεις, τηλεφωνήστε μας.',
         guests: function (n) { return 'Γράψτε από 1 έως ' + n + ' άτομα για αυτό το διαμέρισμα.'; },
         email: 'Γράψτε μια έγκυρη διεύθυνση email.',
         guest_name: 'Γράψτε το όνομά σας.',
@@ -76,13 +76,13 @@
       },
       checkFields: 'Ελέγξτε τα πεδία που σημειώνονται παρακάτω.',
       sending: 'Αποστολή…', send: 'Αποστολή αιτήματος',
-      network: 'Δεν ήταν δυνατό να σταλεί το αίτημα. Δοκιμάστε ξανά σε λίγο ή γράψτε μας με email.',
+      network: 'Δεν ήταν δυνατό να σταλεί το αίτημα. Δοκιμάστε ξανά σε λίγο ή τηλεφωνήστε μας.',
       quick: 'Ήταν πολύ γρήγορο. Ελέγξτε τα στοιχεία σας και στείλτε ξανά το αίτημα.',
       duplicate: 'Έχουμε ήδη αυτό το αίτημα και θα σας απαντήσουμε σύντομα. Δεν χρειάζεται να το ξαναστείλετε.',
-      cap: 'Δεν μπορούμε να δεχτούμε άλλα αιτήματα αυτή τη στιγμή. Δοκιμάστε αργότερα ή γράψτε μας με email.',
+      cap: 'Δεν μπορούμε να δεχτούμε άλλα αιτήματα αυτή τη στιγμή. Δοκιμάστε αργότερα ή τηλεφωνήστε μας.',
       reload: 'Το αίτημα δεν στάλθηκε. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.',
-      blocked: 'Το αίτημα δεν στάλθηκε. Γράψτε μας καλύτερα με email.',
-      closed: 'Τα αιτήματα μέσω της σελίδας είναι προσωρινά κλειστά. Γράψτε μας με email.',
+      blocked: 'Το αίτημα δεν στάλθηκε. Τηλεφωνήστε μας καλύτερα.',
+      closed: 'Τα αιτήματα μέσω της σελίδας είναι προσωρινά κλειστά. Τηλεφωνήστε μας.',
       nightsN: function (n) { return n + (n === 1 ? ' νύχτα' : ' νύχτες'); },
       quote: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + ', με το κόστος καθαριότητας. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
       quoteNoFee: function (total, n) { return 'Ενδεικτική τιμή: ' + total + ' για ' + n + '. Θα την επιβεβαιώσουμε στην απάντησή μας.'; },
@@ -114,6 +114,15 @@
     nav.addEventListener('click', function (e) { if (e.target.closest('a')) setOpen(false); });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && nav.classList.contains('open')) { setOpen(false); toggle.focus(); }
+    });
+  }
+
+  // Language menu (<details>): close on outside click and on Escape
+  var langMenu = document.querySelector('.lang-menu');
+  if (langMenu) {
+    document.addEventListener('click', function (e) { if (langMenu.open && !langMenu.contains(e.target)) langMenu.open = false; });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && langMenu.open) { langMenu.open = false; langMenu.querySelector('summary').focus(); }
     });
   }
 
