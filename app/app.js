@@ -311,11 +311,17 @@ function refresh(manual = false) {
 
 window.addEventListener('online', () => { if (!el.app.hidden) refresh(); });
 window.addEventListener('offline', () => { state.offline = true; renderChrome(); });
+// Refresh when the window comes back (after 30 s away) and every 2 minutes while visible,
+// so a tab left open on the laptop follows changes made on the phone.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !el.app.hidden && Date.now() - lastRefresh > 5 * 60 * 1000) refresh();
+  if (document.visibilityState === 'visible' && !el.app.hidden && Date.now() - lastRefresh > 30 * 1000) refresh();
+});
+window.addEventListener('focus', () => {
+  if (!el.app.hidden && Date.now() - lastRefresh > 30 * 1000) refresh();
 });
 setInterval(() => {
   if (!MOCK && !el.app.hidden && auth.tokenState() === 'expiring') auth.silentRefresh(config.CLIENT_ID);
+  if (!el.app.hidden && document.visibilityState === 'visible' && Date.now() - lastRefresh > 2 * 60 * 1000) refresh();
 }, 60 * 1000);
 
 // ---------- Start ----------
