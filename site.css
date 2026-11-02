@@ -903,7 +903,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 #step-3 .field-narrow { max-width: 12rem; }
 
 /* Spotify playlist on the Culture page */
-.contact .playlist { margin: 2.5rem auto 0; max-width: 480px; }
+.music .playlist { margin: 0; max-width: 640px; }
 .playlist { margin: 1.5rem 0 0; max-width: 480px; }
 .playlist figcaption { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-text, var(--muted)); margin-bottom: .6rem; }
 .playlist iframe { display: block; width: 100%; }
