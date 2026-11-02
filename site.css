@@ -901,3 +901,8 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .nights-seg button { min-width: 2.4rem; padding: .45rem .7rem; }
 .nights-out { margin: -.3rem 0 0; font-size: .88rem; color: var(--muted-text); min-height: 1.3em; }
 #step-3 .field-narrow { max-width: 12rem; }
+
+/* Spotify playlist on the Culture page */
+.playlist { margin: 1.5rem 0 0; max-width: 640px; }
+.playlist figcaption { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-text, var(--muted)); margin-bottom: .6rem; }
+.playlist iframe { display: block; width: 100%; }
