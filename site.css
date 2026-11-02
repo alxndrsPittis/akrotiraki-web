@@ -64,7 +64,7 @@ a:hover { text-decoration-thickness: 2px; }
 :focus-visible { outline: 2px solid var(--sea); outline-offset: 3px; border-radius: 2px; }
 
 h1, h2, h3 { font-family: var(--serif); font-weight: 400; line-height: 1.12; margin: 0 0 .5em; letter-spacing: -0.005em; }
-h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); }
+h1 { font-size: clamp(2.2rem, 4.8vw, 3.6rem); }
 h2 { font-size: clamp(2rem, 4vw, 3rem); }
 h3 { font-size: 1.65rem; font-weight: 500; }
 p { margin: 0 0 1em; max-width: 62ch; }
@@ -479,7 +479,7 @@ input[aria-invalid="true"] { border-color: #a33a2b; }
 /* Greek pages: Cormorant Garamond has no Greek glyphs, so headings use Noto Serif Display (light); the wordmark stays in Cormorant. */
 :root:lang(el) { --serif: "Noto Serif Display", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
 :lang(el) h1, :lang(el) h2, :lang(el) h3, :lang(el) .price, :lang(el) .pull p { font-weight: 300; letter-spacing: -0.01em; }
-:lang(el) h1 { font-size: clamp(2.3rem, 5.2vw, 4rem); }
+:lang(el) h1 { font-size: clamp(2rem, 4.4vw, 3.2rem); }
 :lang(el) h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
 :lang(el) .card h3 { font-size: 1.9rem; }
 .wordmark-name { font-family: "Cormorant Garamond", var(--serif); }
