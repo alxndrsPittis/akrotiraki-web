@@ -479,9 +479,6 @@ input[aria-invalid="true"] { border-color: #a33a2b; }
 /* Greek pages: Cormorant Garamond has no Greek glyphs, so headings use Alegreya (Latin and Greek designed together); the wordmark stays in Cormorant. */
 :root:lang(el) { --serif: "Alegreya", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
 :lang(el) h1, :lang(el) h2, :lang(el) h3, :lang(el) .price, :lang(el) .pull p { font-weight: 400; letter-spacing: -0.005em; }
-:lang(el) h1 { font-size: clamp(1.6rem, 3vw, 2.3rem); }
-:lang(el) h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
-:lang(el) .card h3 { font-size: 1.9rem; }
 .wordmark-name { font-family: "Cormorant Garamond", var(--serif); }
 h1, h2, h3 { text-wrap: balance; }
 
