@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- Asset version: ?v=20261102i. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
+  <!-- Asset version: ?v=20261102z. Bump ?v= on both links (site.css, site.js) whenever site.css/site.js change. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Akrotiraki · Four apartments above Platys Gialos, Sifnos</title>
   <meta name="description" content="Akrotiraki: four holiday apartments in a whitewashed Cycladic house on the hill above the bay of Platys Gialos, Sifnos. Two maisonettes and two studios, each with a sea view and a private terrace.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#fcfbf9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#151c22" media="(prefers-color-scheme: dark)">
   <meta property="og:title" content="Akrotiraki · Platys Gialos, Sifnos">
   <meta property="og:description" content="Four apartments above the bay of Platys Gialos, Sifnos.">
@@ -27,15 +27,13 @@
   <link rel="apple-touch-icon" href="photos/mark-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Gentium+Plus:ital,wght@0,400;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gentium+Plus:ital,wght@0,400;0,700;1,400&family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400&display=swap">
   <link rel="preload" as="image" href="photos/deckchairs-dusk.webp" fetchpriority="high">
-  <link rel="stylesheet" href="site.css?v=20261102y">
-  <!-- Theme previews for discussion (?theme=dusk|aegean|terracotta); no effect without the query. -->
-  <link rel="stylesheet" href="themes.css?v=20261102i">
-  <script>document.documentElement.classList.add("js")</script>
-  <script src="site.js?v=20261102y" defer></script>
-  <script src="mark.js?v=20261102y" defer></script>
-  <script src="booking.js?v=20261102y" defer></script>
+  <link rel="stylesheet" href="site.css?v=20261102z">
+  <link rel="stylesheet" href="themes.css?v=20261102z"><!-- colour schemes + type pairings for the dev switcher -->
+  <script>(function(d){d.classList.add("js");try{var s=localStorage,q=location.search,m=q.match(/[?&]theme=([a-z]+)/),f=q.match(/[?&]fonts=([acd])\b/);if(m)s.setItem("akro-theme",m[1]);if(f)s.setItem("akro-fonts",f[1]);var t=s.getItem("akro-theme"),g=s.getItem("akro-fonts");if(t&&t!=="paper")d.setAttribute("data-theme",t);if(g)d.setAttribute("data-fonts",g)}catch(e){}})(document.documentElement)</script>
+  <script src="site.js?v=20261102z" defer></script>
+  <script src="mark.js?v=20261102z" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -57,7 +55,7 @@
           <li><a href="#practical">Practical</a></li>
           <li><a href="#location">Location</a></li>
         </ul>
-        <a class="btn btn-quiet" href="#contact">Request to stay</a>
+        <a class="btn btn-quiet" href="book.html">Request to stay</a>
         <a class="nav-accent" href="sifnos.html">Sifnos</a>
         <a class="nav-staff" href="./app/" target="_blank" rel="noopener nofollow"><svg class="staff-glyph" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span>Staff</span></a>
         <ul class="nav-langs" aria-label="Language"><li><a href="./" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="el/" hreflang="el" lang="el">Ελληνικά</a></li><li><a href="fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="es/" hreflang="es" lang="es">Español</a></li><li><a href="de/" hreflang="de" lang="de">Deutsch</a></li></ul>
@@ -72,8 +70,15 @@
   <main id="main">
     <!-- Hero -->
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <img class="hero-img" src="photos/deckchairs-dusk.webp" width="1360" height="907" fetchpriority="high" decoding="async"
+      <div class="hero-media">
+        <!-- Hero video, prepared: add photos/hero.webm and/or photos/hero.mp4 and uncomment the sources (see README, "Hero video"). -->
+        <video class="hero-video" muted loop playsinline preload="none" poster="photos/deckchairs-dusk.webp" aria-hidden="true" tabindex="-1" hidden>
+          <!-- <source src="photos/hero.webm" type="video/webm"> -->
+          <!-- <source src="photos/hero.mp4" type="video/mp4"> -->
+        </video>
+        <img class="hero-img" src="photos/deckchairs-dusk.webp" width="1360" height="907" fetchpriority="high" decoding="async"
            alt="Two deckchairs on a stone terrace at dusk, looking over the bay of Platys Gialos.">
+      </div>
       <div class="wrap hero-text">
         <h1 id="hero-title">Four apartments above the bay.</h1>
         <p class="lede">A whitewashed house on the small headland of Platys Gialos, Sifnos, with the sea below every terrace.</p>
@@ -137,7 +142,7 @@
             <figcaption>Bathroom</figcaption>
           </figure>
         </div>
-        <p class="rates-note">Seasonal rates; the <a href="#contact">request form</a> shows the price for your dates.</p>
+        <p class="rates-note">Seasonal rates; the <a href="book.html">request form</a> shows the price for your dates.</p>
 
 
         <figure class="wide wide-after">
@@ -264,7 +269,7 @@
       </div>
     </section>
 
-    <!-- Contact / request to stay. Posts to the ops API (public actions availability + requestStay) via booking.js. -->
+    <!-- Request to stay: compact block; the three-step request lives on book.html. -->
     <section class="section contact" id="contact" aria-labelledby="contact-title">
       <div class="wrap">
         <div class="contact-head">
@@ -272,119 +277,12 @@
             <p class="eyebrow">Contact</p>
             <h2 id="contact-title">Request to stay</h2>
             <p>Choose your dates and apartment and send us a request. We reply personally with availability and a price; nothing is booked until we confirm.</p>
+            <p class="contact-cta"><a class="btn btn-solid btn-lg" href="book.html">Check availability</a></p>
           </div>
           <div class="contact-aside">
             <ul class="contact-list">
               <li><span class="label">Phone</span> <span><a href="tel:+302284072007">+30 22840 72007</a> · <a href="tel:+306945907209">+30 6945 907209</a></span></li><!-- ASSUMED: phone numbers from the property's public listing (see ASSUMPTIONS.md) -->
             </ul>
-          </div>
-        </div>
-
-        <!-- Backend URL: window.AKRO_API in site.js. data-fallback-units = unit ids seeded by the backend's setup, used only if availability cannot be loaded. -->
-        <div class="booking" id="booking" data-photo-base="photos/" data-fallback-units="M1:maisonette:4,M2:maisonette:4,S1:studio:2,S2:studio:2">
-          <form class="form flow" id="stay-form" novalidate>
-            <ol class="steps" aria-label="Request in three steps">
-              <li aria-current="step"><span class="step-n">1</span> Dates</li>
-              <li><span class="step-n">2</span> Choose your apartment</li>
-              <li><span class="step-n">3</span> Your details</li>
-            </ol>
-
-            <section class="step" id="step-1" aria-labelledby="s1-title">
-              <h3 id="s1-title" tabindex="-1">Dates</h3>
-              <div class="step1-grid">
-              <div class="cal" id="cal" hidden>
-                <div class="cal-body">
-                  <button type="button" class="cal-prev" aria-label="Previous month">←</button>
-                  <div class="cal-months" id="cal-months"></div>
-                  <button type="button" class="cal-next" aria-label="Next month">→</button>
-                </div>
-                <ul class="cal-legend" role="list">
-                  <li><span class="sw sw-free" aria-hidden="true"></span>Free</li>
-                  <li><span class="sw sw-pending" aria-hidden="true"></span>On request</li>
-                  <li><span class="sw sw-taken" aria-hidden="true"></span>Taken</li>
-                  <li><span class="sw sw-sel" aria-hidden="true"></span>Your dates</li>
-                </ul>
-                <p class="cal-status" id="cal-status" aria-live="polite"></p>
-              </div>
-                <div class="step1-fields">
-                  <div class="field">
-                    <label for="f-in">Arrival</label>
-                    <input id="f-in" name="check_in" type="date" required aria-describedby="err-check_in">
-                    <p class="field-error" id="err-check_in" hidden></p>
-                  </div>
-                  <div class="field">
-                    <span class="field-label" id="nights-label">Nights</span>
-                    <div class="seg nights-seg" id="nights-seg" role="group" aria-labelledby="nights-label"><button type="button" data-n="2" aria-pressed="false">2</button><button type="button" data-n="3" aria-pressed="false">3</button><button type="button" data-n="4" aria-pressed="false">4</button><button type="button" data-n="5" aria-pressed="false">5</button><button type="button" data-n="7" aria-pressed="false">7</button><button type="button" data-n="10" aria-pressed="false">10</button><button type="button" data-n="14" aria-pressed="false">14</button></div>
-                  </div>
-                  <div class="field">
-                    <label for="f-out">Departure</label>
-                    <input id="f-out" name="check_out" type="date" required aria-describedby="err-check_out">
-                    <p class="field-error" id="err-check_out" hidden></p>
-                  </div>
-                  <p class="nights-out" id="nights-out" aria-live="polite"></p>
-                  <button class="btn btn-solid" type="button" id="s1-go">See availability</button>
-                </div>
-              </div>
-    </section>
-
-            <section class="step" id="step-2" aria-labelledby="s2-title" hidden>
-              <h3 id="s2-title" tabindex="-1">Choose your apartment</h3>
-              <p class="step-summary"><span id="s2-summary"></span> · <button type="button" class="link-btn" data-go="1">Change</button></p>
-              <p class="field-error" id="err-unit_id" hidden></p>
-              <div class="apt-cards" id="apt-cards" aria-live="polite"></div>
-            </section>
-
-            <section class="step" id="step-3" aria-labelledby="s3-title" hidden>
-              <h3 id="s3-title" tabindex="-1">Your details</h3>
-              <p class="step-summary"><span id="chosen"></span> · <button type="button" class="link-btn" data-go="2">Change</button></p>
-              <input type="hidden" name="unit_id">
-              <p class="extras-sum" id="extras-sum" aria-live="polite" hidden></p>
-              <div class="field field-narrow">
-                    <label for="f-guests">Guests <span class="opt">(optional)</span></label>
-                    <input id="f-guests" name="guests" type="number" min="1" max="12" value="2" inputmode="numeric" aria-describedby="err-guests">
-                    <p class="field-error" id="err-guests" hidden></p>
-                  </div>
-              <div class="extras" id="extras"></div>
-              <div class="field">
-                <label for="f-name">Name</label>
-                <input id="f-name" name="guest_name" type="text" autocomplete="name" maxlength="120" required aria-describedby="err-guest_name">
-                <p class="field-error" id="err-guest_name" hidden></p>
-              </div>
-              <div class="field-row">
-                <div class="field">
-                  <label for="f-email">Email</label>
-                  <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
-                  <p class="field-error" id="err-email" hidden></p>
-                </div>
-                <div class="field">
-                  <label for="f-phone">Phone <span class="opt">(optional)</span></label>
-                  <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="err-phone">
-                  <p class="field-error" id="err-phone" hidden></p>
-                </div>
-              </div>
-              <div class="field">
-                <label for="f-msg">Message <span class="opt">(optional)</span></label>
-                <textarea id="f-msg" name="message" rows="4" maxlength="2000" aria-describedby="err-message"></textarea>
-                <p class="field-error" id="err-message" hidden></p>
-              </div>
-              <div class="hp" aria-hidden="true">
-                <label for="f-hp">Leave this field empty</label>
-                <input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off">
-              </div>
-              <p class="form-error" id="form-error" role="alert" hidden></p>
-              <button class="btn btn-solid" type="submit">Send request</button>
-              <p class="form-note">We will reply personally within a day or two. If the other apartment of the same type suits your dates better, we may offer you that one.</p>
-              <p class="form-note">Prefer email? Use the form and we reply from our own address.</p>
-              <noscript><p class="form-error">This form needs JavaScript. Please call us on <a href="tel:+302284072007">+30 22840 72007</a> or <a href="tel:+306945907209">+30 6945 907209</a>.</p></noscript>
-              <p><button type="button" class="link-btn" data-go="2">← Back to apartments</button></p>
-            </section>
-          </form>
-
-          <div class="request-ok" id="request-ok" tabindex="-1" hidden>
-            <h3>Thank you.</h3>
-            <p>We have sent an acknowledgement to <strong data-email></strong> and will reply personally within a day or two. Nothing is booked yet.</p>
-            <p>If the other apartment of the same type suits your dates better, we may offer you that one; they are alike.</p>
-            <p class="form-note">Prefer email? Use the form and we reply from our own address.</p>
           </div>
         </div>
       </div>

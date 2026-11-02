@@ -361,4 +361,49 @@
     <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/faq.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/faq.html"/>
   </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/book.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/book.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://alxndrspittis.github.io/akrotiraki-web/fr/book.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://alxndrspittis.github.io/akrotiraki-web/es/book.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/book.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/el/book.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/book.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://alxndrspittis.github.io/akrotiraki-web/fr/book.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://alxndrspittis.github.io/akrotiraki-web/es/book.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/book.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/fr/book.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/book.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://alxndrspittis.github.io/akrotiraki-web/fr/book.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://alxndrspittis.github.io/akrotiraki-web/es/book.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/book.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/es/book.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/book.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://alxndrspittis.github.io/akrotiraki-web/fr/book.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://alxndrspittis.github.io/akrotiraki-web/es/book.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/book.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+  </url>
+  <url>
+    <loc>https://alxndrspittis.github.io/akrotiraki-web/de/book.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://alxndrspittis.github.io/akrotiraki-web/el/book.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://alxndrspittis.github.io/akrotiraki-web/fr/book.html"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://alxndrspittis.github.io/akrotiraki-web/es/book.html"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://alxndrspittis.github.io/akrotiraki-web/de/book.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://alxndrspittis.github.io/akrotiraki-web/book.html"/>
+  </url>
 </urlset>

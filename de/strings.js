@@ -1,6 +1,7 @@
 // Akrotiraki — German interface strings. site.js merges window.AKRO_STRINGS.de over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.de = {
+  checkAvail: 'Verfügbarkeit prüfen',
   houseName: 'Das ganze Haus', houseMeta: '4 Wohnungen · 2 Maisonetten und 2 Studios · für bis zu 12 Personen',
   houseRequest: 'Das ganze Haus anfragen', houseFind: 'Daten finden',
   houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' Nacht)' : ' Nächte)'); },

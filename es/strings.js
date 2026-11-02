@@ -2,6 +2,7 @@
 // Loaded before ../site.js, which merges window.AKRO_STRINGS.es over the English defaults.
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.es = {
+  checkAvail: 'Ver disponibilidad',
   houseName: 'Toda la casa', houseMeta: '4 apartamentos · 2 dúplex y 2 estudios · hasta 12 personas',
   houseRequest: 'Solicitar toda la casa', houseFind: 'Buscar fechas',
   houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' noche)' : ' noches)'); },

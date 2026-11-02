@@ -3,17 +3,31 @@
   'use strict';
   document.documentElement.classList.add('js');
 
-  // Theme previews (English home page only, where themes.css is loaded): ?theme=dusk|aegean|terracotta|olive|schist|teal|noir|alegreya
-  if (document.querySelector('link[href^="themes.css"]')) {
-    var theme = (location.search.match(/[?&]theme=(dusk|aegean|terracotta|olive|schist|teal|noir|alegreya)\b/) || [])[1];
-    if (theme) document.documentElement.setAttribute('data-theme', theme);
+  // Colour scheme and type pairing: <html data-theme / data-fonts> are set before first paint by the inline
+  // script in each page's <head> (localStorage akro-theme / akro-fonts, or ?theme= / ?fonts=). The pairing's
+  // web fonts are fetched only when a pairing is selected. Tokens: themes.css.
+  var DOC = document.documentElement;
+  var FONTS = {
+    a: { name: 'A · Fos-like', fam: 'Newsreader (Literata for Greek) · Comfortaa 300',
+      css: 'family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,400&family=Literata:ital,opsz,wght@0,7..72,300..500;1,7..72,400&family=Comfortaa:wght@300..600' },
+    c: { name: 'C · Modern', fam: 'Manrope 300 · Manrope', css: 'family=Manrope:wght@300..600' },
+    d: { name: 'D · Didone', fam: 'GFS Didot · Inter', css: 'family=GFS+Didot' }
+  };
+  function loadFonts(k) {
+    if (!FONTS[k] || document.getElementById('fonts-' + k)) return;
+    var l = document.createElement('link');
+    l.rel = 'stylesheet'; l.id = 'fonts-' + k;
+    l.href = 'https://fonts.googleapis.com/css2?' + FONTS[k].css + '&display=swap';
+    document.head.appendChild(l);
   }
+  loadFonts(DOC.getAttribute('data-fonts'));
 
   // Interface strings by page language (<html lang="en|el">). English is the fallback.
   var LANG = (document.documentElement.getAttribute('data-lang') || document.documentElement.lang || 'en').slice(0, 2);
   var STR = {
     en: {
       photo: function (i, n) { return 'Photograph ' + i + ' of ' + n; },
+      checkAvail: 'Check availability',
       houseName: 'The whole house', houseMeta: '4 apartments · 2 maisonettes and 2 studios · sleeps up to 12',
       houseRequest: 'Request the whole house', houseFind: 'Find dates',
       houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' night)' : ' nights)'); },
@@ -88,6 +102,7 @@
     },
     el: {
       photo: function (i, n) { return 'Φωτογραφία ' + i + ' από ' + n; },
+      checkAvail: 'Δείτε διαθεσιμότητα',
       houseName: 'Όλο το σπίτι', houseMeta: '4 διαμερίσματα · 2 μεζονέτες και 2 στούντιο · έως 12 άτομα',
       houseRequest: 'Αίτημα για όλο το σπίτι', houseFind: 'Βρείτε ημερομηνίες',
       houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' νύχτα)' : ' νύχτες)'); },
@@ -299,5 +314,126 @@
     }
     load().then(apply).catch(function () {});
   })();
+
+  // Persistent "Check availability" link to book.html (every page except the booking page). Shown after the
+  // hero (home) or after 400 px; hidden while the compact request block is in view; CSS hides it while the
+  // phone menu, a dialog or the dev panel is open.
+  (function floatCta() {
+    if (document.getElementById('stay-form') || document.body.classList.contains('page-book')) return;
+    var a = document.createElement('a');
+    a.className = 'float-cta'; a.href = 'book.html'; a.textContent = T.checkAvail;
+    document.body.appendChild(a);
+    var hero = document.querySelector('.hero'), cta = document.querySelector('.contact-cta');
+    var tick = false;
+    function update() {
+      tick = false;
+      var show = hero ? hero.getBoundingClientRect().bottom < 0 : window.scrollY > 400;
+      if (show && cta) { var r = cta.getBoundingClientRect(); if (r.top < window.innerHeight && r.bottom > 0) show = false; }
+      a.classList.toggle('is-shown', show);
+    }
+    function onScroll() { if (!tick) { tick = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
+
+  // Hero video (home pages): plays only if a <source src> is present and motion is not reduced; the photo
+  // stays underneath as poster/fallback. To add one: see README ("Hero video").
+  (function heroVideo() {
+    var v = document.querySelector('.hero-video');
+    if (!v || !v.querySelector('source[src]') || !v.play) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    v.muted = true;
+    v.addEventListener('playing', function () { v.hidden = false; }, { once: true });
+    v.addEventListener('error', function () { v.hidden = true; }, true);
+    var pr = v.play(); if (pr && pr.catch) pr.catch(function () { v.hidden = true; });
+  })();
+
+  // DEV: colour + type switcher ("Aa"). Everything it adds carries data-dev and the class dev-*.
+  // Remove for launch: delete the devSwitcher() call below (and the DEV block in site.css); see README.
+  function devSwitcher() {
+    var header = document.querySelector('.header-inner'), langM = document.querySelector('.lang-menu');
+    if (!header) return;
+    var THEMES = [['paper', 'Paper', '#ffffff'], ['stone', 'Stone', '#f3f1ec'], ['schist', 'Schist', '#eef0f1'],
+      ['olive', 'Olive', '#6f7a55'], ['terracotta', 'Terracotta', '#c4532d'], ['dusk', 'Dusk', '#121a24']];
+    var KEYS = { theme: 'akro-theme', fonts: 'akro-fonts' };
+    function get(k) { try { return localStorage.getItem(KEYS[k]); } catch (e) { return null; } }
+    function put(k, v) { try { if (v) localStorage.setItem(KEYS[k], v); else localStorage.removeItem(KEYS[k]); } catch (e) {} }
+    function btn(cls) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'dev-aa ' + cls; b.setAttribute('data-dev', '');
+      b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-controls', 'dev-panel');
+      b.innerHTML = '<span class="dev-aa-glyph" aria-hidden="true">Aa</span><span class="dev-aa-label">Colours &amp; type</span>';
+      b.setAttribute('aria-label', 'Colours and type (preview)');
+      return b;
+    }
+    var bHead = btn('dev-aa-head'), bNav = btn('dev-aa-nav');
+    bHead.querySelector('.dev-aa-label').hidden = true;
+    if (langM) langM.after(bHead); else header.appendChild(bHead);
+    var nav = document.getElementById('site-nav');
+    if (nav) nav.appendChild(bNav);
+
+    var p = document.createElement('div');
+    p.className = 'dev-panel'; p.id = 'dev-panel'; p.hidden = true; p.setAttribute('data-dev', '');
+    p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Colours and type (preview)');
+    var html = '<p class="dev-h">Colours</p><div class="dev-opts dev-colours">';
+    THEMES.forEach(function (t) {
+      html += '<button type="button" class="dev-opt" data-theme-opt="' + t[0] + '"><span class="dev-sw" style="background:' + t[2] + '"></span>' + t[1] + '</button>';
+    });
+    html += '</div><p class="dev-h">Type</p><div class="dev-opts">' +
+      '';
+    ['a', '', 'c', 'd'].forEach(function (k) {
+      if (!k) { html += '<button type="button" class="dev-opt" data-fonts-opt=""><span>B · Classic (default)<small>Gentium Plus · Inter</small></span></button>'; return; }
+      html += '<button type="button" class="dev-opt" data-fonts-opt="' + k + '"><span>' + FONTS[k].name + '<small>' + FONTS[k].fam + '</small></span></button>';
+    });
+    html += '</div><div class="dev-foot"><p class="dev-note">Preview only; stored in this browser.</p><button type="button" class="link-btn" data-dev-reset>Reset</button></div>';
+    p.innerHTML = html;
+    document.body.appendChild(p);
+
+    function sync() {
+      var t = DOC.getAttribute('data-theme') || 'paper', f = DOC.getAttribute('data-fonts') || '';
+      Array.prototype.forEach.call(p.querySelectorAll('[data-theme-opt]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-opt') === t)); });
+      Array.prototype.forEach.call(p.querySelectorAll('[data-fonts-opt]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-fonts-opt') === f)); });
+    }
+    function setTheme(t) {
+      if (t && t !== 'paper') DOC.setAttribute('data-theme', t); else DOC.removeAttribute('data-theme');
+      put('theme', t && t !== 'paper' ? t : '');
+    }
+    function setFonts(f) {
+      if (f) { DOC.setAttribute('data-fonts', f); loadFonts(f); } else DOC.removeAttribute('data-fonts');
+      put('fonts', f);
+    }
+    var opener = null;
+    function open(b) {
+      opener = b; p.hidden = false; sync();
+      [bHead, bNav].forEach(function (x) { x.setAttribute('aria-expanded', 'true'); });
+      (p.querySelector('[aria-pressed="true"]') || p.querySelector('button')).focus();
+    }
+    function close(refocus) {
+      if (p.hidden) return;
+      p.hidden = true;
+      [bHead, bNav].forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+      if (refocus && opener && opener.offsetParent) opener.focus();
+    }
+    [bHead, bNav].forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (p.hidden) {
+          if (b === bNav && toggle && toggle.getAttribute('aria-expanded') === 'true') { setOpen(false); opener = toggle; }
+          open(b === bNav ? toggle || b : b);
+        } else close(true);
+      });
+    });
+    p.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-theme-opt')) setTheme(b.getAttribute('data-theme-opt'));
+      else if (b.hasAttribute('data-fonts-opt')) setFonts(b.getAttribute('data-fonts-opt'));
+      else if (b.hasAttribute('data-dev-reset')) { setTheme(''); setFonts(''); }
+      sync();
+    });
+    document.addEventListener('click', function (e) { if (!p.hidden && !p.contains(e.target)) close(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !p.hidden) close(true); });
+  }
+  devSwitcher();
 
 })();

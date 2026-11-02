@@ -2,6 +2,7 @@
 //   = no-break space,   = narrow no-break space (French typography).
 window.AKRO_STRINGS = window.AKRO_STRINGS || {};
 window.AKRO_STRINGS.fr = {
+  checkAvail: 'Voir les disponibilités',
   houseName: 'Toute la maison', houseMeta: '4 appartements · 2 duplex et 2 studios · jusqu’à 12 personnes',
   houseRequest: 'Demander toute la maison', houseFind: 'Trouver des dates',
   houseWindow: function (r, n) { return r + ' (' + n + (n === 1 ? ' nuit)' : ' nuits)'); },

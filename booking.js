@@ -647,10 +647,37 @@
     if (history.replaceState) history.replaceState(null, '', '#request-ok');
   }
 
+  // Booking page: the list of extras with their prices (#extras-overview), from the same `extras` call.
+  function renderOverview() {
+    var box = document.getElementById('extras-overview');
+    if (!box || !EXTRAS || !(EXTRAS.extras || []).length) return;
+    var cur = EXTRAS.currency, html = '';
+    [['paid', T.exPaid], ['request', T.exRequest], ['quote', T.exQuote]].forEach(function (g) {
+      var items = EXTRAS.extras.filter(function (e) { return (e.category || 'paid') === g[0]; });
+      if (!items.length) return;
+      html += '<li class="ex-group-h">' + esc(g[1]) + '</li>';
+      items.forEach(function (e) {
+        var price = '';
+        if (g[0] === 'quote') price = T.exOnRequest;
+        else if (g[0] === 'paid') {
+          var ps = (e.options || []).map(function (o) { return Number(o.price); }).filter(function (v) { return v > 0; });
+          if (!ps.length) ps = [Number(e.price) || 0];
+          var lo = Math.min.apply(null, ps), hi = Math.max.apply(null, ps);
+          price = T.exPer(e.kind, lo === hi ? money(lo, cur) : money(lo, cur) + '–' + money(hi, cur));
+        }
+        var opts = (e.options || []).map(function (o) { return o.label; }).join(', ');
+        html += '<li><span>' + esc(exName(e)) + (opts ? ' <span class="ex-opts">(' + esc(opts) + ')</span>' : '') + '</span>' +
+          (price ? '<span class="ex-price">' + esc(price) + '</span>' : '') + '</li>';
+      });
+    });
+    box.innerHTML = html;
+    box.hidden = false;
+  }
+
   /* ------------------------------------------------------------------ load */
   show(1, false);
   if (API) {
-    call('extras', { lang: LANG }).then(function (r) { if (r && r.ok && r.data) EXTRAS = r.data; }).catch(function () {});
+    call('extras', { lang: LANG }).then(function (r) { if (r && r.ok && r.data) { EXTRAS = r.data; renderOverview(); } }).catch(function () {});
     availP = call('availability', {}).then(function (res) {
       if (!res || !res.ok || !res.data || !res.data.units) throw new Error('availability');
       avail = res.data;
