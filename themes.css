@@ -97,3 +97,7 @@ html[data-theme="noir"] .site-nav .nav-accent { color: #ffffff; border-bottom: 1
 html[data-theme="noir"] .eyebrow::before { background: #ffffff; }
 html[data-theme="noir"] .form { background: #151518; border: 1px solid var(--line); }
 html[data-theme="noir"] .btn-solid:hover { background: #ffffff; border-color: #ffffff; color: #0e0e10; }
+
+/* Preview: one serif for every language */
+:root[data-theme="alegreya"] { --serif: "Alegreya", "Iowan Old Style", Palatino, Georgia, serif; }
+:root[data-theme="alegreya"] .wordmark-name { font-family: "Alegreya", serif; }
